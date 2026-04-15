@@ -14,7 +14,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import {
   FileText, Zap, Clock, Shield, Star,
   ChevronRight, CheckCircle2, Building2,
-  Download, Share2,
+  Download, Share2, Mail, PenLine,
 } from 'lucide-react'
 
 // ─── Data ────────────────────────────────────────────────────────────────────
@@ -23,9 +23,11 @@ const features = [
   { icon: Zap, title: 'AI-Powered Narratives', description: 'Enter your findings room by room. Claude AI instantly writes professional, detailed report narratives — the kind that used to take hours.' },
   { icon: Clock, title: 'Reports in Minutes', description: 'Cut report writing time by 80%. Finish your report on-site and deliver it to clients the same day.' },
   { icon: FileText, title: 'Branded PDF Reports', description: 'Every report includes your company logo, license number, and contact info. Professional output that builds trust.' },
-  { icon: Share2, title: 'Instant Client Sharing', description: 'Share a secure link or download a PDF — clients get their report immediately, not 48 hours later.' },
+  { icon: Mail, title: 'Email Reports to Clients', description: 'Send the finished report directly to your client with one click. No copying links, no back-and-forth — they get it instantly.' },
+  { icon: PenLine, title: 'Your Signature on Every Report', description: 'Upload your signature once and it appears on every PDF you generate. Looks professional, builds trust, takes 30 seconds to set up.' },
   { icon: Shield, title: 'InterNACHI Standards Built-In', description: 'Pre-loaded with InterNACHI Standards of Practice checklists. Your reports reflect the highest industry standards, automatically.' },
-  { icon: Download, title: 'Works Anywhere', description: 'Use it in the field on your phone or tablet, or back at the office. No app download required.' },
+  { icon: Share2, title: 'Secure Client Share Links', description: 'Share a secure link or download a PDF — clients get their report immediately, not 48 hours later.' },
+  { icon: Download, title: 'Works in the Field', description: 'Fully mobile-responsive. Use it on your phone at the property, or back at the office on your desktop. No app download required.' },
 ]
 
 const testimonials = [
@@ -38,11 +40,12 @@ const pricingFeatures = [
   'Unlimited inspections & reports',
   'AI-generated professional narratives (Claude AI)',
   'InterNACHI standards pre-loaded',
-  'Drag-and-drop photo uploads — auto-optimized for PDF',
-  'Branded PDF export with your logo',
+  'Email reports directly to clients',
+  'Your signature on every PDF',
+  'Drag-and-drop photo uploads',
+  'Branded PDF with your logo',
   'Secure client share links',
-  'Full inspection history',
-  'Admin dashboard',
+  'Mobile-friendly — works in the field',
   'Cancel anytime',
 ]
 
@@ -393,9 +396,9 @@ export default function AnimatedLanding() {
         <FadeInWhenVisible>
           <div className="max-w-4xl mx-auto px-6 flex flex-col md:flex-row items-center justify-center gap-8 text-sm text-slate-500">
             {[
-              'Trusted by inspectors across 30+ states',
               'ASHI & InterNACHI standards pre-loaded',
-              'Reports in under 10 minutes',
+              'Reports delivered to clients in minutes',
+              'Mobile-friendly — works in the field',
             ].map((text) => (
               <div key={text} className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
@@ -482,12 +485,11 @@ export default function AnimatedLanding() {
             <Card className="border-2 border-blue-600 shadow-2xl shadow-blue-100">
               <CardContent className="pt-8 pb-8">
                 <div className="text-center mb-8">
-                  <Badge className="bg-blue-600 mb-4">Most Popular</Badge>
                   <div className="flex items-end justify-center gap-1">
                     <span className="text-5xl font-bold text-slate-900">$99</span>
                     <span className="text-slate-500 mb-2">/month</span>
                   </div>
-                  <p className="text-slate-500 text-sm mt-2">14-day free trial included</p>
+                  <p className="text-slate-500 text-sm mt-2">Everything included. Cancel anytime.</p>
                 </div>
                 <ul className="space-y-3 mb-8">
                   {pricingFeatures.map((f) => (
@@ -497,10 +499,20 @@ export default function AnimatedLanding() {
                     </li>
                   ))}
                 </ul>
-                <Link href="/auth/signup" className="block">
-                  <Button className="w-full bg-blue-600 hover:bg-blue-700" size="lg">Start free trial</Button>
-                </Link>
-                <p className="text-center text-xs text-slate-400 mt-3">No charge for 14 days. Cancel anytime.</p>
+                {/* Two CTAs */}
+                <div className="space-y-3">
+                  <Link href="/auth/signup" className="block">
+                    <Button className="w-full bg-blue-600 hover:bg-blue-700" size="lg">
+                      Start 14-day free trial
+                    </Button>
+                  </Link>
+                  <Link href="/auth/signup?checkout=1" className="block">
+                    <Button variant="outline" className="w-full border-blue-200 text-blue-700 hover:bg-blue-50" size="lg">
+                      Subscribe now — $99/mo
+                    </Button>
+                  </Link>
+                </div>
+                <p className="text-center text-xs text-slate-400 mt-3">Free trial: no credit card required. Subscribe now: billed immediately.</p>
               </CardContent>
             </Card>
           </div>
@@ -537,7 +549,7 @@ export default function AnimatedLanding() {
           <div className="flex gap-6">
             <Link href="/privacy" className="hover:text-slate-600 transition-colors">Privacy</Link>
             <Link href="/terms" className="hover:text-slate-600 transition-colors">Terms</Link>
-            <a href="mailto:support@inspectiq.app" className="hover:text-slate-600 transition-colors">Support</a>
+            <a href="mailto:support@useinspectiq.com" className="hover:text-slate-600 transition-colors">Support</a>
           </div>
           <p>© {new Date().getFullYear()} InspectIQ. All rights reserved.</p>
         </div>

@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ClipboardList, FileText, Plus, TrendingUp } from 'lucide-react'
+import { Suspense } from 'react'
+import CheckoutRedirect from '@/components/CheckoutRedirect'
 
 export default async function DashboardPage() {
   const userId = await getUserId()
@@ -22,6 +24,7 @@ export default async function DashboardPage() {
 
   return (
     <div>
+      <Suspense><CheckoutRedirect /></Suspense>
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>

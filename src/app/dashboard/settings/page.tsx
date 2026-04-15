@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Loader2, CreditCard, CheckCircle2, Upload, Building2, PenLine, Link2, Copy } from 'lucide-react'
+import { Loader2, CreditCard, CheckCircle2, Upload, Building2, PenLine } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function SettingsPage() {
@@ -277,31 +277,6 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {referralCode && (
-        <>
-          <Separator />
-          <Card className="border-slate-100 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Link2 className="h-4 w-4 text-blue-500" />
-                Refer a Fellow Inspector
-              </CardTitle>
-              <CardDescription>Share your link. When they subscribe, you both get a free month.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                <code className="flex-1 text-sm text-slate-700 truncate">
-                  {typeof window !== 'undefined' ? `${window.location.origin}/?ref=${referralCode}` : `useinspectiq.com/?ref=${referralCode}`}
-                </code>
-                <Button variant="outline" size="sm" onClick={copyReferralLink}>
-                  <Copy className="h-3.5 w-3.5 mr-1.5" />Copy
-                </Button>
-              </div>
-              <p className="text-xs text-slate-400">Your friend gets a 30-day free trial (vs 14 days). You get a free month when they pay their first bill.</p>
-            </CardContent>
-          </Card>
-        </>
-      )}
     </div>
   )
 }
