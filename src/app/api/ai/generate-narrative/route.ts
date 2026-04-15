@@ -1,0 +1,38 @@
+import { NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
+import Anthropic from '@anthropic-ai/sdk'
+
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+
+export async function POST(request: Request) {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { roomName, items } = await request.json()
+  if (!roomName || !items?.length) return NextResponse.json({ error: 'Missing data' }, { status: 400 })
+
+  const itemsText = items
+    .filter((item: { condition: string }) => item.condition !== 'na')
+    .map((item: { name: string; condition: string; notes: string }) =>
+      `- ${item.name}: ${item.condition.toUpperCase()}${item.notes ? ` — Notes: ${item.notes}` : ''}`
+    ).join('\n')
+
+  const message = await anthropic.messages.create({
+    model: 'claude-opus-4-6',
+    max_tokens: 600,
+    messages: [{
+      role: 'user',
+      content: `You are a professional home inspector writing a formal inspection report. Write a concise, professional narrative paragraph for the following room section. Use clear, objective language appropriate for a legal inspection document. Write in paragraph form only — no bullet points. Do not repeat the room name as a heading.
+
+Room: ${roomName}
+
+Findings:
+${itemsText}
+
+Write the narrative now:`,
+    }],
+  })
+
+  const narrative = message.content[0].type === 'text' ? message.content[0].text : ''
+  return NextResponse.json({ narrative })
+}
