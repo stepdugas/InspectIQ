@@ -18,6 +18,13 @@ export default clerkMiddleware(async (auth, request) => {
   }
   const response = NextResponse.next()
   response.headers.set('x-pathname', request.nextUrl.pathname)
+
+  // Capture referral code from ?ref=CODE and store in cookie for signup
+  const ref = request.nextUrl.searchParams.get('ref')
+  if (ref) {
+    response.cookies.set('referral_code', ref, { maxAge: 60 * 60 * 24 * 7, path: '/' })
+  }
+
   return response
 })
 

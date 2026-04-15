@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 import lazyLoad from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { FileText, Download, Loader2, Share2 } from 'lucide-react'
+import { FileText, Download, Loader2, Share2, Mail } from 'lucide-react'
 import { toast } from 'sonner'
 import { pdf } from '@react-pdf/renderer'
 import PDFReport from '@/components/report/PDFReport'
@@ -20,6 +20,7 @@ interface Inspection {
   id: string
   propertyAddress: string
   clientName: string
+  clientEmail: string | null
   inspectionDate: string
 }
 
@@ -53,6 +54,7 @@ export default function ReportsPage() {
   const [selectedInspection, setSelectedInspection] = useState<Inspection | null>(null)
   const [loading, setLoading] = useState(true)
   const [generatingPDF, setGeneratingPDF] = useState(false)
+  const [sendingEmail, setSendingEmail] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -92,6 +94,18 @@ export default function ReportsPage() {
       toast.success('PDF downloaded!')
     } catch { toast.error('Failed to generate PDF') }
     finally { setGeneratingPDF(false) }
+  }
+
+  async function sendToClient() {
+    if (!selectedId) return
+    setSendingEmail(true)
+    const res = await fetch(`/api/reports/${selectedId}/send-to-client`, { method: 'POST' })
+    if (res.ok) toast.success('Report emailed to client!')
+    else {
+      const { error } = await res.json()
+      toast.error(error === 'No client email on file' ? 'No client email saved for this inspection' : 'Failed to send email')
+    }
+    setSendingEmail(false)
   }
 
   async function copyShareLink() {
@@ -160,7 +174,13 @@ export default function ReportsPage() {
                   <h2 className="font-semibold text-slate-900">{selectedInspection.propertyAddress}</h2>
                   <p className="text-sm text-slate-400">{selectedInspection.clientName}</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
+                  {selectedInspection.clientEmail && (
+                    <Button variant="outline" size="sm" onClick={sendToClient} disabled={sendingEmail}>
+                      {sendingEmail ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Mail className="h-4 w-4 mr-2" />}
+                      Email Client
+                    </Button>
+                  )}
                   <Button variant="outline" size="sm" onClick={copyShareLink}>
                     <Share2 className="h-4 w-4 mr-2" />Share Link
                   </Button>

@@ -356,6 +356,7 @@ export default function PDFReport({ inspection, rooms, profile }: PDFReportProps
   const phone = profile.phone
   const email = profile.email
   const logoUrl = profile.logo_url ?? profile.logoUrl
+  const signatureUrl = profile.signature_url ?? profile.signatureUrl
   const propertyAddress = inspection.property_address ?? inspection.propertyAddress ?? ''
   const clientName = inspection.client_name ?? inspection.clientName ?? ''
   const inspectionDate = inspection.inspection_date ?? inspection.inspectionDate ?? ''
@@ -545,6 +546,15 @@ export default function PDFReport({ inspection, rooms, profile }: PDFReportProps
             </View>
           )
         })}
+
+        {/* Signature block */}
+        {signatureUrl && (
+          <View style={{ marginTop: 24, borderTopWidth: 1, borderTopColor: '#e2e8f0', paddingTop: 16 }}>
+            <Text style={{ fontSize: 8, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>Inspector Signature</Text>
+            <Image src={signatureUrl} style={{ width: 120, height: 40, objectFit: 'contain' }} />
+            <Text style={{ fontSize: 9, color: '#334155', marginTop: 4 }}>{fullName}{licenseNumber ? `  ·  License #${licenseNumber}` : ''}</Text>
+          </View>
+        )}
 
         <Footer />
       </Page>

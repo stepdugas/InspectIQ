@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Loader2, CreditCard, CheckCircle2, Upload, Building2 } from 'lucide-react'
+import { Loader2, CreditCard, CheckCircle2, Upload, Building2, PenLine, Link2, Copy } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function SettingsPage() {
@@ -25,10 +25,14 @@ export default function SettingsPage() {
   const [phone, setPhone] = useState('')
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [logoUploading, setLogoUploading] = useState(false)
+  const [signatureUrl, setSignatureUrl] = useState<string | null>(null)
+  const [signatureUploading, setSignatureUploading] = useState(false)
+  const [referralCode, setReferralCode] = useState<string | null>(null)
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null)
   const [portalLoading, setPortalLoading] = useState(false)
   const [hasStripeCustomer, setHasStripeCustomer] = useState(false)
   const logoInputRef = useRef<HTMLInputElement>(null)
+  const signatureInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     async function load() {
@@ -40,6 +44,8 @@ export default function SettingsPage() {
         setLicenseNumber(data.profile.licenseNumber ?? '')
         setPhone(data.profile.phone ?? '')
         setLogoUrl(data.profile.logoUrl ?? null)
+        setSignatureUrl(data.profile.signatureUrl ?? null)
+        setReferralCode(data.profile.referralCode ?? null)
         setSubscriptionStatus(data.profile.subscriptionStatus)
         setHasStripeCustomer(!!data.profile.stripeCustomerId)
       }
@@ -110,6 +116,39 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleSignatureUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setSignatureUploading(true)
+    try {
+      const paramsRes = await fetch('/api/upload/signature')
+      const { signature, timestamp, folder, public_id, cloudName, apiKey } = await paramsRes.json()
+      const form = new FormData()
+      form.append('file', file)
+      form.append('signature', signature)
+      form.append('timestamp', timestamp)
+      form.append('folder', folder)
+      form.append('public_id', public_id)
+      form.append('overwrite', 'true')
+      form.append('api_key', apiKey)
+      const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: 'POST', body: form })
+      const uploadData = await uploadRes.json()
+      const url = uploadData.secure_url
+      await fetch('/api/upload/signature', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ signatureUrl: url }) })
+      setSignatureUrl(url)
+      toast.success('Signature saved!')
+    } catch {
+      toast.error('Upload failed')
+    } finally {
+      setSignatureUploading(false)
+    }
+  }
+
+  function copyReferralLink() {
+    const link = `${window.location.origin}/?ref=${referralCode}`
+    navigator.clipboard.writeText(link).then(() => toast.success('Referral link copied!')).catch(() => toast.error('Could not copy'))
+  }
+
   const isActive = subscriptionStatus === 'active' || subscriptionStatus === 'trialing'
 
   if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-slate-300" /></div>
@@ -168,6 +207,27 @@ export default function SettingsPage() {
             </div>
           </div>
 
+          {/* Signature upload */}
+          <div className="space-y-2">
+            <Label>Inspector Signature</Label>
+            <div className="flex items-center gap-4">
+              <div className="h-16 w-40 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0">
+                {signatureUrl
+                  ? <img src={signatureUrl} alt="Signature" className="w-full h-full object-contain p-2" />
+                  : <PenLine className="h-5 w-5 text-slate-300" />
+                }
+              </div>
+              <div>
+                <input ref={signatureInputRef} type="file" accept="image/*" className="hidden" onChange={handleSignatureUpload} />
+                <Button type="button" variant="outline" size="sm" onClick={() => signatureInputRef.current?.click()} disabled={signatureUploading}>
+                  {signatureUploading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
+                  {signatureUrl ? 'Change Signature' : 'Upload Signature'}
+                </Button>
+                <p className="text-xs text-slate-400 mt-1">Appears at the bottom of every PDF report</p>
+              </div>
+            </div>
+          </div>
+
           <Button onClick={saveProfile} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
             {saving ? 'Saving...' : 'Save Profile'}
           </Button>
@@ -216,6 +276,32 @@ export default function SettingsPage() {
           )}
         </CardContent>
       </Card>
+
+      {referralCode && (
+        <>
+          <Separator />
+          <Card className="border-slate-100 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Link2 className="h-4 w-4 text-blue-500" />
+                Refer a Fellow Inspector
+              </CardTitle>
+              <CardDescription>Share your link. When they subscribe, you both get a free month.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <code className="flex-1 text-sm text-slate-700 truncate">
+                  {typeof window !== 'undefined' ? `${window.location.origin}/?ref=${referralCode}` : `useinspectiq.com/?ref=${referralCode}`}
+                </code>
+                <Button variant="outline" size="sm" onClick={copyReferralLink}>
+                  <Copy className="h-3.5 w-3.5 mr-1.5" />Copy
+                </Button>
+              </div>
+              <p className="text-xs text-slate-400">Your friend gets a 30-day free trial (vs 14 days). You get a free month when they pay their first bill.</p>
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   )
 }

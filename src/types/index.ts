@@ -11,6 +11,9 @@ export interface Profile {
   licenseNumber?: string | null
   phone?: string | null
   logoUrl?: string | null
+  signatureUrl?: string | null
+  referralCode?: string | null
+  referredBy?: string | null
   stripeCustomerId?: string | null
   stripeSubscriptionId?: string | null
   subscriptionStatus?: string | null
@@ -19,6 +22,7 @@ export interface Profile {
   company_name?: string | null
   license_number?: string | null
   logo_url?: string | null
+  signature_url?: string | null
   stripe_customer_id?: string | null
   stripe_subscription_id?: string | null
   subscription_status?: string | null
