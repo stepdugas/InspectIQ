@@ -6,10 +6,12 @@ import { useState, useEffect } from 'react'
 import lazyLoad from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { FileText, Download, Loader2, Share2, Mail } from 'lucide-react'
+import { FileText, Download, Loader2, Share2, Mail, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { pdf } from '@react-pdf/renderer'
 import PDFReport from '@/components/report/PDFReport'
+
+const ISN_ENABLED = process.env.NEXT_PUBLIC_ISN_ENABLED === 'true'
 
 const PDFViewer = lazyLoad(() => import('@react-pdf/renderer').then((m) => m.PDFViewer), {
   ssr: false,
@@ -22,6 +24,7 @@ interface Inspection {
   clientName: string
   clientEmail: string | null
   inspectionDate: string
+  isnOrderId?: string | null
 }
 
 interface Room {
@@ -55,6 +58,7 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true)
   const [generatingPDF, setGeneratingPDF] = useState(false)
   const [sendingEmail, setSendingEmail] = useState(false)
+  const [pushingToIsn, setPushingToIsn] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -106,6 +110,29 @@ export default function ReportsPage() {
       toast.error(error === 'No client email on file' ? 'No client email saved for this inspection' : 'Failed to send email')
     }
     setSendingEmail(false)
+  }
+
+  async function pushToIsn() {
+    if (!selectedInspection || !profile) return
+    setPushingToIsn(true)
+    try {
+      // Generate the PDF blob client-side
+      const blob = await pdf(
+        <PDFReport inspection={selectedInspection as never} rooms={rooms as never} profile={profile as never} />
+      ).toBlob()
+
+      // Send it to our server which uploads to ISN
+      const form = new FormData()
+      form.append('pdf', blob, 'report.pdf')
+      const res = await fetch(`/api/isn/push-report/${selectedInspection.id}`, { method: 'POST', body: form })
+      const data = await res.json()
+      if (!res.ok) { toast.error(data.error ?? 'Failed to push to ISN'); return }
+      toast.success('Report pushed to ISN!')
+    } catch {
+      toast.error('Failed to push report to ISN')
+    } finally {
+      setPushingToIsn(false)
+    }
   }
 
   async function copyShareLink() {
@@ -188,6 +215,12 @@ export default function ReportsPage() {
                     {generatingPDF ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
                     Download PDF
                   </Button>
+                  {ISN_ENABLED && selectedInspection.isnOrderId && (
+                    <Button variant="outline" size="sm" onClick={pushToIsn} disabled={pushingToIsn}>
+                      {pushingToIsn ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
+                      Push to ISN
+                    </Button>
+                  )}
                 </div>
               </div>
               {profile && (

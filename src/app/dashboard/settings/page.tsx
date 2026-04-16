@@ -10,8 +10,10 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Loader2, CreditCard, CheckCircle2, Upload, Building2, PenLine } from 'lucide-react'
+import { Loader2, CreditCard, CheckCircle2, Upload, Building2, PenLine, Link2, Link2Off } from 'lucide-react'
 import { toast } from 'sonner'
+
+const ISN_ENABLED = process.env.NEXT_PUBLIC_ISN_ENABLED === 'true'
 
 export default function SettingsPage() {
   const { user } = useUser()
@@ -29,6 +31,13 @@ export default function SettingsPage() {
   const [signatureUploading, setSignatureUploading] = useState(false)
   const [referralCode, setReferralCode] = useState<string | null>(null)
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null)
+  // ISN integration state
+  const [isnConnected, setIsnConnected] = useState(false)
+  const [isnCompanyKey, setIsnCompanyKey] = useState('')
+  const [isnUsername, setIsnUsername] = useState('')
+  const [isnPassword, setIsnPassword] = useState('')
+  const [isnConnecting, setIsnConnecting] = useState(false)
+  const [isnDisconnecting, setIsnDisconnecting] = useState(false)
   const [portalLoading, setPortalLoading] = useState(false)
   const [hasStripeCustomer, setHasStripeCustomer] = useState(false)
   const logoInputRef = useRef<HTMLInputElement>(null)
@@ -48,6 +57,9 @@ export default function SettingsPage() {
         setReferralCode(data.profile.referralCode ?? null)
         setSubscriptionStatus(data.profile.subscriptionStatus)
         setHasStripeCustomer(!!data.profile.stripeCustomerId)
+        setIsnConnected(!!data.profile.isnCompanyKey)
+        if (data.profile.isnCompanyKey) setIsnCompanyKey(data.profile.isnCompanyKey)
+        if (data.profile.isnUsername) setIsnUsername(data.profile.isnUsername)
       }
       setLoading(false)
     }
@@ -142,6 +154,45 @@ export default function SettingsPage() {
     } finally {
       setSignatureUploading(false)
     }
+  }
+
+  async function connectIsn() {
+    if (!isnCompanyKey || !isnUsername || !isnPassword) {
+      toast.error('Please fill in all ISN fields')
+      return
+    }
+    setIsnConnecting(true)
+    try {
+      const res = await fetch('/api/isn/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyKey: isnCompanyKey, username: isnUsername, password: isnPassword }),
+      })
+      const data = await res.json()
+      if (!res.ok) { toast.error(data.error ?? 'Failed to connect ISN'); return }
+      setIsnConnected(true)
+      setIsnPassword('')
+      toast.success('ISN connected successfully!')
+    } catch {
+      toast.error('Failed to connect ISN')
+    } finally {
+      setIsnConnecting(false)
+    }
+  }
+
+  async function disconnectIsn() {
+    setIsnDisconnecting(true)
+    const res = await fetch('/api/isn/connect', { method: 'DELETE' })
+    if (res.ok) {
+      setIsnConnected(false)
+      setIsnCompanyKey('')
+      setIsnUsername('')
+      setIsnPassword('')
+      toast.success('ISN disconnected')
+    } else {
+      toast.error('Failed to disconnect')
+    }
+    setIsnDisconnecting(false)
   }
 
   function copyReferralLink() {
@@ -276,6 +327,72 @@ export default function SettingsPage() {
           )}
         </CardContent>
       </Card>
+
+      {ISN_ENABLED && (
+        <>
+          <Separator />
+          <Card className="border-slate-100 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base">ISN Integration</CardTitle>
+              <CardDescription>
+                Connect your Inspection Support Network account to auto-import jobs and sync reports.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isnConnected ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 p-4 rounded-lg bg-green-50 border border-green-100">
+                    <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
+                    <div>
+                      <p className="font-semibold text-slate-900 text-sm">ISN Connected</p>
+                      <p className="text-xs text-slate-500">Company key: {isnCompanyKey} · {isnUsername}</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={disconnectIsn} disabled={isnDisconnecting}>
+                    {isnDisconnecting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Link2Off className="h-4 w-4 mr-2" />}
+                    Disconnect ISN
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 gap-3">
+                    <div className="space-y-2">
+                      <Label>Company Key</Label>
+                      <Input
+                        placeholder="e.g. smithinspections"
+                        value={isnCompanyKey}
+                        onChange={(e) => setIsnCompanyKey(e.target.value)}
+                      />
+                      <p className="text-xs text-slate-400">Visible in your ISN URL — inspectionsupport.com/your-key</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>ISN Username</Label>
+                      <Input
+                        placeholder="Your ISN login username"
+                        value={isnUsername}
+                        onChange={(e) => setIsnUsername(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>ISN Password</Label>
+                      <Input
+                        type="password"
+                        placeholder="Your ISN login password"
+                        value={isnPassword}
+                        onChange={(e) => setIsnPassword(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <Button onClick={connectIsn} disabled={isnConnecting} className="bg-blue-600 hover:bg-blue-700">
+                    {isnConnecting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Link2 className="h-4 w-4 mr-2" />}
+                    Connect ISN Account
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
 
     </div>
   )

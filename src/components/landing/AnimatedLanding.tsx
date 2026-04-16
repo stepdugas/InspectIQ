@@ -291,6 +291,7 @@ export default function AnimatedLanding() {
             <a href="#features" className="hover:text-slate-900 transition-colors">Features</a>
             <a href="#pricing" className="hover:text-slate-900 transition-colors">Pricing</a>
             <a href="#testimonials" className="hover:text-slate-900 transition-colors">Reviews</a>
+            <Link href="/sample-report" className="hover:text-slate-900 transition-colors font-medium text-blue-600 hover:text-blue-700">Sample Report</Link>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <Link href="/auth/login"><Button variant="ghost" size="sm" className="hover:bg-slate-100 transition-colors">Log in</Button></Link>

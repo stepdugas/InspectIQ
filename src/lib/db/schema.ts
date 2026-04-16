@@ -16,6 +16,11 @@ export const profiles = pgTable('profiles', {
   subscriptionStatus: text('subscription_status'),
   trialEndsAt: timestamp('trial_ends_at').defaultNow(),
   createdAt: timestamp('created_at').defaultNow(),
+  // ISN integration — null means not connected
+  isnCompanyKey: text('isn_company_key'),
+  isnUsername: text('isn_username'),
+  isnPassword: text('isn_password'), // TODO: encrypt at rest before v1 launch
+  isnBaseUrl: text('isn_base_url'),  // resolved via Admin API on connect
 })
 
 export const inspections = pgTable('inspections', {
@@ -29,6 +34,8 @@ export const inspections = pgTable('inspections', {
   reportUrl: text('report_url'),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
+  // ISN order link — set when inspection is created from an ISN import
+  isnOrderId: text('isn_order_id'),
 })
 
 export const rooms = pgTable('rooms', {

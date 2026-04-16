@@ -28,7 +28,7 @@ export async function POST(request: Request) {
 
   await getProfile()
 
-  const { address, clientName, clientEmail, date, selectedRooms } = await request.json()
+  const { address, clientName, clientEmail, date, selectedRooms, isnOrderId } = await request.json()
 
   const [inspection] = await db.insert(inspections).values({
     userId,
@@ -37,6 +37,7 @@ export async function POST(request: Request) {
     clientEmail: clientEmail || null,
     inspectionDate: date,
     status: 'in_progress',
+    isnOrderId: isnOrderId || null,
   }).returning()
 
   const templates = DEFAULT_ROOMS.filter((r) => selectedRooms.includes(r.name))
