@@ -61,6 +61,7 @@ export default function SettingsPage() {
         setIsnConnected(!!data.profile.isnCompanyKey)
         if (data.profile.isnCompanyKey) setIsnCompanyKey(data.profile.isnCompanyKey)
         if (data.profile.isnUsername) setIsnUsername(data.profile.isnUsername)
+        if (data.profile.isnBaseUrl) setIsnBaseUrl(data.profile.isnBaseUrl)
       }
       setLoading(false)
     }
