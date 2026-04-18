@@ -1,33 +1,20 @@
 // ISN (Inspection Support Network) API client
-// Two-API system: Admin API resolves the ISN URL, then ISN API handles data
 //
-// To activate: set ISN_INTEGRATION_USER + ISN_INTEGRATION_PASS in env (from ISN ops team)
-// and NEXT_PUBLIC_ISN_ENABLED=true
-
-const ISN_ADMIN_API = 'https://isnadmin.com/rest'
+// URL pattern: https://{domain}/{companyKey}/rest
+// Default domain: inspectionsupport.net (most common)
+// Custom domains (e.g. 4isn.com) are supported via the optional domain field.
+//
+// Auth: username/password (basic auth) — ISN also supports Access Key / Secret Key
+// for 3rd party apps (recommended for production, add later).
 
 function basicAuth(user: string, pass: string) {
   return 'Basic ' + Buffer.from(`${user}:${pass}`).toString('base64')
 }
 
-// Use InspectIQ's integration credentials (issued by ISN to us as a vendor)
-function getIntegrationAuth() {
-  const user = process.env.ISN_INTEGRATION_USER
-  const pass = process.env.ISN_INTEGRATION_PASS
-  if (!user || !pass) throw new Error('ISN integration credentials not configured — add ISN_INTEGRATION_USER and ISN_INTEGRATION_PASS to your environment')
-  return basicAuth(user, pass)
-}
-
-// Call the Admin API to resolve which URL this inspector's ISN lives at
-export async function getIsnUrl(companyKey: string): Promise<string> {
-  const auth = getIntegrationAuth()
-  const res = await fetch(`${ISN_ADMIN_API}/isn/url?companykey=${encodeURIComponent(companyKey)}`, {
-    headers: { Authorization: auth },
-  })
-  if (!res.ok) throw new Error(`Admin API returned ${res.status} — check your integration credentials`)
-  const data = await res.json()
-  if (data.status !== 'ok') throw new Error(data.message ?? 'Failed to look up ISN URL')
-  return data.url as string
+// Construct the REST endpoint URL from domain + company key
+export function buildIsnUrl(companyKey: string, domain = 'inspectionsupport.net'): string {
+  const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/$/, '')
+  return `https://${cleanDomain}/${companyKey}/rest`
 }
 
 // Build an ISN API client for a specific inspector using their credentials
@@ -52,39 +39,53 @@ export function createIsnClient(baseUrl: string, username: string, password: str
   }
 
   return {
-    // Verify that the inspector's credentials are valid
+    // Verify credentials are valid
     me: () => request('/me'),
 
-    // Fetch pending inspection orders
+    // Fetch upcoming inspection footprints (stubs of upcoming jobs)
+    // Footprints must be deleted after reading — they are queued notifications
+    footprints: () => request<{ footprints?: unknown[] } | unknown[]>('/orders/footprints'),
+
+    // Delete a footprint after it has been imported
+    deleteFootprint: (id: string | number) =>
+      request(`/orders/footprints`, { method: 'DELETE', body: JSON.stringify({ id }) }),
+
+    // Fetch all orders (broader list, use footprints for upcoming jobs)
     orders: (limit = 50) => request(`/orders?limit=${limit}`),
 
     // Get full details for a single order
     order: (id: string | number) => request(`/order/${id}`),
 
-    // Upload a PDF and associate it with an order
-    uploadAttachment: async (orderId: string, pdfBlob: Blob, filename: string) => {
+    // Upload report PDF to an ISN order
+    uploadReport: async (orderId: string, pdfBlob: Blob, filename: string) => {
       const form = new FormData()
       form.append('file', pdfBlob, filename)
       form.append('orderid', orderId)
-      form.append('name', filename)
 
-      const res = await fetch(`${baseUrl}/attachmentupload`, {
+      const res = await fetch(`${baseUrl}/orders/uploadreport`, {
         method: 'PUT',
         headers: { Authorization: auth },
         body: form,
       })
       if (!res.ok) {
         const text = await res.text().catch(() => res.statusText)
-        throw new Error(`ISN upload failed ${res.status}: ${text}`)
+        throw new Error(`ISN report upload failed ${res.status}: ${text}`)
       }
       return res.json()
     },
+
+    // Add a web URL (e.g. InspectIQ share link) to an ISN order
+    addReportUrl: (orderId: string, url: string) =>
+      request('/orders/addreporturl', {
+        method: 'PUT',
+        body: JSON.stringify({ orderid: orderId, url }),
+      }),
   }
 }
 
 // One-shot helper: verify credentials and return the resolved ISN URL
-export async function verifyIsnCredentials(companyKey: string, username: string, password: string) {
-  const isnUrl = await getIsnUrl(companyKey)
+export async function verifyIsnCredentials(companyKey: string, username: string, password: string, domain?: string) {
+  const isnUrl = buildIsnUrl(companyKey, domain)
   const client = createIsnClient(isnUrl, username, password)
   const me = await client.me()
   return { isnUrl, me }

@@ -33,7 +33,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const client = createIsnClient(profile.isnBaseUrl, profile.isnUsername, profile.isnPassword)
     const pdfBlob = new Blob([await pdfFile.arrayBuffer()], { type: 'application/pdf' })
     const filename = `InspectIQ_${inspection.propertyAddress.replace(/[^a-z0-9]/gi, '_')}.pdf`
-    await client.uploadAttachment(inspection.isnOrderId, pdfBlob, filename)
+    await client.uploadReport(inspection.isnOrderId, pdfBlob, filename)
     return NextResponse.json({ ok: true })
   } catch (err) {
     return NextResponse.json({ error: (err as Error).message }, { status: 500 })

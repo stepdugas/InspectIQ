@@ -36,7 +36,7 @@ export default function SettingsPage() {
   const [isnCompanyKey, setIsnCompanyKey] = useState('')
   const [isnUsername, setIsnUsername] = useState('')
   const [isnPassword, setIsnPassword] = useState('')
-  const [isnBaseUrl, setIsnBaseUrl] = useState('')
+  const [isnDomain, setIsnDomain] = useState('')
   const [isnConnecting, setIsnConnecting] = useState(false)
   const [isnDisconnecting, setIsnDisconnecting] = useState(false)
   const [portalLoading, setPortalLoading] = useState(false)
@@ -61,7 +61,6 @@ export default function SettingsPage() {
         setIsnConnected(!!data.profile.isnCompanyKey)
         if (data.profile.isnCompanyKey) setIsnCompanyKey(data.profile.isnCompanyKey)
         if (data.profile.isnUsername) setIsnUsername(data.profile.isnUsername)
-        if (data.profile.isnBaseUrl) setIsnBaseUrl(data.profile.isnBaseUrl)
       }
       setLoading(false)
     }
@@ -159,7 +158,7 @@ export default function SettingsPage() {
   }
 
   async function connectIsn() {
-    if (!isnCompanyKey || !isnUsername || !isnPassword || !isnBaseUrl) {
+    if (!isnCompanyKey || !isnUsername || !isnPassword) {
       toast.error('Please fill in all ISN fields')
       return
     }
@@ -168,7 +167,7 @@ export default function SettingsPage() {
       const res = await fetch('/api/isn/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ companyKey: isnCompanyKey, username: isnUsername, password: isnPassword, baseUrl: isnBaseUrl }),
+        body: JSON.stringify({ companyKey: isnCompanyKey, username: isnUsername, password: isnPassword, domain: isnDomain || undefined }),
       })
       const data = await res.json()
       if (!res.ok) { toast.error(data.error ?? 'Failed to connect ISN'); return }
@@ -190,7 +189,7 @@ export default function SettingsPage() {
       setIsnCompanyKey('')
       setIsnUsername('')
       setIsnPassword('')
-      setIsnBaseUrl('')
+      setIsnDomain('')
       toast.success('ISN disconnected')
     } else {
       toast.error('Failed to disconnect')
@@ -360,22 +359,22 @@ export default function SettingsPage() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 gap-3">
                     <div className="space-y-2">
-                      <Label>ISN Base URL</Label>
-                      <Input
-                        placeholder="https://yourcompany.inspectionsupport.net"
-                        value={isnBaseUrl}
-                        onChange={(e) => setIsnBaseUrl(e.target.value)}
-                      />
-                      <p className="text-xs text-slate-400">The URL you use to log into ISN — found in your browser address bar</p>
-                    </div>
-                    <div className="space-y-2">
                       <Label>Company Key</Label>
                       <Input
                         placeholder="e.g. smithinspections"
                         value={isnCompanyKey}
                         onChange={(e) => setIsnCompanyKey(e.target.value)}
                       />
-                      <p className="text-xs text-slate-400">The part of your ISN URL after inspectionsupport.net/</p>
+                      <p className="text-xs text-slate-400">Found in your ISN URL — inspectionsupport.net/<strong>yourkey</strong>/rest</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Custom Domain <span className="text-slate-400 font-normal">(optional)</span></Label>
+                      <Input
+                        placeholder="inspectionsupport.net"
+                        value={isnDomain}
+                        onChange={(e) => setIsnDomain(e.target.value)}
+                      />
+                      <p className="text-xs text-slate-400">Only needed if your ISN is on a custom domain. Leave blank for standard accounts.</p>
                     </div>
                     <div className="space-y-2">
                       <Label>ISN Username</Label>
