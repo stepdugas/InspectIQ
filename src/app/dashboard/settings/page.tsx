@@ -36,6 +36,7 @@ export default function SettingsPage() {
   const [isnCompanyKey, setIsnCompanyKey] = useState('')
   const [isnUsername, setIsnUsername] = useState('')
   const [isnPassword, setIsnPassword] = useState('')
+  const [isnBaseUrl, setIsnBaseUrl] = useState('')
   const [isnConnecting, setIsnConnecting] = useState(false)
   const [isnDisconnecting, setIsnDisconnecting] = useState(false)
   const [portalLoading, setPortalLoading] = useState(false)
@@ -157,7 +158,7 @@ export default function SettingsPage() {
   }
 
   async function connectIsn() {
-    if (!isnCompanyKey || !isnUsername || !isnPassword) {
+    if (!isnCompanyKey || !isnUsername || !isnPassword || !isnBaseUrl) {
       toast.error('Please fill in all ISN fields')
       return
     }
@@ -166,7 +167,7 @@ export default function SettingsPage() {
       const res = await fetch('/api/isn/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ companyKey: isnCompanyKey, username: isnUsername, password: isnPassword }),
+        body: JSON.stringify({ companyKey: isnCompanyKey, username: isnUsername, password: isnPassword, baseUrl: isnBaseUrl }),
       })
       const data = await res.json()
       if (!res.ok) { toast.error(data.error ?? 'Failed to connect ISN'); return }
@@ -188,6 +189,7 @@ export default function SettingsPage() {
       setIsnCompanyKey('')
       setIsnUsername('')
       setIsnPassword('')
+      setIsnBaseUrl('')
       toast.success('ISN disconnected')
     } else {
       toast.error('Failed to disconnect')
@@ -357,13 +359,22 @@ export default function SettingsPage() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 gap-3">
                     <div className="space-y-2">
+                      <Label>ISN Base URL</Label>
+                      <Input
+                        placeholder="https://yourcompany.inspectionsupport.net"
+                        value={isnBaseUrl}
+                        onChange={(e) => setIsnBaseUrl(e.target.value)}
+                      />
+                      <p className="text-xs text-slate-400">The URL you use to log into ISN — found in your browser address bar</p>
+                    </div>
+                    <div className="space-y-2">
                       <Label>Company Key</Label>
                       <Input
                         placeholder="e.g. smithinspections"
                         value={isnCompanyKey}
                         onChange={(e) => setIsnCompanyKey(e.target.value)}
                       />
-                      <p className="text-xs text-slate-400">Visible in your ISN URL — inspectionsupport.com/your-key</p>
+                      <p className="text-xs text-slate-400">The part of your ISN URL after inspectionsupport.net/</p>
                     </div>
                     <div className="space-y-2">
                       <Label>ISN Username</Label>
