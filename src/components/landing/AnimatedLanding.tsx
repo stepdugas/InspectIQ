@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
   motion,
@@ -276,6 +276,18 @@ function DashboardMockup() {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function AnimatedLanding() {
+  const [stars, setStars] = useState<Array<{ left: string; top: string; opacity: number; duration: number; delay: number }>>([])
+
+  useEffect(() => {
+    setStars([...Array(40)].map(() => ({
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      opacity: Math.random() * 0.6 + 0.1,
+      duration: 2 + Math.random() * 3,
+      delay: Math.random() * 3,
+    })))
+  }, [])
+
   return (
     <div className="min-h-screen bg-white">
 
@@ -306,17 +318,13 @@ export default function AnimatedLanding() {
       <section className="bg-gradient-to-b from-slate-900 via-blue-950 to-slate-900 pt-16 sm:pt-24 pb-20 sm:pb-32 px-4 sm:px-6 text-center overflow-hidden relative">
         {/* Background stars */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(40)].map((_, i) => (
+          {stars.map((star, i) => (
             <motion.div
               key={i}
               className="absolute w-0.5 h-0.5 bg-white rounded-full"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                opacity: Math.random() * 0.6 + 0.1,
-              }}
+              style={{ left: star.left, top: star.top, opacity: star.opacity }}
               animate={{ opacity: [0.1, 0.7, 0.1] }}
-              transition={{ duration: 2 + Math.random() * 3, repeat: Infinity, delay: Math.random() * 3 }}
+              transition={{ duration: star.duration, repeat: Infinity, delay: star.delay }}
             />
           ))}
         </div>
