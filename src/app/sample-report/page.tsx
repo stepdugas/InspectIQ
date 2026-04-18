@@ -192,10 +192,9 @@ export default function SampleReportPage() {
           </div>
           <div className="flex flex-col sm:flex-row gap-3 shrink-0">
             <Button
-              variant="outline"
               onClick={downloadSample}
               disabled={downloading}
-              className="border-slate-600 text-slate-200 hover:bg-slate-800 hover:text-white"
+              className="bg-blue-600 hover:bg-blue-700"
             >
               {downloading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
               Download PDF
