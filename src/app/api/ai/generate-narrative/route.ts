@@ -1,12 +1,17 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { hasActiveAccess } from '@/lib/auth'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export async function POST(request: Request) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // Prevent expired trial / inactive users from burning AI credits
+  const canAccess = await hasActiveAccess()
+  if (!canAccess) return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
 
   const { roomName, items } = await request.json()
   if (!roomName || !items?.length) return NextResponse.json({ error: 'Missing data' }, { status: 400 })

@@ -3,7 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { db, inspections, rooms, inspectionItems } from '@/lib/db'
 import { eq, and } from 'drizzle-orm'
 import { DEFAULT_ROOMS } from '@/lib/inspection-templates'
-import { getProfile } from '@/lib/auth'
+import { getProfile, hasActiveAccess } from '@/lib/auth'
 
 export async function GET(request: Request) {
   const { userId } = await auth()
@@ -27,6 +27,10 @@ export async function POST(request: Request) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await getProfile()
+
+  // Block expired trial / inactive subscription
+  const canAccess = await hasActiveAccess()
+  if (!canAccess) return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
 
   const { address, clientName, clientEmail, date, selectedRooms, isnOrderId } = await request.json()
 

@@ -62,3 +62,17 @@ export async function getUserId() {
   const { userId } = await auth()
   return userId
 }
+
+// Returns true if the user has an active subscription or valid trial
+export async function hasActiveAccess(): Promise<boolean> {
+  const profile = await getProfile()
+  if (!profile) return false
+
+  if (profile.subscriptionStatus === 'active') return true
+
+  if (profile.subscriptionStatus === 'trialing' && profile.trialEndsAt) {
+    return new Date(profile.trialEndsAt) > new Date()
+  }
+
+  return false
+}
