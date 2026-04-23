@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, date, uuid } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, integer, date, uuid, boolean } from 'drizzle-orm/pg-core'
 
 export const profiles = pgTable('profiles', {
   id: text('id').primaryKey(), // Clerk user ID
@@ -15,6 +15,11 @@ export const profiles = pgTable('profiles', {
   stripeSubscriptionId: text('stripe_subscription_id'),
   subscriptionStatus: text('subscription_status'),
   trialEndsAt: timestamp('trial_ends_at').defaultNow(),
+  // Founding member — first 50 inspectors get $99/mo locked forever
+  isFoundingMember: boolean('is_founding_member').default(false),
+  foundingMemberNumber: integer('founding_member_number'), // 1-50, null if not founding
+  // Referral reward tracking — true once the referrer has been credited for this user subscribing
+  referralRewarded: boolean('referral_rewarded').default(false),
   createdAt: timestamp('created_at').defaultNow(),
   // ISN integration — null means not connected
   isnCompanyKey: text('isn_company_key'),
@@ -36,6 +41,13 @@ export const inspections = pgTable('inspections', {
   updatedAt: timestamp('updated_at').defaultNow(),
   // ISN order link — set when inspection is created from an ISN import
   isnOrderId: text('isn_order_id'),
+  // Client payment — inspector sets fee, generates Stripe link for client to pay
+  inspectionFee: integer('inspection_fee'), // in cents, null = fee not set
+  paymentStatus: text('payment_status').default('unpaid'), // 'unpaid' | 'pending' | 'paid'
+  paymentSessionId: text('payment_session_id'), // Stripe checkout session ID
+  // Scheduling — time of day and client phone for calendar view
+  scheduledTime: text('scheduled_time'), // e.g. '09:00' 24hr format
+  clientPhone: text('client_phone'),
 })
 
 export const rooms = pgTable('rooms', {
@@ -53,6 +65,30 @@ export const inspectionItems = pgTable('inspection_items', {
   notes: text('notes'),
   aiNarrative: text('ai_narrative'),
   photos: text('photos').default('[]'),
+  orderIndex: integer('order_index').notNull().default(0),
+})
+
+// Custom inspection templates — inspectors build their own for commercial, pool, radon, etc.
+export const customTemplates = pgTable('custom_templates', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('user_id').notNull().references(() => profiles.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  description: text('description'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+})
+
+export const templateRooms = pgTable('template_rooms', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  templateId: uuid('template_id').notNull().references(() => customTemplates.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  orderIndex: integer('order_index').notNull().default(0),
+})
+
+export const templateItems = pgTable('template_items', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  roomId: uuid('room_id').notNull().references(() => templateRooms.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
   orderIndex: integer('order_index').notNull().default(0),
 })
 

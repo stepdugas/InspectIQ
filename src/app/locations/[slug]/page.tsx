@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getCityBySlug, getAllSlugs } from '@/lib/cities'
-import { CheckCircle2, ArrowRight, FileText, Cpu, Share2 } from 'lucide-react'
+import { CheckCircle2, ArrowRight, FileText, Cpu, Share2, Camera, CreditCard, Calendar } from 'lucide-react'
 
 // Pre-build all 50 city pages at deploy time
 export function generateStaticParams() {
@@ -58,6 +58,24 @@ const features = [
     title: 'Instant Client Share Links',
     description:
       'Send clients a secure link to view their report online — no login required on their end.',
+  },
+  {
+    icon: Camera,
+    title: 'Photo Annotation',
+    description:
+      'Mark up photos with arrows, boxes, and text directly in the app — no desktop software needed.',
+  },
+  {
+    icon: CreditCard,
+    title: 'Client Payment Collection',
+    description:
+      'Set your inspection fee and send clients a payment link. Money lands in your account automatically.',
+  },
+  {
+    icon: Calendar,
+    title: 'Built-In Scheduling',
+    description:
+      'Calendar view for all your upcoming jobs. Schedule inspections and see your week at a glance.',
   },
 ]
 
@@ -122,7 +140,7 @@ export default async function CityPage({
 
       {/* Features */}
       <section className="max-w-4xl mx-auto px-6 py-12">
-        <div className="grid sm:grid-cols-3 gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map(({ icon: Icon, title, description }) => (
             <div
               key={title}
@@ -149,7 +167,10 @@ export default async function CityPage({
               `Complete inspection reports in a fraction of the time of legacy software`,
               `InterNACHI standards pre-loaded — no manual setup required`,
               `AI narratives write professional findings from your field notes automatically`,
-              `Drag-and-drop photo upload with automatic compression`,
+              `Annotate photos with arrows, boxes & text — right in the app`,
+              `Collect client payments with a single link — no invoicing hassle`,
+              `Built-in scheduling calendar to manage your jobs`,
+              `Custom inspection templates for your market and property types`,
               `Branded PDF reports clients can view, download, or share`,
               `Secure client share links — no client login required`,
               `$99/month flat — no per-report fees, no contracts`,

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft, Sparkles, Loader2, ChevronDown, ChevronRight, CheckCircle2, FileText, AlertCircle, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, Sparkles, Loader2, ChevronDown, ChevronRight, CheckCircle2, FileText, AlertCircle, AlertTriangle, DollarSign, Copy, ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import PhotoUploader from '@/components/inspection/PhotoUploader'
@@ -42,6 +42,9 @@ interface Inspection {
   clientName: string
   inspectionDate: string
   status: string | null
+  inspectionFee: number | null
+  paymentStatus: string | null
+  paymentSessionId: string | null
 }
 
 const CONDITIONS: { value: ConditionRating; label: string; color: string }[] = [
@@ -60,6 +63,12 @@ export default function InspectionEditorPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [generatingAll, setGeneratingAll] = useState(false)
+  const [autoSaving, setAutoSaving] = useState(false)
+  const [lastSaved, setLastSaved] = useState<Date | null>(null)
+  // Client payment state
+  const [feeInput, setFeeInput] = useState('')
+  const [paymentUrl, setPaymentUrl] = useState<string | null>(null)
+  const [generatingPayment, setGeneratingPayment] = useState(false)
 
   const loadInspection = useCallback(async () => {
     const res = await fetch(`/api/inspections/${id}`)
@@ -67,6 +76,8 @@ export default function InspectionEditorPage() {
     const data = await res.json()
     setInspection(data.inspection)
     setRoomList(data.rooms.map((r: FullRoom) => ({ ...r, expanded: true, generating: false, narrative: r.items.find((i) => i.aiNarrative)?.aiNarrative ?? '' })))
+    // Pre-fill fee input if already set
+    if (data.inspection.inspectionFee) setFeeInput(String(data.inspection.inspectionFee / 100))
     setLoading(false)
   }, [id, router])
 
@@ -77,11 +88,14 @@ export default function InspectionEditorPage() {
       ...r,
       items: r.items.map((item) => item.id === itemId ? { ...item, [field]: value } : item),
     })))
+    setAutoSaving(true)
     await fetch(`/api/inspections/${id}/items/${itemId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ [field]: value }),
     })
+    setAutoSaving(false)
+    setLastSaved(new Date())
   }
 
   function handlePhotosChange(itemId: string, urls: string[]) {
@@ -126,6 +140,26 @@ export default function InspectionEditorPage() {
     router.push(`/dashboard/reports`)
   }
 
+  async function generatePaymentLink() {
+    const fee = parseFloat(feeInput)
+    if (isNaN(fee) || fee < 1) { toast.error('Enter a valid fee (minimum $1)'); return }
+    setGeneratingPayment(true)
+    try {
+      const res = await fetch(`/api/inspections/${id}/payment-link`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feeInCents: Math.round(fee * 100) }),
+      })
+      const data = await res.json()
+      if (!res.ok) { toast.error(data.error ?? 'Failed to create payment link'); return }
+      setPaymentUrl(data.paymentUrl)
+      setInspection((prev) => prev ? { ...prev, paymentStatus: 'pending', inspectionFee: Math.round(fee * 100) } : prev)
+      toast.success('Payment link created!')
+    } finally {
+      setGeneratingPayment(false)
+    }
+  }
+
   const allItems = roomList.flatMap((r) => r.items)
   const criticalCount = allItems.filter((i) => i.condition === 'poor').length
   const maintenanceCount = allItems.filter((i) => i.condition === 'fair').length
@@ -146,21 +180,35 @@ export default function InspectionEditorPage() {
             <p className="text-sm text-slate-400 mt-0.5">{inspection?.clientName} · {inspection?.inspectionDate}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 pl-10 sm:pl-0">
-          <Button variant="outline" size="sm" onClick={generateAllNarratives} disabled={generatingAll} className="text-xs">
-            {generatingAll ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 mr-1.5" />}
-            Generate All AI
-          </Button>
-          <Button size="sm" onClick={completeInspection} disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-xs">
-            <FileText className="h-3.5 w-3.5 mr-1.5" />Complete & Export
-          </Button>
+        <div className="flex flex-col items-end gap-1.5 pl-10 sm:pl-0">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={generateAllNarratives} disabled={generatingAll} className="text-xs">
+              {generatingAll ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 mr-1.5" />}
+              Generate All AI
+            </Button>
+            <Button size="sm" onClick={completeInspection} disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-xs">
+              <FileText className="h-3.5 w-3.5 mr-1.5" />Complete & Export
+            </Button>
+          </div>
+          {/* Auto-save indicator */}
+          <div className="h-4 flex items-center">
+            {autoSaving ? (
+              <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                <Loader2 className="h-2.5 w-2.5 animate-spin" />Saving...
+              </span>
+            ) : lastSaved ? (
+              <span className="text-[10px] text-green-500 flex items-center gap-1">
+                <CheckCircle2 className="h-2.5 w-2.5" />Saved
+              </span>
+            ) : null}
+          </div>
         </div>
       </div>
 
-      {/* Stats summary — replaces broken progress bar */}
+      {/* Stats summary */}
       <div className="mb-4 p-4 bg-white rounded-xl border border-slate-100 shadow-sm">
-        <div className="flex items-center gap-4 text-sm">
-          <span className="text-slate-400 text-xs uppercase tracking-wide font-medium">Findings</span>
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+          <span className="text-slate-400 text-xs uppercase tracking-wide font-medium w-full sm:w-auto">Findings</span>
           <div className="flex items-center gap-1.5 text-red-600">
             <AlertCircle className="h-3.5 w-3.5" />
             <span className="font-semibold">{criticalCount}</span>
@@ -179,6 +227,66 @@ export default function InspectionEditorPage() {
         </div>
       </div>
 
+      {/* Client Payment Card */}
+      <div className="mb-4 p-4 bg-white rounded-xl border border-slate-100 shadow-sm">
+        <div className="flex items-center gap-2 mb-3">
+          <DollarSign className="h-4 w-4 text-blue-500" />
+          <span className="text-sm font-semibold text-slate-800">Client Payment</span>
+          {inspection?.paymentStatus === 'paid' && (
+            <span className="ml-auto text-xs bg-green-100 text-green-700 font-semibold px-2 py-0.5 rounded-full">PAID</span>
+          )}
+          {inspection?.paymentStatus === 'pending' && (
+            <span className="ml-auto text-xs bg-amber-100 text-amber-700 font-semibold px-2 py-0.5 rounded-full">AWAITING PAYMENT</span>
+          )}
+        </div>
+
+        {inspection?.paymentStatus === 'paid' ? (
+          <p className="text-sm text-green-600">
+            Client paid <span className="font-semibold">${((inspection.inspectionFee ?? 0) / 100).toFixed(2)}</span> — payment confirmed.
+          </p>
+        ) : paymentUrl || inspection?.paymentSessionId ? (
+          <div className="space-y-2">
+            <p className="text-xs text-slate-500">Share this link with your client to collect payment:</p>
+            <div className="flex items-center gap-2">
+              <input
+                readOnly
+                value={paymentUrl ?? `Stripe session: ${inspection?.paymentSessionId}`}
+                className="flex-1 text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-600 truncate"
+              />
+              <button
+                onClick={() => { navigator.clipboard.writeText(paymentUrl ?? ''); toast.success('Copied!') }}
+                className="p-2 text-slate-400 hover:text-blue-600 border border-slate-200 rounded-lg hover:bg-slate-50"
+              >
+                <Copy className="h-4 w-4" />
+              </button>
+              {paymentUrl && (
+                <a href={paymentUrl} target="_blank" rel="noopener noreferrer" className="p-2 text-slate-400 hover:text-blue-600 border border-slate-200 rounded-lg hover:bg-slate-50">
+                  <ExternalLink className="h-4 w-4" />
+                </a>
+              )}
+            </div>
+            <p className="text-xs text-slate-400">Fee: <span className="font-medium text-slate-600">${((inspection?.inspectionFee ?? 0) / 100).toFixed(2)}</span></p>
+          </div>
+        ) : (
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div className="relative flex-1 sm:flex-initial">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+              <input
+                type="number"
+                placeholder="350.00"
+                value={feeInput}
+                onChange={(e) => setFeeInput(e.target.value)}
+                className="pl-7 pr-3 py-2 text-sm border border-slate-200 rounded-lg w-full sm:w-32 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              />
+            </div>
+            <Button size="sm" onClick={generatePaymentLink} disabled={generatingPayment} className="bg-blue-600 hover:bg-blue-700 text-xs w-full sm:w-auto">
+              {generatingPayment ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <DollarSign className="h-3.5 w-3.5 mr-1.5" />}
+              Generate Payment Link
+            </Button>
+          </div>
+        )}
+      </div>
+
       {/* Sticky room nav */}
       <div className="sticky top-0 z-10 -mx-1 px-1 pb-3 pt-1 bg-slate-50">
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
@@ -192,7 +300,7 @@ export default function InspectionEditorPage() {
                   setRoomList((prev) => prev.map((r) => r.id === room.id ? { ...r, expanded: true } : r))
                   setTimeout(() => document.getElementById(`room-${room.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
                 }}
-                className="flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 transition-colors shadow-sm shrink-0"
+                className="flex items-center gap-1.5 whitespace-nowrap px-4 py-2 rounded-full text-xs font-medium bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 transition-colors shadow-sm shrink-0"
               >
                 <span
                   className="w-2 h-2 rounded-full shrink-0"

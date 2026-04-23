@@ -5,8 +5,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: '*',
-        allow: ['/', '/auth/login', '/auth/signup', '/privacy', '/terms'],
-        disallow: ['/dashboard/', '/admin/', '/api/', '/report/'],
+        allow: ['/', '/sample-report', '/locations/', '/privacy', '/terms'],
+        disallow: ['/dashboard/', '/admin/', '/api/', '/report/', '/auth/'],
       },
     ],
     sitemap: 'https://www.useinspectiq.com/sitemap.xml',

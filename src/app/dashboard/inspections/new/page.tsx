@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { DEFAULT_ROOMS } from '@/lib/inspection-templates'
 import { Button } from '@/components/ui/button'
@@ -11,8 +11,15 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
-import { ArrowLeft, Download, Loader2, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, Download, Loader2, CheckCircle2, LayoutTemplate } from 'lucide-react'
 import { toast } from 'sonner'
+
+interface CustomTemplate {
+  id: string
+  name: string
+  description: string | null
+  rooms: { id: string; name: string; items: { name: string }[] }[]
+}
 
 const ISN_ENABLED = process.env.NEXT_PUBLIC_ISN_ENABLED === 'true'
 
@@ -32,12 +39,16 @@ interface IsnOrder {
 
 export default function NewInspectionPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [address, setAddress] = useState('')
   const [clientName, setClientName] = useState('')
   const [clientEmail, setClientEmail] = useState('')
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+  const [date, setDate] = useState(searchParams.get('date') ?? new Date().toISOString().split('T')[0])
   const [selectedRooms, setSelectedRooms] = useState<string[]>(DEFAULT_ROOMS.map((r) => r.name))
   const [loading, setLoading] = useState(false)
+  // Custom template state
+  const [customTemplates, setCustomTemplates] = useState<CustomTemplate[]>([])
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
   // ISN import state
   const [isnConnected, setIsnConnected] = useState(false)
   const [isnOrders, setIsnOrders] = useState<IsnOrder[]>([])
@@ -45,8 +56,11 @@ export default function NewInspectionPage() {
   const [selectedIsnOrderId, setSelectedIsnOrderId] = useState<string | null>(null)
   const [showIsnImport, setShowIsnImport] = useState(false)
 
-  // Check if ISN is connected on mount
+  // Load custom templates + ISN status on mount
   useEffect(() => {
+    fetch('/api/templates').then(r => r.json()).then(data => {
+      setCustomTemplates(data.templates ?? [])
+    })
     if (!ISN_ENABLED) return
     fetch('/api/profile').then(r => r.json()).then(data => {
       setIsnConnected(!!data.profile?.isnCompanyKey)
@@ -96,7 +110,7 @@ export default function NewInspectionPage() {
     const res = await fetch('/api/inspections', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ address, clientName, clientEmail, date, selectedRooms, isnOrderId: selectedIsnOrderId }),
+      body: JSON.stringify({ address, clientName, clientEmail, date, selectedRooms, isnOrderId: selectedIsnOrderId, customTemplateId: selectedTemplateId }),
     })
 
     if (!res.ok) { toast.error('Failed to create inspection'); setLoading(false); return }
@@ -204,25 +218,103 @@ export default function NewInspectionPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-100 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-base">Rooms to Inspect</CardTitle>
-            <CardDescription>InterNACHI Standards of Practice — select all that apply</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-3">
-              {DEFAULT_ROOMS.map((room) => (
-                <label key={room.name} className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 hover:bg-slate-50 cursor-pointer">
-                  <Checkbox checked={selectedRooms.includes(room.name)} onCheckedChange={() => toggleRoom(room.name)} />
-                  <div>
-                    <span className="text-sm text-slate-700">{room.name}</span>
-                    <p className="text-xs text-slate-400">{room.standard}</p>
+        {/* Template selector — shown only if inspector has custom templates */}
+        {customTemplates.length > 0 && (
+          <Card className="border-slate-100 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base">Inspection Template</CardTitle>
+              <CardDescription>Use a custom template or the InterNACHI standard checklist</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {/* InterNACHI default option */}
+              <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${!selectedTemplateId ? 'border-blue-300 bg-blue-50' : 'border-slate-100 hover:bg-slate-50'}`}>
+                <input
+                  type="radio"
+                  name="template"
+                  checked={!selectedTemplateId}
+                  onChange={() => setSelectedTemplateId(null)}
+                  className="text-blue-600"
+                />
+                <div>
+                  <span className="text-sm font-medium text-slate-700">InterNACHI Standard</span>
+                  <p className="text-xs text-slate-400">18 room checklist — residential home inspections</p>
+                </div>
+              </label>
+
+              {/* Custom templates */}
+              {customTemplates.map((t) => (
+                <label key={t.id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${selectedTemplateId === t.id ? 'border-blue-300 bg-blue-50' : 'border-slate-100 hover:bg-slate-50'}`}>
+                  <input
+                    type="radio"
+                    name="template"
+                    checked={selectedTemplateId === t.id}
+                    onChange={() => setSelectedTemplateId(t.id)}
+                    className="text-blue-600"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <LayoutTemplate className="h-3.5 w-3.5 text-blue-400" />
+                      <span className="text-sm font-medium text-slate-700">{t.name}</span>
+                    </div>
+                    {t.description && <p className="text-xs text-slate-400 mt-0.5">{t.description}</p>}
+                    <p className="text-xs text-slate-400 mt-0.5">{t.rooms.length} rooms · {t.rooms.reduce((a, r) => a + r.items.length, 0)} items</p>
                   </div>
                 </label>
               ))}
-            </div>
-          </CardContent>
-        </Card>
+
+              <Link href="/dashboard/templates" className="text-xs text-blue-500 hover:text-blue-700 block mt-1">
+                Manage templates →
+              </Link>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* InterNACHI rooms — only shown when no custom template selected */}
+        {!selectedTemplateId && (
+          <Card className="border-slate-100 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base">Rooms to Inspect</CardTitle>
+              <CardDescription>InterNACHI Standards of Practice — select all that apply</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-3">
+                {DEFAULT_ROOMS.map((room) => (
+                  <label key={room.name} className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 hover:bg-slate-50 cursor-pointer">
+                    <Checkbox checked={selectedRooms.includes(room.name)} onCheckedChange={() => toggleRoom(room.name)} />
+                    <div>
+                      <span className="text-sm text-slate-700">{room.name}</span>
+                      <p className="text-xs text-slate-400">{room.standard}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Preview of selected custom template rooms */}
+        {selectedTemplateId && (() => {
+          const t = customTemplates.find((ct) => ct.id === selectedTemplateId)
+          if (!t) return null
+          return (
+            <Card className="border-blue-100 bg-blue-50/30 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-base text-blue-800">{t.name} — Rooms Preview</CardTitle>
+                <CardDescription>All rooms and items from this template will be included</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-2">
+                  {t.rooms.map((r) => (
+                    <div key={r.id} className="p-3 rounded-lg bg-white border border-blue-100">
+                      <p className="text-sm font-medium text-slate-700">{r.name}</p>
+                      <p className="text-xs text-slate-400">{r.items.length} items</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })()}
 
         <Button onClick={handleCreate} disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700" size="lg">
           {loading ? 'Creating...' : 'Create Inspection'}

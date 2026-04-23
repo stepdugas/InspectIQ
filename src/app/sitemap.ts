@@ -13,32 +13,27 @@ export default function sitemap(): MetadataRoute.Sitemap {
     {
       url: 'https://www.useinspectiq.com',
       lastModified: new Date(),
-      changeFrequency: 'monthly',
+      changeFrequency: 'weekly',
       priority: 1,
     },
     {
-      url: 'https://www.useinspectiq.com/auth/login',
+      // High-intent page: people searching for what inspection reports look like are close to buying
+      url: 'https://www.useinspectiq.com/sample-report',
       lastModified: new Date(),
-      changeFrequency: 'yearly',
-      priority: 0.8,
-    },
-    {
-      url: 'https://www.useinspectiq.com/auth/signup',
-      lastModified: new Date(),
-      changeFrequency: 'yearly',
-      priority: 0.8,
+      changeFrequency: 'monthly',
+      priority: 0.9,
     },
     {
       url: 'https://www.useinspectiq.com/privacy',
       lastModified: new Date(),
       changeFrequency: 'yearly',
-      priority: 0.3,
+      priority: 0.2,
     },
     {
       url: 'https://www.useinspectiq.com/terms',
       lastModified: new Date(),
       changeFrequency: 'yearly',
-      priority: 0.3,
+      priority: 0.2,
     },
     ...cityPages,
   ]

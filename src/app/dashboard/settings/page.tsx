@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Loader2, CreditCard, CheckCircle2, Upload, Building2, PenLine, Link2, Link2Off } from 'lucide-react'
+import { Loader2, CreditCard, CheckCircle2, Upload, Building2, PenLine, Link2, Link2Off, Star } from 'lucide-react'
 import { toast } from 'sonner'
 
 const ISN_ENABLED = process.env.NEXT_PUBLIC_ISN_ENABLED === 'true'
@@ -31,6 +31,7 @@ export default function SettingsPage() {
   const [signatureUploading, setSignatureUploading] = useState(false)
   const [referralCode, setReferralCode] = useState<string | null>(null)
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null)
+  const [foundingMemberNumber, setFoundingMemberNumber] = useState<number | null>(null)
   // ISN integration state
   const [isnConnected, setIsnConnected] = useState(false)
   const [isnCompanyKey, setIsnCompanyKey] = useState('')
@@ -57,6 +58,7 @@ export default function SettingsPage() {
         setSignatureUrl(data.profile.signatureUrl ?? null)
         setReferralCode(data.profile.referralCode ?? null)
         setSubscriptionStatus(data.profile.subscriptionStatus)
+        setFoundingMemberNumber(data.profile.foundingMemberNumber ?? null)
         setHasStripeCustomer(!!data.profile.stripeCustomerId)
         setIsnConnected(!!data.profile.isnCompanyKey)
         if (data.profile.isnCompanyKey) setIsnCompanyKey(data.profile.isnCompanyKey)
@@ -79,9 +81,13 @@ export default function SettingsPage() {
     setSaving(false)
   }
 
-  async function handleSubscribe() {
+  async function handleSubscribe(plan: 'monthly' | 'annual' = 'monthly') {
     setCheckoutLoading(true)
-    const res = await fetch('/api/stripe/create-checkout', { method: 'POST' })
+    const res = await fetch('/api/stripe/create-checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan }),
+    })
     const { url } = await res.json()
     if (url) window.location.href = url
     else { toast.error('Failed to start checkout'); setCheckoutLoading(false) }
@@ -294,6 +300,18 @@ export default function SettingsPage() {
         <CardContent>
           {isActive ? (
             <div className="space-y-3">
+              {foundingMemberNumber !== null && (
+                <div className="flex items-center gap-3 p-4 rounded-lg bg-amber-50 border border-amber-200">
+                  <Star className="h-5 w-5 fill-amber-400 text-amber-400 shrink-0" />
+                  <div>
+                    <p className="font-semibold text-slate-900 text-sm">
+                      Founding Member #{foundingMemberNumber}
+                    </p>
+                    <p className="text-xs text-slate-500">Your $99/month rate is locked in forever — even when prices go up.</p>
+                  </div>
+                  <Badge className="ml-auto bg-amber-100 text-amber-700 border-amber-200 shrink-0">Locked</Badge>
+                </div>
+              )}
               <div className="flex items-center justify-between p-4 rounded-lg bg-green-50 border border-green-100">
                 <div className="flex items-center gap-3">
                   <CheckCircle2 className="h-5 w-5 text-green-600" />
@@ -316,16 +334,52 @@ export default function SettingsPage() {
               )}
             </div>
           ) : (
-            <div>
-              <div className="p-4 rounded-lg bg-amber-50 border border-amber-100 mb-4">
+            <div className="space-y-3">
+              <div className="p-4 rounded-lg bg-amber-50 border border-amber-100">
                 <p className="text-sm font-medium text-slate-900">No active subscription</p>
                 <p className="text-xs text-slate-500 mt-1">Subscribe to continue generating reports</p>
               </div>
-              <Button onClick={handleSubscribe} disabled={checkoutLoading} className="bg-blue-600 hover:bg-blue-700">
+              <Button onClick={() => handleSubscribe('monthly')} disabled={checkoutLoading} className="w-full bg-blue-600 hover:bg-blue-700">
                 {checkoutLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CreditCard className="h-4 w-4 mr-2" />}
-                Subscribe — $99/month
+                Subscribe Monthly — $99/mo
               </Button>
+              <Button onClick={() => handleSubscribe('annual')} disabled={checkoutLoading} variant="outline" className="w-full border-blue-200 text-blue-700 hover:bg-blue-50">
+                {checkoutLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CreditCard className="h-4 w-4 mr-2" />}
+                Subscribe Annually — $79/mo
+                <span className="ml-2 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">Save $240</span>
+              </Button>
+              <p className="text-xs text-slate-400 text-center">Annual = $948 billed once per year</p>
             </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Separator />
+
+      {/* Referral Program */}
+      <Card className="border-slate-100 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-base">Refer & Earn</CardTitle>
+          <CardDescription>Share your link with other inspectors. Every inspector who subscribes earns you a free month ($99 credit on your next bill).</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {referralCode ? (
+            <>
+              <div className="flex gap-2">
+                <div className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 font-mono truncate">
+                  {typeof window !== 'undefined' ? `${window.location.origin}/?ref=${referralCode}` : `https://useinspectiq.com/?ref=${referralCode}`}
+                </div>
+                <Button variant="outline" size="sm" onClick={copyReferralLink} className="shrink-0">
+                  <Link2 className="h-4 w-4 mr-1.5" />
+                  Copy
+                </Button>
+              </div>
+              <p className="text-xs text-slate-400">
+                Referred users get a 30-day trial (vs. the standard 14 days). Credits apply automatically — no tracking needed on your end.
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-slate-400">Loading referral link...</p>
           )}
         </CardContent>
       </Card>

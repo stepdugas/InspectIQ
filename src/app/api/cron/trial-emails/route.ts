@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
-import { db, profiles } from '@/lib/db'
-import { eq } from 'drizzle-orm'
-import { sendTrialMidpointEmail, sendTrialExpiringEmail } from '@/lib/email'
+import { db, profiles, inspections } from '@/lib/db'
+import { eq, count } from 'drizzle-orm'
+import { sendActivationEmail, sendTrialMidpointEmail, sendTrialExpiringEmail } from '@/lib/email'
 
-// Called daily by Vercel Cron — sends trial nudge emails at day 7 and day 13
+// Called daily by Vercel Cron — sends trial nudge emails at day 2, day 7, and day 13
 export async function GET(request: Request) {
   // Protect the cron endpoint
   const authHeader = request.headers.get('authorization')
@@ -14,6 +14,7 @@ export async function GET(request: Request) {
   const allTrialing = await db.select().from(profiles).where(eq(profiles.subscriptionStatus, 'trialing'))
 
   const now = new Date()
+  let activationSent = 0
   let midpointSent = 0
   let expiringSent = 0
 
@@ -24,7 +25,17 @@ export async function GET(request: Request) {
 
     const firstName = profile.fullName?.split(' ')[0] ?? ''
 
-    if (daysLeft === 7) {
+    if (daysLeft === 12) {
+      // Day 2 — only send if they haven't created any inspections yet
+      const [{ total }] = await db
+        .select({ total: count() })
+        .from(inspections)
+        .where(eq(inspections.userId, profile.id))
+      if (total === 0) {
+        await sendActivationEmail(profile.email, firstName).catch(() => {})
+        activationSent++
+      }
+    } else if (daysLeft === 7) {
       await sendTrialMidpointEmail(profile.email, firstName).catch(() => {})
       midpointSent++
     } else if (daysLeft === 1) {
@@ -33,5 +44,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, midpointSent, expiringSent })
+  return NextResponse.json({ ok: true, activationSent, midpointSent, expiringSent })
 }

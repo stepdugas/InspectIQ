@@ -2,9 +2,10 @@
 
 import { useState, useCallback } from 'react'
 import imageCompression from 'browser-image-compression'
-import { Upload, X, Loader2, Image as ImageIcon, Camera } from 'lucide-react'
+import { Upload, X, Loader2, Image as ImageIcon, Camera, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import AnnotationModal from './AnnotationModal'
 
 interface PhotoUploaderProps {
   inspectionId: string
@@ -23,6 +24,7 @@ export default function PhotoUploader({ inspectionId, itemId, existingPhotos = [
   const [photos, setPhotos] = useState<string[]>(existingPhotos)
   const [uploading, setUploading] = useState(false)
   const [dragOver, setDragOver] = useState(false)
+  const [annotatingUrl, setAnnotatingUrl] = useState<string | null>(null)
 
   const uploadFiles = useCallback(async (files: File[]) => {
     const imageFiles = files.filter((f) => f.type.startsWith('image/'))
@@ -79,8 +81,26 @@ export default function PhotoUploader({ inspectionId, itemId, existingPhotos = [
     onPhotosChange?.(updated)
   }
 
+  function handleAnnotationSave(originalUrl: string, newUrl: string) {
+    // Replace the original photo with the annotated version
+    const updated = photos.map((p) => (p === originalUrl ? newUrl : p))
+    setPhotos(updated)
+    onPhotosChange?.(updated)
+    setAnnotatingUrl(null)
+  }
+
   return (
     <div className="mt-3">
+      {/* Annotation modal — portal-like, rendered at top of component */}
+      {annotatingUrl && (
+        <AnnotationModal
+          photoUrl={annotatingUrl}
+          inspectionId={inspectionId}
+          itemId={itemId}
+          onSave={(newUrl) => handleAnnotationSave(annotatingUrl, newUrl)}
+          onClose={() => setAnnotatingUrl(null)}
+        />
+      )}
       <div className="flex gap-2">
         {/* Upload from library / drag-drop */}
         <label
@@ -119,12 +139,20 @@ export default function PhotoUploader({ inspectionId, itemId, existingPhotos = [
               <div key={url} className="relative aspect-square rounded-lg overflow-hidden bg-slate-100">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={url} alt="Inspection photo" className="w-full h-full object-cover" />
-                {/* Always-visible delete button (no hover required — works on touch) */}
+                {/* Annotate button */}
+                <button
+                  onClick={() => setAnnotatingUrl(url)}
+                  className="absolute bottom-1 left-1 bg-black/70 text-white rounded-full p-2 touch-manipulation"
+                  title="Annotate photo"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+                {/* Delete button */}
                 <button
                   onClick={() => removePhoto(url)}
-                  className="absolute top-1 right-1 bg-black/70 text-white rounded-full p-1 touch-manipulation"
+                  className="absolute top-1 right-1 bg-black/70 text-white rounded-full p-2 touch-manipulation"
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-4 w-4" />
                 </button>
               </div>
             ))}

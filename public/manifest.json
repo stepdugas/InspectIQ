@@ -1,0 +1,41 @@
+{
+  "name": "InspectIQ AI",
+  "short_name": "InspectIQ",
+  "description": "AI-powered home inspection reports — works offline in the field",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/favicon-32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "New Inspection",
+      "short_name": "New",
+      "description": "Start a new inspection",
+      "url": "/dashboard/inspections/new",
+      "icons": [{ "src": "/favicon-32.png", "sizes": "32x32" }]
+    },
+    {
+      "name": "My Schedule",
+      "short_name": "Schedule",
+      "description": "View upcoming inspections",
+      "url": "/dashboard/schedule",
+      "icons": [{ "src": "/favicon-32.png", "sizes": "32x32" }]
+    }
+  ]
+}

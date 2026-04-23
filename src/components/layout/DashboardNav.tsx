@@ -5,13 +5,15 @@ import { usePathname } from 'next/navigation'
 import { useClerk } from '@clerk/nextjs'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Building2, LayoutDashboard, ClipboardList, FileText, Settings, LogOut, Home } from 'lucide-react'
+import { Building2, LayoutDashboard, ClipboardList, FileText, Settings, LogOut, Home, LayoutTemplate, CalendarDays } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/inspections', label: 'Inspections', icon: ClipboardList },
+  { href: '/dashboard/schedule', label: 'Schedule', icon: CalendarDays },
   { href: '/dashboard/reports', label: 'Reports', icon: FileText },
+  { href: '/dashboard/templates', label: 'Templates', icon: LayoutTemplate },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
   { href: '/', label: 'Home', icon: Home },
 ]
