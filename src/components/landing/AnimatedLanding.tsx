@@ -313,6 +313,7 @@ export default function AnimatedLanding() {
             <a href="#features" className="hover:text-slate-900 transition-colors">Features</a>
             <a href="#pricing" className="hover:text-slate-900 transition-colors">Pricing</a>
             <a href="#founding" className="hover:text-slate-900 transition-colors">Founding Members</a>
+            <Link href="/blog" className="hover:text-slate-900 transition-colors">Blog</Link>
             <Link href="/sample-report" className="hover:text-slate-900 transition-colors font-medium text-blue-600 hover:text-blue-700">Sample Report</Link>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -824,6 +825,7 @@ export default function AnimatedLanding() {
               <span className="font-semibold text-slate-700">InspectIQ</span>
             </div>
             <div className="flex gap-6">
+              <Link href="/blog" className="hover:text-slate-600 transition-colors">Blog</Link>
               <Link href="/privacy" className="hover:text-slate-600 transition-colors">Privacy</Link>
               <Link href="/terms" className="hover:text-slate-600 transition-colors">Terms</Link>
               <Link href="/support" className="hover:text-slate-600 transition-colors">Support</Link>
