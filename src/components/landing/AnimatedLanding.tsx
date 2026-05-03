@@ -23,7 +23,7 @@ import {
 const features = [
   { icon: WifiOff, title: 'Install to Your Home Screen', description: 'InspectIQ installs as an app directly on your phone — no App Store needed. The app and your recent inspections load instantly even in low-signal areas. Works great with spotty LTE.', isNew: true },
   { icon: Pencil, title: 'Photo Annotation', description: 'Draw arrows, boxes, circles, and text directly on your inspection photos — right inside the app. Circle the cracked flashing. Arrow the double-tapped breaker. Make every defect crystal clear to your client.', isNew: true },
-  { icon: DollarSign, title: 'Collect Client Payments', description: 'Set your inspection fee and generate a secure payment link in one click. Email it to your client — they pay online, you get notified. No separate payment app needed.', isNew: true },
+  { icon: DollarSign, title: 'Collect Client Payments', description: 'Connect your Stripe account and collect inspection fees directly. Set your fee, generate a payment link, email it to your client — they pay online and money goes straight to your bank. No separate payment app needed.', isNew: true },
   { icon: CalendarDays, title: 'Built-In Scheduling Calendar', description: 'See all your upcoming inspections on a month, week, or day calendar. Click any day to schedule a new job. Set inspection times and store client phone numbers — everything in one place.', isNew: true },
   { icon: LayoutTemplate, title: 'Custom Inspection Templates', description: 'Build your own templates for commercial properties, pools, radon, sewer scopes, and any specialty inspection. Start from a preset or build from scratch — then use your template on any job.', isNew: true },
   { icon: Zap, title: 'AI-Powered Narratives', description: 'Enter your findings room by room. Claude AI instantly writes professional, detailed report narratives — the kind that used to take hours to write by hand.' },
@@ -31,7 +31,7 @@ const features = [
   { icon: FileText, title: 'Branded PDF Reports', description: 'Every report includes your company logo, license number, and contact info. Professional output that wins referrals.' },
   { icon: Mail, title: 'Email Reports to Clients', description: 'Send the finished report directly to your client with one click. No copying links, no back-and-forth — they get it instantly.' },
   { icon: Share2, title: 'Secure Client Share Links', description: 'Share a secure link or download a PDF — clients get their report immediately, not 48 hours later.' },
-  { icon: PenLine, title: 'Your Signature on Every Report', description: 'Upload your signature once and it appears on every PDF you generate. Looks professional, builds trust.' },
+  { icon: PenLine, title: 'Your Signature on Every Report', description: 'Draw your signature right in the app or upload an image. It appears on every PDF you generate. Looks professional, builds trust.' },
   { icon: Clock, title: 'Reports in Minutes', description: 'Cut report writing time by 80%. Finish your report on-site and deliver it to clients the same day.' },
 ]
 
@@ -40,7 +40,7 @@ const pricingFeatures = [
   'Unlimited inspections & reports',
   'Installs to home screen — works in low-signal areas',
   'Photo annotation — arrows, boxes, text on photos',
-  'Client payment collection via Stripe',
+  'Client payment collection — money goes to your bank',
   'Built-in scheduling calendar',
   'Custom templates (commercial, pool, radon & more)',
   'AI-generated professional narratives (Claude AI)',
@@ -551,7 +551,7 @@ export default function AnimatedLanding() {
                     <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
                       <CheckCircle2 className="h-4 w-4 text-green-600 mx-auto mb-1" />
                       <p className="text-xs text-green-700 font-semibold">Payment link ready</p>
-                      <p className="text-xs text-slate-500 mt-0.5">Email it to your client — done.</p>
+                      <p className="text-xs text-slate-500 mt-0.5">Money goes straight to your bank.</p>
                     </div>
                   </div>
                 </CardContent>
@@ -789,7 +789,7 @@ export default function AnimatedLanding() {
               The inspection app that works where you work.
             </h2>
             <p className="text-blue-100 text-lg mb-8">
-              Annotate photos. Collect payments. Schedule jobs. Installs to your phone. All in one — starting at $99/month.
+              Annotate photos. Collect payments directly. Schedule jobs. Draw your signature. Installs to your phone. All in one — starting at $99/month.
             </p>
             <Link href="/auth/signup">
               <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50 hover:scale-105 active:scale-95 transition-all duration-200 text-base px-8 shadow-lg">
@@ -826,7 +826,7 @@ export default function AnimatedLanding() {
             <div className="flex gap-6">
               <Link href="/privacy" className="hover:text-slate-600 transition-colors">Privacy</Link>
               <Link href="/terms" className="hover:text-slate-600 transition-colors">Terms</Link>
-              <a href="mailto:support@useinspectiq.com" className="hover:text-slate-600 transition-colors">Support</a>
+              <Link href="/support" className="hover:text-slate-600 transition-colors">Support</Link>
             </div>
             <p>© {new Date().getFullYear()} InspectIQ. All rights reserved.</p>
           </div>

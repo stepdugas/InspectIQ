@@ -8,6 +8,7 @@ const isPublicRoute = createRouteMatcher([
   '/payment-success',
   '/payment-cancelled',
   '/sample-report',
+  '/support',
   '/privacy',
   '/terms',
   '/api/stripe/webhook',
