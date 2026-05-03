@@ -22,6 +22,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!result) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (result.ownerId !== userId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  await db.update(inspectionItems).set(body).where(eq(inspectionItems.id, itemId))
+  // Allowlist only the fields that should be updatable
+  const { condition, notes, photos } = body
+  const updates: Record<string, unknown> = {}
+  if (condition !== undefined) updates.condition = condition
+  if (notes !== undefined) updates.notes = notes
+  if (photos !== undefined) updates.photos = photos
+
+  await db.update(inspectionItems).set(updates).where(eq(inspectionItems.id, itemId))
   return NextResponse.json({ ok: true })
 }

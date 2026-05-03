@@ -1,30 +1,17 @@
 export const dynamic = 'force-dynamic'
 
 import { redirect } from 'next/navigation'
-import { cookies } from 'next/headers'
-import { db, profiles, inspections, adminSettings } from '@/lib/db'
+import { db, profiles, inspections } from '@/lib/db'
 import { count, eq, desc } from 'drizzle-orm'
 import { reports, inspections as inspectionsTable } from '@/lib/db'
 import Link from 'next/link'
 import { Building2, ShieldCheck } from 'lucide-react'
 import AdminDashboard from '@/components/admin/AdminDashboard'
 import SeedButton from '@/components/admin/SeedButton'
-
-async function isAuthenticated() {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('admin_auth')?.value
-  if (!token) return false
-  const fallback = process.env.ADMIN_PASSWORD ?? 'changeme'
-  try {
-    const [row] = await db.select().from(adminSettings).where(eq(adminSettings.key, 'admin_password')).limit(1)
-    return token === (row?.value ?? fallback)
-  } catch {
-    return token === fallback
-  }
-}
+import { isAdminAuthenticated } from '@/lib/admin-auth'
 
 export default async function AdminPage() {
-  if (!(await isAuthenticated())) redirect('/admin/login')
+  if (!(await isAdminAuthenticated())) redirect('/admin/login')
 
   const adminEmail = process.env.ADMIN_EMAIL ?? ''
   const [allProfiles, inspectionCountResult, adminProfile] = await Promise.all([

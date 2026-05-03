@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { db, reports, inspections, profiles } from '@/lib/db'
 import { eq, and } from 'drizzle-orm'
 import { sendReportToClient } from '@/lib/email'
+import { randomBytes } from 'node:crypto'
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { userId } = await auth()
@@ -16,7 +17,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   ).limit(1)
 
   if (!report) {
-    const shareToken = Math.random().toString(36).substring(2) + Date.now().toString(36)
+    const shareToken = randomBytes(16).toString('hex')
     const [created] = await db.insert(reports).values({ inspectionId: id, userId, shareToken }).returning()
     report = created
   }

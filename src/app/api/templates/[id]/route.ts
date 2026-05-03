@@ -24,38 +24,43 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     .set({ name: name.trim(), description: description?.trim() || null, updatedAt: new Date() })
     .where(eq(customTemplates.id, id))
 
-  // Get existing rooms to delete their items first
-  const existingRooms = await db
-    .select()
-    .from(templateRooms)
-    .where(eq(templateRooms.templateId, id))
+  // Delete old rooms (cascades to items), then re-insert new ones
+  try {
+    const existingRooms = await db
+      .select()
+      .from(templateRooms)
+      .where(eq(templateRooms.templateId, id))
 
-  for (const r of existingRooms) {
-    await db.delete(templateItems).where(eq(templateItems.roomId, r.id))
-  }
-  await db.delete(templateRooms).where(eq(templateRooms.templateId, id))
+    for (const r of existingRooms) {
+      await db.delete(templateItems).where(eq(templateItems.roomId, r.id))
+    }
+    await db.delete(templateRooms).where(eq(templateRooms.templateId, id))
 
-  // Re-insert rooms + items
-  if (rooms?.length) {
-    const roomRows = await db
-      .insert(templateRooms)
-      .values(rooms.map((r: { name: string }, idx: number) => ({
-        templateId: id,
-        name: r.name,
-        orderIndex: idx,
-      })))
-      .returning()
+    // Re-insert rooms + items
+    if (rooms?.length) {
+      const roomRows = await db
+        .insert(templateRooms)
+        .values(rooms.map((r: { name: string }, idx: number) => ({
+          templateId: id,
+          name: r.name,
+          orderIndex: idx,
+        })))
+        .returning()
 
-    const allItems = roomRows.flatMap((roomRow, roomIdx) => {
-      const srcRoom = rooms[roomIdx] as { name: string; items: string[] }
-      return (srcRoom.items ?? []).map((itemName: string, itemIdx: number) => ({
-        roomId: roomRow.id,
-        name: itemName,
-        orderIndex: itemIdx,
-      }))
-    })
+      const allItems = roomRows.flatMap((roomRow, roomIdx) => {
+        const srcRoom = rooms[roomIdx] as { name: string; items: string[] }
+        return (srcRoom.items ?? []).map((itemName: string, itemIdx: number) => ({
+          roomId: roomRow.id,
+          name: itemName,
+          orderIndex: itemIdx,
+        }))
+      })
 
-    if (allItems.length > 0) await db.insert(templateItems).values(allItems)
+      if (allItems.length > 0) await db.insert(templateItems).values(allItems)
+    }
+  } catch (err) {
+    console.error('[InspectIQ] Template update failed during room/item replacement:', err)
+    return NextResponse.json({ error: 'Failed to update template rooms' }, { status: 500 })
   }
 
   return NextResponse.json({ success: true })

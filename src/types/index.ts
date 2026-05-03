@@ -1,6 +1,6 @@
 export type InspectionStatus = 'draft' | 'in_progress' | 'completed'
 
-export type ConditionRating = 'good' | 'fair' | 'poor' | 'na'
+export type ConditionRating = 'good' | 'fair' | 'poor' | 'na' | 'not_inspected'
 
 export interface Profile {
   id: string
@@ -47,6 +47,17 @@ export interface Inspection {
   report_url?: string | null
   createdAt?: Date | string | null
   created_at?: string | null
+  summary?: string | null
+  buyerAgentName?: string | null
+  buyer_agent_name?: string | null
+  listingAgentName?: string | null
+  listing_agent_name?: string | null
+  inspectorName?: string | null
+  inspector_name?: string | null
+  startedAt?: string | null
+  started_at?: string | null
+  completedAt?: string | null
+  completed_at?: string | null
   rooms?: Room[]
 }
 

@@ -281,14 +281,14 @@ const styles = StyleSheet.create({
   photoGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 4,
+    gap: 8,
     paddingHorizontal: 8,
     paddingBottom: 6,
   },
   photoThumb: {
-    width: 80,
-    height: 60,
-    borderRadius: 3,
+    width: 260,
+    height: 195,
+    borderRadius: 4,
     objectFit: 'cover',
   },
   // ── Footer ───────────────────────────────────────────────────────────────────
@@ -307,6 +307,108 @@ const styles = StyleSheet.create({
     fontSize: 7,
     color: '#94a3b8',
   },
+  // ── Table of Contents ────────────────────────────────────────────────────────
+  tocTitle: {
+    fontSize: 18,
+    fontFamily: 'Helvetica-Bold',
+    color: '#0f172a',
+    marginBottom: 8,
+  },
+  tocSubtitle: {
+    fontSize: 9,
+    color: '#94a3b8',
+    marginBottom: 24,
+  },
+  tocItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  tocBullet: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#2563eb',
+    marginRight: 10,
+  },
+  tocRoomName: {
+    fontSize: 11,
+    color: '#334155',
+  },
+  // ── Scope & Limitations ──────────────────────────────────────────────────────
+  scopeTitle: {
+    fontSize: 18,
+    fontFamily: 'Helvetica-Bold',
+    color: '#0f172a',
+    marginBottom: 8,
+  },
+  scopeSubtitle: {
+    fontSize: 9,
+    color: '#94a3b8',
+    marginBottom: 24,
+  },
+  scopeText: {
+    fontSize: 10,
+    color: '#334155',
+    lineHeight: 1.7,
+  },
+  // ── Closing page ─────────────────────────────────────────────────────────────
+  closingPage: {
+    fontFamily: 'Helvetica',
+    fontSize: 10,
+    color: '#1e293b',
+    paddingTop: 48,
+    paddingBottom: 60,
+    paddingHorizontal: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closingThankYou: {
+    fontSize: 20,
+    fontFamily: 'Helvetica-Bold',
+    color: '#0f172a',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  closingMessage: {
+    fontSize: 11,
+    color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 1.6,
+    marginBottom: 40,
+    maxWidth: 400,
+  },
+  closingSignatureLabel: {
+    fontSize: 8,
+    color: '#94a3b8',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 10,
+  },
+  closingInspectorName: {
+    fontSize: 12,
+    fontFamily: 'Helvetica-Bold',
+    color: '#0f172a',
+    marginTop: 8,
+  },
+  closingLicense: {
+    fontSize: 9,
+    color: '#64748b',
+    marginTop: 4,
+  },
+  closingContact: {
+    fontSize: 9,
+    color: '#64748b',
+    marginTop: 2,
+  },
+  closingDivider: {
+    height: 2,
+    backgroundColor: '#2563eb',
+    width: 48,
+    marginVertical: 24,
+  },
 })
 
 const conditionLabel = (c: string) => {
@@ -314,6 +416,7 @@ const conditionLabel = (c: string) => {
     case 'good': return 'Satisfactory'
     case 'fair': return 'Maintenance'
     case 'poor': return 'Critical'
+    case 'not_inspected': return 'Not Inspected'
     default: return 'N/A'
   }
 }
@@ -323,6 +426,7 @@ const conditionColor = (c: string) => {
     case 'good': return '#16a34a'
     case 'fair': return '#d97706'
     case 'poor': return '#dc2626'
+    case 'not_inspected': return '#7c3aed'
     default: return '#94a3b8'
   }
 }
@@ -332,6 +436,7 @@ const conditionBg = (c: string) => {
     case 'good': return '#f0fdf4'
     case 'fair': return '#fffbeb'
     case 'poor': return '#fef2f2'
+    case 'not_inspected': return '#f5f3ff'
     default: return '#f8fafc'
   }
 }
@@ -346,9 +451,15 @@ export default function PDFReport({ inspection, rooms, profile }: PDFReportProps
   const allItems = rooms.flatMap((r) => r.items.map((i) => ({ ...i, roomName: r.name })))
   const criticalItems = allItems.filter((i) => i.condition === 'poor')
   const maintenanceItems = allItems.filter((i) => i.condition === 'fair')
+  const notInspectedItems = allItems.filter((i) => i.condition === 'not_inspected')
   const satisfactoryCount = allItems.filter((i) => i.condition === 'good').length
   const totalItems = allItems.filter((i) => i.condition !== 'na').length
   const hasSummary = criticalItems.length > 0 || maintenanceItems.length > 0
+
+  // Build defect numbering: sequential D1, D2... for critical and maintenance items
+  const defectItems = allItems.filter((i) => i.condition === 'poor' || i.condition === 'fair')
+  const defectMap = new Map<string, string>() // item.id -> "D1", "D2", etc.
+  defectItems.forEach((item, idx) => { defectMap.set(item.id, `D${idx + 1}`) })
 
   const companyName = profile.company_name ?? profile.companyName ?? 'InspectIQ'
   const fullName = profile.full_name ?? profile.fullName ?? 'Inspector'
@@ -360,6 +471,11 @@ export default function PDFReport({ inspection, rooms, profile }: PDFReportProps
   const propertyAddress = inspection.property_address ?? inspection.propertyAddress ?? ''
   const clientName = inspection.client_name ?? inspection.clientName ?? ''
   const inspectionDate = inspection.inspection_date ?? inspection.inspectionDate ?? ''
+
+  // New fields for cover page property details
+  const inspectionSummary = inspection.summary ?? null
+  const buyerAgentName = inspection.buyer_agent_name ?? inspection.buyerAgentName ?? null
+  const listingAgentName = inspection.listing_agent_name ?? inspection.listingAgentName ?? null
 
   const formattedDate = (() => {
     try {
@@ -419,10 +535,36 @@ export default function PDFReport({ inspection, rooms, profile }: PDFReportProps
               </View>
             )}
           </View>
+
+          {/* Agent names row — only shown if at least one agent is provided */}
+          {(buyerAgentName || listingAgentName) && (
+            <View style={[styles.coverMetaRow, { marginTop: 12 }]}>
+              {buyerAgentName && (
+                <View>
+                  <Text style={styles.coverMetaLabel}>Buyer&apos;s Agent</Text>
+                  <Text style={styles.coverMetaValue}>{buyerAgentName}</Text>
+                </View>
+              )}
+              {listingAgentName && (
+                <View>
+                  <Text style={styles.coverMetaLabel}>Listing Agent</Text>
+                  <Text style={styles.coverMetaValue}>{listingAgentName}</Text>
+                </View>
+              )}
+            </View>
+          )}
         </View>
 
         <View style={styles.coverBottom}>
           <View>
+            {/* Inspection summary narrative if provided */}
+            {inspectionSummary && (
+              <View style={{ marginBottom: 20 }}>
+                <Text style={styles.coverSummaryTitle}>Inspection Summary</Text>
+                <Text style={{ fontSize: 9, color: '#475569', lineHeight: 1.6 }}>{inspectionSummary}</Text>
+              </View>
+            )}
+
             <Text style={styles.coverSummaryTitle}>Inspection Overview</Text>
             <View style={styles.coverStatRow}>
               <View style={[styles.coverStat, { backgroundColor: '#f0fdf4' }]}>
@@ -453,7 +595,36 @@ export default function PDFReport({ inspection, rooms, profile }: PDFReportProps
         </View>
       </Page>
 
-      {/* ── Page 2: Summary of Findings (only if issues exist) ──────────────── */}
+      {/* ── Page 2: Table of Contents ──────────────────────────────────────────── */}
+      <Page size="LETTER" style={styles.page}>
+        <PageHeader />
+        <Text style={styles.tocTitle}>Table of Contents</Text>
+        <Text style={styles.tocSubtitle}>Areas inspected in this report</Text>
+
+        {rooms.map((room) => (
+          <View key={room.id} style={styles.tocItem}>
+            <View style={styles.tocBullet} />
+            <Text style={styles.tocRoomName}>{room.name}</Text>
+          </View>
+        ))}
+
+        <Footer />
+      </Page>
+
+      {/* ── Page 3: Scope & Limitations ────────────────────────────────────────── */}
+      <Page size="LETTER" style={styles.page}>
+        <PageHeader />
+        <Text style={styles.scopeTitle}>Scope &amp; Limitations</Text>
+        <Text style={styles.scopeSubtitle}>Please read carefully before reviewing this report</Text>
+
+        <Text style={styles.scopeText}>
+          This inspection was performed in accordance with the InterNACHI Standards of Practice. The inspection is a non-invasive, visual examination of the accessible areas of the property at the time of the inspection. The inspection does not include concealed or inaccessible areas, and is not technically exhaustive. Items not inspected may include areas that were obstructed, locked, or otherwise inaccessible. This report is not a guarantee or warranty of any kind.
+        </Text>
+
+        <Footer />
+      </Page>
+
+      {/* ── Summary of Findings (only if issues exist) ─────────────────────────── */}
       {hasSummary && (
         <Page size="LETTER" style={styles.page}>
           <PageHeader />
@@ -469,7 +640,7 @@ export default function PDFReport({ inspection, rooms, profile }: PDFReportProps
               {criticalItems.map((item) => (
                 <View key={item.id}>
                   <View style={[styles.findingRow, { backgroundColor: '#fef2f2' }]}>
-                    <Text style={styles.findingName}>{item.name}</Text>
+                    <Text style={styles.findingName}>{defectMap.get(item.id)} — {item.name}</Text>
                     <Text style={styles.findingRoom}>{item.roomName}</Text>
                     <Text style={[styles.findingBadge, { backgroundColor: '#fee2e2', color: '#dc2626' }]}>Critical</Text>
                   </View>
@@ -488,9 +659,29 @@ export default function PDFReport({ inspection, rooms, profile }: PDFReportProps
               {maintenanceItems.map((item) => (
                 <View key={item.id}>
                   <View style={[styles.findingRow, { backgroundColor: '#fffbeb' }]}>
-                    <Text style={styles.findingName}>{item.name}</Text>
+                    <Text style={styles.findingName}>{defectMap.get(item.id)} — {item.name}</Text>
                     <Text style={styles.findingRoom}>{item.roomName}</Text>
                     <Text style={[styles.findingBadge, { backgroundColor: '#fef3c7', color: '#d97706' }]}>Maintenance</Text>
+                  </View>
+                  {item.notes && <Text style={styles.findingNote}>{item.notes}</Text>}
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Show not-inspected items in summary if any exist */}
+          {notInspectedItems.length > 0 && (
+            <View>
+              <View style={styles.findingGroupLabel}>
+                <View style={[styles.findingGroupDot, { backgroundColor: '#7c3aed' }]} />
+                <Text style={[styles.findingGroupText, { color: '#7c3aed' }]}>Not Inspected — Inaccessible or Excluded</Text>
+              </View>
+              {notInspectedItems.map((item) => (
+                <View key={item.id}>
+                  <View style={[styles.findingRow, { backgroundColor: '#f5f3ff' }]}>
+                    <Text style={styles.findingName}>{item.name}</Text>
+                    <Text style={styles.findingRoom}>{item.roomName}</Text>
+                    <Text style={[styles.findingBadge, { backgroundColor: '#ede9fe', color: '#7c3aed' }]}>Not Inspected</Text>
                   </View>
                   {item.notes && <Text style={styles.findingNote}>{item.notes}</Text>}
                 </View>
@@ -502,7 +693,31 @@ export default function PDFReport({ inspection, rooms, profile }: PDFReportProps
         </Page>
       )}
 
-      {/* ── Page 3+: Room Detail ──────────────────────────────────────────────── */}
+      {/* ── Defect Summary — numbered list of all defects ────────────────────── */}
+      {defectItems.length > 0 && (
+        <Page size="LETTER" style={styles.page}>
+          <PageHeader />
+          <Text style={styles.sectionTitle}>Defect Summary</Text>
+          <Text style={styles.sectionSub}>All defects numbered for easy reference</Text>
+
+          {defectItems.map((item) => (
+            <View key={item.id} style={[styles.findingRow, { backgroundColor: item.condition === 'poor' ? '#fef2f2' : '#fffbeb' }]}>
+              <Text style={[styles.findingName, { fontFamily: 'Helvetica-Bold' }]}>{defectMap.get(item.id)}</Text>
+              <Text style={[styles.findingName, { flex: 2 }]}>{item.roomName}: {item.name}</Text>
+              <Text style={[styles.findingBadge, {
+                backgroundColor: item.condition === 'poor' ? '#fee2e2' : '#fef3c7',
+                color: item.condition === 'poor' ? '#dc2626' : '#d97706',
+              }]}>
+                {item.condition === 'poor' ? 'Critical' : 'Maintenance'}
+              </Text>
+            </View>
+          ))}
+
+          <Footer />
+        </Page>
+      )}
+
+      {/* ── Room Detail Pages ──────────────────────────────────────────────────── */}
       <Page size="LETTER" style={styles.page}>
         <PageHeader />
         <Text style={styles.sectionTitle}>Detailed Inspection Report</Text>
@@ -510,6 +725,7 @@ export default function PDFReport({ inspection, rooms, profile }: PDFReportProps
 
         {rooms.map((room) => {
           const narrative = room.narrative ?? room.items.find((i) => i.ai_narrative ?? i.aiNarrative)?.ai_narrative ?? room.items.find((i) => i.aiNarrative)?.aiNarrative
+          // Show all items except 'na' — 'not_inspected' items are now rendered
           const items = room.items.filter((i) => i.condition !== 'na')
           return (
             <View key={room.id} style={styles.roomSection} wrap={false}>
@@ -521,7 +737,7 @@ export default function PDFReport({ inspection, rooms, profile }: PDFReportProps
                 return (
                   <View key={item.id}>
                     <View style={styles.itemRow}>
-                      <Text style={styles.itemName}>{item.name}</Text>
+                      <Text style={styles.itemName}>{defectMap.has(item.id) ? `${defectMap.get(item.id)} — ` : ''}{item.name}</Text>
                       <Text style={[styles.conditionBadge, { backgroundColor: conditionBg(item.condition ?? 'good'), color: conditionColor(item.condition ?? 'good') }]}>
                         {conditionLabel(item.condition ?? 'good')}
                       </Text>
@@ -547,13 +763,33 @@ export default function PDFReport({ inspection, rooms, profile }: PDFReportProps
           )
         })}
 
-        {/* Signature block */}
+        <Footer />
+      </Page>
+
+      {/* ── Closing Page: Signature & Thank You ────────────────────────────────── */}
+      <Page size="LETTER" style={styles.closingPage}>
+        <Text style={styles.closingThankYou}>Thank You</Text>
+        <Text style={styles.closingMessage}>
+          Thank you for choosing {companyName}. Please contact us with any questions regarding this report or the inspection findings.
+        </Text>
+
+        <View style={styles.closingDivider} />
+
+        <Text style={styles.closingSignatureLabel}>Inspector Signature</Text>
+
         {signatureUrl && (
-          <View style={{ marginTop: 24, borderTopWidth: 1, borderTopColor: '#e2e8f0', paddingTop: 16 }}>
-            <Text style={{ fontSize: 8, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>Inspector Signature</Text>
-            <Image src={signatureUrl} style={{ width: 120, height: 40, objectFit: 'contain' }} />
-            <Text style={{ fontSize: 9, color: '#334155', marginTop: 4 }}>{fullName}{licenseNumber ? `  ·  License #${licenseNumber}` : ''}</Text>
-          </View>
+          <Image src={signatureUrl} style={{ width: 160, height: 54, objectFit: 'contain', marginBottom: 4 }} />
+        )}
+
+        <Text style={styles.closingInspectorName}>{fullName}</Text>
+        {licenseNumber && (
+          <Text style={styles.closingLicense}>License #{licenseNumber}</Text>
+        )}
+        {phone && (
+          <Text style={styles.closingContact}>{phone}</Text>
+        )}
+        {email && (
+          <Text style={styles.closingContact}>{email}</Text>
         )}
 
         <Footer />

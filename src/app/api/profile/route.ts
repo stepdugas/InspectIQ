@@ -18,6 +18,18 @@ export async function PATCH(request: Request) {
   const body = await request.json()
   const { fullName, companyName, licenseNumber, phone } = body
 
+  // Validate string types and length
+  for (const [key, value] of Object.entries({ fullName, companyName, licenseNumber, phone })) {
+    if (value !== undefined && value !== null) {
+      if (typeof value !== 'string') {
+        return NextResponse.json({ error: `${key} must be a string` }, { status: 400 })
+      }
+      if (value.length > 200) {
+        return NextResponse.json({ error: `${key} must be 200 characters or fewer` }, { status: 400 })
+      }
+    }
+  }
+
   await db.update(profiles)
     .set({ fullName, companyName, licenseNumber, phone })
     .where(eq(profiles.id, userId))

@@ -32,7 +32,25 @@ export async function POST(request: Request) {
   const canAccess = await hasActiveAccess()
   if (!canAccess) return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
 
-  const { address, clientName, clientEmail, date, selectedRooms, isnOrderId, customTemplateId } = await request.json()
+  const { address, clientName, clientEmail, date, selectedRooms, isnOrderId, customTemplateId, buyerAgentName, buyerAgentEmail, buyerAgentPhone, listingAgentName, listingAgentEmail, listingAgentPhone, inspectorName } = await request.json()
+
+  // Validate required fields
+  if (!address || typeof address !== 'string' || !address.trim()) {
+    return NextResponse.json({ error: 'address is required and must be a non-empty string' }, { status: 400 })
+  }
+  if (!clientName || typeof clientName !== 'string' || !clientName.trim()) {
+    return NextResponse.json({ error: 'clientName is required and must be a non-empty string' }, { status: 400 })
+  }
+  if (!date || typeof date !== 'string' || !date.trim()) {
+    return NextResponse.json({ error: 'date is required and must be a non-empty string' }, { status: 400 })
+  }
+  // Validate email format if provided
+  if (clientEmail && typeof clientEmail === 'string' && clientEmail.trim()) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(clientEmail)) {
+      return NextResponse.json({ error: 'clientEmail must be a valid email address' }, { status: 400 })
+    }
+  }
 
   const [inspection] = await db.insert(inspections).values({
     userId,
@@ -42,6 +60,13 @@ export async function POST(request: Request) {
     inspectionDate: date,
     status: 'in_progress',
     isnOrderId: isnOrderId || null,
+    buyerAgentName: buyerAgentName || null,
+    buyerAgentEmail: buyerAgentEmail || null,
+    buyerAgentPhone: buyerAgentPhone || null,
+    listingAgentName: listingAgentName || null,
+    listingAgentEmail: listingAgentEmail || null,
+    listingAgentPhone: listingAgentPhone || null,
+    inspectorName: inspectorName || null,
   }).returning()
 
   if (customTemplateId) {

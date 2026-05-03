@@ -36,7 +36,7 @@ export async function getProfile() {
       referredBy = referrer.id
       trialDays = 30 // referred users get 30-day trial
       // Notify referrer
-      sendReferralNotification(referrer.email, referrer.fullName ?? '', email).catch(() => {})
+      sendReferralNotification(referrer.email, referrer.fullName ?? '', email).catch((err) => console.error('[InspectIQ] Email send failed:', err))
     }
   }
 
@@ -53,7 +53,7 @@ export async function getProfile() {
   }).returning()
 
   // Send welcome email (non-blocking)
-  sendWelcomeEmail(email, firstName).catch(() => {})
+  sendWelcomeEmail(email, firstName).catch((err) => console.error('[InspectIQ] Email send failed:', err))
 
   return created
 }

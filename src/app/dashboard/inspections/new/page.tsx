@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
-import { ArrowLeft, Download, Loader2, CheckCircle2, LayoutTemplate } from 'lucide-react'
+import { ArrowLeft, Download, Loader2, CheckCircle2, LayoutTemplate, ChevronDown, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface CustomTemplate {
@@ -55,15 +55,26 @@ export default function NewInspectionPage() {
   const [isnLoading, setIsnLoading] = useState(false)
   const [selectedIsnOrderId, setSelectedIsnOrderId] = useState<string | null>(null)
   const [showIsnImport, setShowIsnImport] = useState(false)
+  // Agent information state
+  const [showAgentInfo, setShowAgentInfo] = useState(false)
+  const [buyerAgentName, setBuyerAgentName] = useState('')
+  const [buyerAgentEmail, setBuyerAgentEmail] = useState('')
+  const [buyerAgentPhone, setBuyerAgentPhone] = useState('')
+  const [listingAgentName, setListingAgentName] = useState('')
+  const [listingAgentEmail, setListingAgentEmail] = useState('')
+  const [listingAgentPhone, setListingAgentPhone] = useState('')
+  // Inspector name — pre-filled from profile, editable for multi-inspector companies
+  const [inspectorName, setInspectorName] = useState('')
 
-  // Load custom templates + ISN status on mount
+  // Load custom templates + ISN status + profile on mount
   useEffect(() => {
     fetch('/api/templates').then(r => r.json()).then(data => {
       setCustomTemplates(data.templates ?? [])
     })
-    if (!ISN_ENABLED) return
+    // Always fetch profile to pre-fill inspector name
     fetch('/api/profile').then(r => r.json()).then(data => {
-      setIsnConnected(!!data.profile?.isnCompanyKey)
+      if (data.profile?.fullName) setInspectorName(data.profile.fullName)
+      if (ISN_ENABLED) setIsnConnected(!!data.profile?.isnCompanyKey)
     })
   }, [])
 
@@ -110,7 +121,7 @@ export default function NewInspectionPage() {
     const res = await fetch('/api/inspections', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ address, clientName, clientEmail, date, selectedRooms, isnOrderId: selectedIsnOrderId, customTemplateId: selectedTemplateId }),
+      body: JSON.stringify({ address, clientName, clientEmail, date, selectedRooms, isnOrderId: selectedIsnOrderId, customTemplateId: selectedTemplateId, buyerAgentName, buyerAgentEmail, buyerAgentPhone, listingAgentName, listingAgentEmail, listingAgentPhone, inspectorName }),
     })
 
     if (!res.ok) { toast.error('Failed to create inspection'); setLoading(false); return }
@@ -201,6 +212,11 @@ export default function NewInspectionPage() {
               <Label htmlFor="date">Inspection Date *</Label>
               <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="inspectorName">Inspector</Label>
+              <Input id="inspectorName" placeholder="Inspector name" value={inspectorName} onChange={(e) => setInspectorName(e.target.value)} />
+              <p className="text-xs text-slate-400">Pre-filled from your profile. Change for a different inspector.</p>
+            </div>
           </CardContent>
         </Card>
 
@@ -216,6 +232,63 @@ export default function NewInspectionPage() {
               <Input id="clientEmail" type="email" placeholder="clients@email.com" value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} />
             </div>
           </CardContent>
+        </Card>
+
+        {/* Agent Information — collapsible optional section */}
+        <Card className="border-slate-100 shadow-sm">
+          <button
+            type="button"
+            onClick={() => setShowAgentInfo(!showAgentInfo)}
+            className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors text-left"
+          >
+            <div>
+              <CardTitle className="text-base">Agent Information (optional)</CardTitle>
+              <p className="text-xs text-slate-400 mt-0.5">Buyer&apos;s agent and listing agent details</p>
+            </div>
+            {showAgentInfo ? <ChevronDown className="h-4 w-4 text-slate-400" /> : <ChevronRight className="h-4 w-4 text-slate-400" />}
+          </button>
+          {showAgentInfo && (
+            <CardContent className="space-y-5 pt-0">
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Buyer&apos;s Agent</p>
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="buyerAgentName">Name</Label>
+                    <Input id="buyerAgentName" placeholder="Jane Smith" value={buyerAgentName} onChange={(e) => setBuyerAgentName(e.target.value)} />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="buyerAgentEmail">Email</Label>
+                      <Input id="buyerAgentEmail" type="email" placeholder="jane@realty.com" value={buyerAgentEmail} onChange={(e) => setBuyerAgentEmail(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="buyerAgentPhone">Phone</Label>
+                      <Input id="buyerAgentPhone" type="tel" placeholder="(555) 123-4567" value={buyerAgentPhone} onChange={(e) => setBuyerAgentPhone(e.target.value)} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Listing Agent</p>
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="listingAgentName">Name</Label>
+                    <Input id="listingAgentName" placeholder="Bob Johnson" value={listingAgentName} onChange={(e) => setListingAgentName(e.target.value)} />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="listingAgentEmail">Email</Label>
+                      <Input id="listingAgentEmail" type="email" placeholder="bob@realty.com" value={listingAgentEmail} onChange={(e) => setListingAgentEmail(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="listingAgentPhone">Phone</Label>
+                      <Input id="listingAgentPhone" type="tel" placeholder="(555) 987-6543" value={listingAgentPhone} onChange={(e) => setListingAgentPhone(e.target.value)} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          )}
         </Card>
 
         {/* Template selector — shown only if inspector has custom templates */}

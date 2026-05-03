@@ -21,7 +21,7 @@ import {
 // ─── Data ────────────────────────────────────────────────────────────────────
 
 const features = [
-  { icon: WifiOff, title: 'Install to Your Home Screen', description: 'InspectIQ installs as an app directly on your phone — no App Store needed. The app and your recent inspections load instantly even in low-signal areas. Works great with spotty LTE.', isNew: true },
+  { icon: WifiOff, title: 'Install to Your Home Screen', description: 'InspectIQ installs as an app directly on your phone — no App Store needed. Loads instantly and lets you view cached inspections in low-signal areas. Creating inspections and uploading photos requires an internet connection.', isNew: true },
   { icon: Pencil, title: 'Photo Annotation', description: 'Draw arrows, boxes, circles, and text directly on your inspection photos — right inside the app. Circle the cracked flashing. Arrow the double-tapped breaker. Make every defect crystal clear to your client.', isNew: true },
   { icon: DollarSign, title: 'Collect Client Payments', description: 'Connect your Stripe account and collect inspection fees directly. Set your fee, generate a payment link, email it to your client — they pay online and money goes straight to your bank. No separate payment app needed.', isNew: true },
   { icon: CalendarDays, title: 'Built-In Scheduling Calendar', description: 'See all your upcoming inspections on a month, week, or day calendar. Click any day to schedule a new job. Set inspection times and store client phone numbers — everything in one place.', isNew: true },
@@ -585,7 +585,7 @@ export default function AnimatedLanding() {
                     <th className="py-3 px-3 text-center text-slate-400 font-medium">
                       <div className="flex flex-col items-center">
                         <span>Spectora</span>
-                        <span className="text-xs">$149+/mo</span>
+                        <span className="text-xs">$89+/mo</span>
                       </div>
                     </th>
                     <th className="py-3 px-3 text-center text-slate-400 font-medium">
@@ -606,9 +606,9 @@ export default function AnimatedLanding() {
                   {[
                     { feature: 'AI-written narratives', us: true, spectora: false, homegauge: false, palmtech: false },
                     { feature: 'Installs to home screen (PWA)', us: true, spectora: true, homegauge: false, palmtech: true },
-                    { feature: 'Photo annotation (arrows, boxes)', us: true, spectora: true, homegauge: false, palmtech: false },
+                    { feature: 'Photo annotation (arrows, boxes)', us: true, spectora: true, homegauge: true, palmtech: false },
                     { feature: 'Collect client payments in-app', us: true, spectora: true, homegauge: false, palmtech: false },
-                    { feature: 'Built-in scheduling calendar', us: true, spectora: true, homegauge: false, palmtech: false },
+                    { feature: 'Built-in scheduling calendar', us: true, spectora: true, homegauge: true, palmtech: false },
                     { feature: 'Custom inspection templates', us: true, spectora: true, homegauge: true, palmtech: true },
                     { feature: 'InterNACHI standards pre-loaded', us: true, spectora: true, homegauge: true, palmtech: true },
                     { feature: 'Branded PDF reports', us: true, spectora: true, homegauge: true, palmtech: true },

@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 import lazyLoad from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { FileText, Download, Loader2, Share2, Mail, Upload } from 'lucide-react'
+import { FileText, Download, Loader2, Share2, Mail, Upload, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { pdf } from '@react-pdf/renderer'
 import PDFReport from '@/components/report/PDFReport'
@@ -59,6 +59,8 @@ export default function ReportsPage() {
   const [generatingPDF, setGeneratingPDF] = useState(false)
   const [sendingEmail, setSendingEmail] = useState(false)
   const [pushingToIsn, setPushingToIsn] = useState(false)
+  // Mobile: show detail overlay when a report is selected
+  const [mobileShowDetail, setMobileShowDetail] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -77,6 +79,7 @@ export default function ReportsPage() {
   async function loadReport(inspection: Inspection) {
     setSelectedId(inspection.id)
     setSelectedInspection(inspection)
+    setMobileShowDetail(true)
     const res = await fetch(`/api/inspections/${inspection.id}`)
     const data = await res.json()
     setRooms(data.rooms ?? [])
@@ -156,6 +159,8 @@ export default function ReportsPage() {
     }
   }
 
+  const profileIncomplete = profile && (!profile.companyName || !profile.fullName || !profile.logoUrl)
+
   if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-slate-300" /></div>
 
   return (
@@ -165,8 +170,21 @@ export default function ReportsPage() {
         <p className="text-slate-500 text-sm mt-1">Download or share completed inspection reports</p>
       </div>
 
-      <div className="flex gap-6">
-        <div className="w-72 shrink-0 space-y-2">
+      {profileIncomplete && (
+        <div className="mb-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-amber-800">Your profile is incomplete</p>
+            <p className="text-xs text-amber-600 mt-0.5">
+              Reports look best with your company name, full name, and logo. <a href="/dashboard/settings" className="underline font-medium hover:text-amber-800">Complete your profile in Settings</a>.
+            </p>
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col md:flex-row gap-6">
+        {/* Report list — full width on mobile, fixed sidebar on md+ */}
+        <div className={`w-full md:w-72 md:shrink-0 space-y-2 ${mobileShowDetail ? 'hidden md:block' : ''}`}>
           {inspections.length === 0 ? (
             <Card className="border-slate-100 shadow-sm">
               <CardContent className="py-8 text-center">
@@ -186,7 +204,8 @@ export default function ReportsPage() {
           ))}
         </div>
 
-        <div className="flex-1">
+        {/* Report detail — full screen overlay on mobile, side panel on md+ */}
+        <div className={`flex-1 ${mobileShowDetail ? '' : 'hidden md:block'}`}>
           {!selectedInspection ? (
             <Card className="border-slate-100 shadow-sm h-64 flex items-center justify-center">
               <CardContent className="text-center">
@@ -196,7 +215,14 @@ export default function ReportsPage() {
             </Card>
           ) : (
             <div>
-              <div className="flex items-center justify-between mb-4">
+              {/* Back button visible only on mobile */}
+              <button
+                onClick={() => setMobileShowDetail(false)}
+                className="md:hidden mb-3 text-sm text-blue-600 font-medium flex items-center gap-1"
+              >
+                &larr; Back to reports
+              </button>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
                 <div>
                   <h2 className="font-semibold text-slate-900">{selectedInspection.propertyAddress}</h2>
                   <p className="text-sm text-slate-400">{selectedInspection.clientName}</p>
@@ -224,7 +250,7 @@ export default function ReportsPage() {
                 </div>
               </div>
               {profile && (
-                <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm h-[700px]">
+                <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm h-[400px] md:h-[700px]">
                   <PDFViewer width="100%" height="100%" showToolbar={false}>
                     <PDFReport inspection={selectedInspection as never} rooms={rooms as never} profile={profile as never} />
                   </PDFViewer>

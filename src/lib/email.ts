@@ -1,5 +1,9 @@
 import { Resend } from 'resend'
 
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
 function getResend() {
   return new Resend(process.env.RESEND_API_KEY ?? 'placeholder')
 }
@@ -11,14 +15,14 @@ export async function sendWelcomeEmail(to: string, firstName: string) {
     from: FROM,
     to,
     // Personal, lowercase subject — feels like a real email not an automated one
-    subject: `your InspectIQ trial is live${firstName ? ', ' + firstName : ''}`,
+    subject: `your InspectIQ trial is live${firstName ? ', ' + escapeHtml(firstName) : ''}`,
     html: `
       <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1e293b">
         <div style="background:#0f172a;padding:32px;border-radius:12px 12px 0 0">
           <h1 style="color:#60a5fa;font-size:20px;margin:0">InspectIQ</h1>
         </div>
         <div style="background:#ffffff;padding:32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px">
-          <h2 style="font-size:22px;margin:0 0 16px">Hey${firstName ? ' ' + firstName : ''} 👋</h2>
+          <h2 style="font-size:22px;margin:0 0 16px">Hey${firstName ? ' ' + escapeHtml(firstName) : ''} 👋</h2>
           <p style="color:#475569;line-height:1.6">Your 14-day trial is active. I built InspectIQ because I got tired of watching inspectors spend 2+ hours writing reports that should take 20 minutes.</p>
           <p style="color:#475569;line-height:1.6">The fastest way to see what it does: create an inspection, add notes on one room, then hit <strong>Generate AI</strong>. That's the moment everything clicks.</p>
           <a href="${APP_URL}/dashboard/inspections/new" style="display:inline-block;background:#2563eb;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;margin-top:8px">
@@ -43,7 +47,7 @@ export async function sendActivationEmail(to: string, firstName: string) {
   await getResend().emails.send({
     from: FROM,
     to,
-    subject: `did you try Generate AI yet${firstName ? ', ' + firstName : ''}?`,
+    subject: `did you try Generate AI yet${firstName ? ', ' + escapeHtml(firstName) : ''}?`,
     html: `
       <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1e293b">
         <div style="background:#0f172a;padding:32px;border-radius:12px 12px 0 0">
@@ -51,7 +55,7 @@ export async function sendActivationEmail(to: string, firstName: string) {
         </div>
         <div style="background:#ffffff;padding:32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px">
           <h2 style="font-size:22px;margin:0 0 16px">One thing worth trying today</h2>
-          <p style="color:#475569;line-height:1.6">Hey${firstName ? ' ' + firstName : ''} — just checking in. If you haven't had a chance to try InspectIQ yet, here's the one thing I'd want you to see:</p>
+          <p style="color:#475569;line-height:1.6">Hey${firstName ? ' ' + escapeHtml(firstName) : ''} — just checking in. If you haven't had a chance to try InspectIQ yet, here's the one thing I'd want you to see:</p>
           <ol style="color:#475569;line-height:2;margin:0;padding-left:20px">
             <li>Create any inspection (fake address is fine)</li>
             <li>Open a room — type a quick note like "missing shingles SE corner"</li>
@@ -80,7 +84,7 @@ export async function sendTrialMidpointEmail(to: string, firstName: string) {
           <h1 style="color:#60a5fa;font-size:20px;margin:0">InspectIQ</h1>
         </div>
         <div style="background:#ffffff;padding:32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px">
-          <h2 style="font-size:22px;margin:0 0 16px">Hey${firstName ? ' ' + firstName : ''} — 7 days left</h2>
+          <h2 style="font-size:22px;margin:0 0 16px">Hey${firstName ? ' ' + escapeHtml(firstName) : ''} — 7 days left</h2>
           <p style="color:#475569;line-height:1.6">Just wanted to check in. Have you had a chance to run a real inspection through it yet?</p>
           <p style="color:#475569;line-height:1.6">If you have — awesome. If not, the AI narrative generator is the part most inspectors say saves them the most time. Even just trying it on a single room is enough to see what it does.</p>
           <p style="color:#475569;line-height:1.6">After your trial it's <strong>$99/month</strong> — most inspectors make that back on their very first report. And right now the first 50 signups lock in that price forever, even when I raise it.</p>
@@ -106,7 +110,7 @@ export async function sendTrialExpiringEmail(to: string, firstName: string) {
         </div>
         <div style="background:#ffffff;padding:32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px">
           <h2 style="font-size:22px;margin:0 0 16px">Trial ends tomorrow ⏰</h2>
-          <p style="color:#475569;line-height:1.6">Hey${firstName ? ' ' + firstName : ''} — your trial expires tomorrow. Everything you've created is saved and won't go anywhere.</p>
+          <p style="color:#475569;line-height:1.6">Hey${firstName ? ' ' + escapeHtml(firstName) : ''} — your trial expires tomorrow. Everything you've created is saved and won't go anywhere.</p>
           <p style="color:#475569;line-height:1.6">If you're on the fence: at $99/month, you make it back on one inspection. And right now you can lock in that price as a founding member — it stays at $99 forever even after I raise it for new signups.</p>
           <p style="color:#475569;line-height:1.6">The founding member offer closes May 31 or when the first 50 spots fill — whichever comes first.</p>
           <a href="${APP_URL}/dashboard/settings" style="display:inline-block;background:#2563eb;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;margin-top:8px">
@@ -124,22 +128,48 @@ export async function sendReportToClient(to: string, clientName: string, inspect
   await getResend().emails.send({
     from: FROM,
     to,
-    subject: `Your home inspection report — ${propertyAddress}`,
+    subject: `Your home inspection report — ${escapeHtml(propertyAddress)}`,
     html: `
       <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1e293b">
         <div style="background:#0f172a;padding:32px;border-radius:12px 12px 0 0">
           <h1 style="color:#60a5fa;font-size:20px;margin:0">Home Inspection Report</h1>
         </div>
         <div style="background:#ffffff;padding:32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px">
-          <h2 style="font-size:20px;margin:0 0 8px">Hi ${clientName},</h2>
-          <p style="color:#475569;line-height:1.6">Your home inspection report for <strong>${propertyAddress}</strong> is ready.</p>
+          <h2 style="font-size:20px;margin:0 0 8px">Hi ${escapeHtml(clientName)},</h2>
+          <p style="color:#475569;line-height:1.6">Your home inspection report for <strong>${escapeHtml(propertyAddress)}</strong> is ready.</p>
           <p style="color:#475569;line-height:1.6">Click the button below to view your full report online. You can also download it as a PDF from the report page.</p>
-          <a href="${shareUrl}" style="display:inline-block;background:#2563eb;color:#ffffff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;margin-top:8px;font-size:16px">
+          <a href="${escapeHtml(shareUrl)}" style="display:inline-block;background:#2563eb;color:#ffffff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;margin-top:8px;font-size:16px">
             View Your Report →
           </a>
-          <p style="color:#475569;line-height:1.6;margin-top:24px">Prepared by <strong>${inspectorName}</strong>.</p>
+          <p style="color:#475569;line-height:1.6;margin-top:24px">Prepared by <strong>${escapeHtml(inspectorName)}</strong>.</p>
           <p style="color:#94a3b8;font-size:12px;margin-top:24px;border-top:1px solid #e2e8f0;padding-top:16px">
             Report delivered via InspectIQ · useinspectiq.com
+          </p>
+        </div>
+      </div>
+    `,
+  })
+}
+
+export async function sendAgreementEmail(to: string, clientName: string, inspectorCompany: string, propertyAddress: string, agreementUrl: string) {
+  await getResend().emails.send({
+    from: FROM,
+    to,
+    subject: `Pre-Inspection Agreement — ${escapeHtml(propertyAddress)}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1e293b">
+        <div style="background:#0f172a;padding:32px;border-radius:12px 12px 0 0">
+          <h1 style="color:#60a5fa;font-size:20px;margin:0">InspectIQ</h1>
+        </div>
+        <div style="background:#ffffff;padding:32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px">
+          <h2 style="font-size:20px;margin:0 0 8px">Hi ${escapeHtml(clientName)},</h2>
+          <p style="color:#475569;line-height:1.6"><strong>${escapeHtml(inspectorCompany)}</strong> has sent you a pre-inspection agreement for the property at <strong>${escapeHtml(propertyAddress)}</strong>.</p>
+          <p style="color:#475569;line-height:1.6">Please review and sign the agreement before the inspection begins.</p>
+          <a href="${escapeHtml(agreementUrl)}" style="display:inline-block;background:#2563eb;color:#ffffff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;margin-top:8px;font-size:16px">
+            Review &amp; Sign Agreement →
+          </a>
+          <p style="color:#94a3b8;font-size:12px;margin-top:24px;border-top:1px solid #e2e8f0;padding-top:16px">
+            Sent via InspectIQ · useinspectiq.com
           </p>
         </div>
       </div>
@@ -159,7 +189,7 @@ export async function sendReferralRewardEmail(to: string, referrerName: string, 
         </div>
         <div style="background:#ffffff;padding:32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px">
           <h2 style="font-size:22px;margin:0 0 16px">You earned a free month! 🎉</h2>
-          <p style="color:#475569;line-height:1.6">Hey${referrerName ? ' ' + referrerName : ''} — <strong>${newUserEmail}</strong> just subscribed using your referral link.</p>
+          <p style="color:#475569;line-height:1.6">Hey${referrerName ? ' ' + escapeHtml(referrerName) : ''} — <strong>${escapeHtml(newUserEmail)}</strong> just subscribed using your referral link.</p>
           <p style="color:#475569;line-height:1.6">A <strong>$99 credit</strong> has been applied to your Stripe account and will automatically come off your next bill. No action needed.</p>
           <p style="color:#475569;line-height:1.6">Keep sharing your link — every inspector who subscribes earns you another free month.</p>
           <a href="${APP_URL}/dashboard/settings" style="display:inline-block;background:#2563eb;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;margin-top:8px">
@@ -184,7 +214,7 @@ export async function sendReferralNotification(to: string, referrerName: string,
         </div>
         <div style="background:#ffffff;padding:32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px">
           <h2 style="font-size:22px;margin:0 0 16px">Your referral worked! 🎉</h2>
-          <p style="color:#475569;line-height:1.6">Hey${referrerName ? ' ' + referrerName : ''} — <strong>${newUserEmail}</strong> just signed up using your referral link and got a 30-day trial.</p>
+          <p style="color:#475569;line-height:1.6">Hey${referrerName ? ' ' + escapeHtml(referrerName) : ''} — <strong>${escapeHtml(newUserEmail)}</strong> just signed up using your referral link and got a 30-day trial.</p>
           <p style="color:#475569;line-height:1.6">When they subscribe, you'll automatically get a free month ($99 credit) applied to your next bill.</p>
           <p style="color:#475569;line-height:1.6">Keep sharing your link to earn more free months!</p>
           <a href="${APP_URL}/dashboard/settings" style="display:inline-block;background:#2563eb;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;margin-top:8px">

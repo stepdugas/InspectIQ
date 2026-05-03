@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { db, customTemplates, templateRooms, templateItems } from '@/lib/db'
-import { eq } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 
 // GET /api/templates — list all custom templates for the current user
 export async function GET() {
@@ -14,29 +14,46 @@ export async function GET() {
     .where(eq(customTemplates.userId, userId))
     .orderBy(customTemplates.createdAt)
 
-  // Load rooms + items for each template
-  const full = await Promise.all(
-    templates.map(async (t) => {
-      const tRooms = await db
+  if (templates.length === 0) return NextResponse.json({ templates: [] })
+
+  // Batch-load all rooms for these templates (avoids N+1)
+  const templateIds = templates.map((t) => t.id)
+  const allRooms = await db
+    .select()
+    .from(templateRooms)
+    .where(inArray(templateRooms.templateId, templateIds))
+    .orderBy(templateRooms.orderIndex)
+
+  // Batch-load all items for those rooms (avoids N+1)
+  const roomIds = allRooms.map((r) => r.id)
+  const allItems = roomIds.length > 0
+    ? await db
         .select()
-        .from(templateRooms)
-        .where(eq(templateRooms.templateId, t.id))
-        .orderBy(templateRooms.orderIndex)
+        .from(templateItems)
+        .where(inArray(templateItems.roomId, roomIds))
+        .orderBy(templateItems.orderIndex)
+    : []
 
-      const roomsWithItems = await Promise.all(
-        tRooms.map(async (r) => {
-          const items = await db
-            .select()
-            .from(templateItems)
-            .where(eq(templateItems.roomId, r.id))
-            .orderBy(templateItems.orderIndex)
-          return { ...r, items }
-        })
-      )
+  // Group items by roomId
+  const itemsByRoomId = new Map<string, typeof allItems>()
+  for (const item of allItems) {
+    const list = itemsByRoomId.get(item.roomId) ?? []
+    list.push(item)
+    itemsByRoomId.set(item.roomId, list)
+  }
 
-      return { ...t, rooms: roomsWithItems }
-    })
-  )
+  // Group rooms by templateId
+  const roomsByTemplateId = new Map<string, (typeof allRooms[number] & { items: typeof allItems })[]>()
+  for (const room of allRooms) {
+    const list = roomsByTemplateId.get(room.templateId) ?? []
+    list.push({ ...room, items: itemsByRoomId.get(room.id) ?? [] })
+    roomsByTemplateId.set(room.templateId, list)
+  }
+
+  const full = templates.map((t) => ({
+    ...t,
+    rooms: roomsByTemplateId.get(t.id) ?? [],
+  }))
 
   return NextResponse.json({ templates: full })
 }

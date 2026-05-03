@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { db, profiles, inspections } from '@/lib/db'
-import { eq, count } from 'drizzle-orm'
+import { eq, count, sql } from 'drizzle-orm'
 import { sendReferralRewardEmail } from '@/lib/email'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2026-03-25.dahlia' })
@@ -26,17 +26,17 @@ export async function POST(request: Request) {
       const customerId = getCustomerId(sub)
       if (customerId) {
         if (sub.metadata?.isFoundingMember === 'true') {
-          // Count existing founding members to assign a sequential number
-          const [row] = await db
-            .select({ total: count() })
-            .from(profiles)
-            .where(eq(profiles.isFoundingMember, true))
+          // Atomically assign founding member number using a subquery to avoid race conditions.
+          // The subquery counts existing founding members at query execution time, so two
+          // concurrent webhooks won't read the same count and assign duplicate numbers.
+          // If 50 slots are already taken, skip founding member assignment entirely.
+          const foundingCountSubquery = sql`(SELECT COUNT(*)::int FROM profiles WHERE is_founding_member = true)`
           await db.update(profiles)
             .set({
               stripeSubscriptionId: sub.id,
               subscriptionStatus: sub.status,
-              isFoundingMember: true,
-              foundingMemberNumber: (row?.total ?? 0) + 1,
+              isFoundingMember: sql`CASE WHEN ${foundingCountSubquery} < 50 THEN true ELSE is_founding_member END`,
+              foundingMemberNumber: sql`CASE WHEN ${foundingCountSubquery} < 50 THEN ${foundingCountSubquery} + 1 ELSE founding_member_number END`,
             })
             .where(eq(profiles.stripeCustomerId, customerId))
         } else {

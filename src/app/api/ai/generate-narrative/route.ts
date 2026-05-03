@@ -5,9 +5,35 @@ import { hasActiveAccess } from '@/lib/auth'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
+// Simple in-memory rate limiter: max 30 requests per minute per user
+const RATE_LIMIT_WINDOW_MS = 60_000
+const RATE_LIMIT_MAX = 30
+const rateLimitMap = new Map<string, number[]>()
+
+function isRateLimited(userId: string): boolean {
+  const now = Date.now()
+  const timestamps = rateLimitMap.get(userId) ?? []
+  // Drop timestamps outside the current window
+  const recent = timestamps.filter((t) => now - t < RATE_LIMIT_WINDOW_MS)
+  if (recent.length >= RATE_LIMIT_MAX) {
+    rateLimitMap.set(userId, recent)
+    return true
+  }
+  recent.push(now)
+  rateLimitMap.set(userId, recent)
+  return false
+}
+
 export async function POST(request: Request) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  if (isRateLimited(userId)) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please wait a minute before generating more narratives.' },
+      { status: 429 },
+    )
+  }
 
   // Prevent expired trial / inactive users from burning AI credits
   const canAccess = await hasActiveAccess()

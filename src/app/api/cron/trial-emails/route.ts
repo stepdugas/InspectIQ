@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db, profiles, inspections } from '@/lib/db'
-import { eq, count } from 'drizzle-orm'
+import { eq, count, inArray } from 'drizzle-orm'
 import { sendActivationEmail, sendTrialMidpointEmail, sendTrialExpiringEmail } from '@/lib/email'
 
 // Called daily by Vercel Cron — sends trial nudge emails at day 2, day 7, and day 13
@@ -18,6 +18,27 @@ export async function GET(request: Request) {
   let midpointSent = 0
   let expiringSent = 0
 
+  // Identify day-2 candidates (daysLeft === 12) who need an inspection count check
+  const day2Candidates = allTrialing.filter((p) => {
+    if (!p.trialEndsAt) return false
+    const daysLeft = Math.round((new Date(p.trialEndsAt).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+    return daysLeft === 12
+  })
+
+  // Batch-fetch inspection counts for all day-2 candidates in one query (N+1 fix)
+  const inspectionCountByUserId = new Map<string, number>()
+  if (day2Candidates.length > 0) {
+    const candidateIds = day2Candidates.map((p) => p.id)
+    const rows = await db
+      .select({ userId: inspections.userId, total: count() })
+      .from(inspections)
+      .where(inArray(inspections.userId, candidateIds))
+      .groupBy(inspections.userId)
+    for (const row of rows) {
+      inspectionCountByUserId.set(row.userId, row.total)
+    }
+  }
+
   for (const profile of allTrialing) {
     if (!profile.trialEndsAt) continue
     const trialEnd = new Date(profile.trialEndsAt)
@@ -27,10 +48,7 @@ export async function GET(request: Request) {
 
     if (daysLeft === 12) {
       // Day 2 — only send if they haven't created any inspections yet
-      const [{ total }] = await db
-        .select({ total: count() })
-        .from(inspections)
-        .where(eq(inspections.userId, profile.id))
+      const total = inspectionCountByUserId.get(profile.id) ?? 0
       if (total === 0) {
         await sendActivationEmail(profile.email, firstName).catch(() => {})
         activationSent++

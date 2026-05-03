@@ -40,6 +40,11 @@ export async function POST(request: Request) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { logoUrl } = await request.json()
+
+  if (!logoUrl || typeof logoUrl !== 'string' || !logoUrl.startsWith('https://res.cloudinary.com/')) {
+    return NextResponse.json({ error: 'logoUrl must be a valid Cloudinary URL starting with https://res.cloudinary.com/' }, { status: 400 })
+  }
+
   await db.update(profiles).set({ logoUrl }).where(eq(profiles.id, userId))
 
   return NextResponse.json({ ok: true })

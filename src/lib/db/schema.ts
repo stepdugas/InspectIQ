@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, date, uuid, boolean } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, integer, date, uuid, boolean, index } from 'drizzle-orm/pg-core'
 
 export const profiles = pgTable('profiles', {
   id: text('id').primaryKey(), // Clerk user ID
@@ -29,7 +29,11 @@ export const profiles = pgTable('profiles', {
   isnUsername: text('isn_username'),
   isnPassword: text('isn_password'), // TODO: encrypt at rest before v1 launch
   isnBaseUrl: text('isn_base_url'),  // resolved via Admin API on connect
-})
+}, (table) => [
+  index('profiles_stripe_customer_id_idx').on(table.stripeCustomerId),
+  index('profiles_referral_code_idx').on(table.referralCode),
+  index('profiles_email_idx').on(table.email),
+])
 
 export const inspections = pgTable('inspections', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -43,7 +47,7 @@ export const inspections = pgTable('inspections', {
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
   // ISN order link — set when inspection is created from an ISN import
-  isnOrderId: text('isn_order_id'),
+  isnOrderId: text('isn_order_id'), // indexed below
   // Client payment — inspector sets fee, generates Stripe link for client to pay
   inspectionFee: integer('inspection_fee'), // in cents, null = fee not set
   paymentStatus: text('payment_status').default('unpaid'), // 'unpaid' | 'pending' | 'paid'
@@ -52,14 +56,39 @@ export const inspections = pgTable('inspections', {
   // Scheduling — time of day and client phone for calendar view
   scheduledTime: text('scheduled_time'), // e.g. '09:00' 24hr format
   clientPhone: text('client_phone'),
-})
+  // Agent / realtor info — tracks referral pipeline
+  buyerAgentName: text('buyer_agent_name'),
+  buyerAgentEmail: text('buyer_agent_email'),
+  buyerAgentPhone: text('buyer_agent_phone'),
+  listingAgentName: text('listing_agent_name'),
+  listingAgentEmail: text('listing_agent_email'),
+  listingAgentPhone: text('listing_agent_phone'),
+  // Overall inspection summary / notes
+  summary: text('summary'),
+  // Pre-Inspection Agreement (PIA)
+  agreementToken: text('agreement_token'),
+  agreementSentAt: timestamp('agreement_sent_at'),
+  agreementSignedAt: timestamp('agreement_signed_at'),
+  agreementSignerName: text('agreement_signer_name'),
+  agreementSignerIp: text('agreement_signer_ip'),
+  // Inspector who performed this inspection (defaults to profile fullName)
+  inspectorName: text('inspector_name'),
+  // Duration tracking — when the inspector started/stopped on-site
+  startedAt: timestamp('started_at'),
+  completedAt: timestamp('completed_at'),
+}, (table) => [
+  index('inspections_user_id_idx').on(table.userId),
+  index('inspections_isn_order_id_idx').on(table.isnOrderId),
+])
 
 export const rooms = pgTable('rooms', {
   id: uuid('id').primaryKey().defaultRandom(),
   inspectionId: uuid('inspection_id').notNull().references(() => inspections.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   orderIndex: integer('order_index').notNull().default(0),
-})
+}, (table) => [
+  index('rooms_inspection_id_idx').on(table.inspectionId),
+])
 
 export const inspectionItems = pgTable('inspection_items', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -70,7 +99,9 @@ export const inspectionItems = pgTable('inspection_items', {
   aiNarrative: text('ai_narrative'),
   photos: text('photos').default('[]'),
   orderIndex: integer('order_index').notNull().default(0),
-})
+}, (table) => [
+  index('inspection_items_room_id_idx').on(table.roomId),
+])
 
 // Custom inspection templates — inspectors build their own for commercial, pool, radon, etc.
 export const customTemplates = pgTable('custom_templates', {
@@ -109,4 +140,6 @@ export const reports = pgTable('reports', {
   pdfUrl: text('pdf_url'),
   shareToken: text('share_token').unique(),
   createdAt: timestamp('created_at').defaultNow(),
-})
+}, (table) => [
+  index('reports_inspection_id_idx').on(table.inspectionId),
+])
