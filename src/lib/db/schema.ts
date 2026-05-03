@@ -21,6 +21,9 @@ export const profiles = pgTable('profiles', {
   // Referral reward tracking — true once the referrer has been credited for this user subscribing
   referralRewarded: boolean('referral_rewarded').default(false),
   createdAt: timestamp('created_at').defaultNow(),
+  // Stripe Connect — inspector's own Stripe account for collecting client payments
+  stripeConnectAccountId: text('stripe_connect_account_id'),
+  stripeConnectOnboarded: boolean('stripe_connect_onboarded').default(false),
   // ISN integration — null means not connected
   isnCompanyKey: text('isn_company_key'),
   isnUsername: text('isn_username'),
@@ -45,6 +48,7 @@ export const inspections = pgTable('inspections', {
   inspectionFee: integer('inspection_fee'), // in cents, null = fee not set
   paymentStatus: text('payment_status').default('unpaid'), // 'unpaid' | 'pending' | 'paid'
   paymentSessionId: text('payment_session_id'), // Stripe checkout session ID
+  paymentCheckoutUrl: text('payment_checkout_url'), // Stripe checkout URL for client
   // Scheduling — time of day and client phone for calendar view
   scheduledTime: text('scheduled_time'), // e.g. '09:00' 24hr format
   clientPhone: text('client_phone'),

@@ -9,10 +9,11 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft, Sparkles, Loader2, ChevronDown, ChevronRight, CheckCircle2, FileText, AlertCircle, AlertTriangle, DollarSign, Copy, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Sparkles, Loader2, ChevronDown, ChevronRight, CheckCircle2, FileText, AlertCircle, AlertTriangle, DollarSign, Copy, ExternalLink, Settings } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import PhotoUploader from '@/components/inspection/PhotoUploader'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 
 type ConditionRating = 'good' | 'fair' | 'poor' | 'na'
 
@@ -45,6 +46,7 @@ interface Inspection {
   inspectionFee: number | null
   paymentStatus: string | null
   paymentSessionId: string | null
+  paymentCheckoutUrl: string | null
 }
 
 const CONDITIONS: { value: ConditionRating; label: string; color: string }[] = [
@@ -69,6 +71,9 @@ export default function InspectionEditorPage() {
   const [feeInput, setFeeInput] = useState('')
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null)
   const [generatingPayment, setGeneratingPayment] = useState(false)
+  const [showConnectDialog, setShowConnectDialog] = useState(false)
+  const [connectLoading, setConnectLoading] = useState(false)
+  const [stripeConnected, setStripeConnected] = useState<boolean | null>(null)
 
   const loadInspection = useCallback(async () => {
     const res = await fetch(`/api/inspections/${id}`)
@@ -76,12 +81,20 @@ export default function InspectionEditorPage() {
     const data = await res.json()
     setInspection(data.inspection)
     setRoomList(data.rooms.map((r: FullRoom) => ({ ...r, expanded: true, generating: false, narrative: r.items.find((i) => i.aiNarrative)?.aiNarrative ?? '' })))
-    // Pre-fill fee input if already set
+    // Pre-fill fee input and payment URL if already set
     if (data.inspection.inspectionFee) setFeeInput(String(data.inspection.inspectionFee / 100))
+    if (data.inspection.paymentCheckoutUrl) setPaymentUrl(data.inspection.paymentCheckoutUrl)
     setLoading(false)
   }, [id, router])
 
   useEffect(() => { loadInspection() }, [loadInspection])
+
+  // Check Stripe Connect status on mount
+  useEffect(() => {
+    fetch('/api/stripe/connect').then(r => r.json()).then(data => {
+      setStripeConnected(data.onboarded === true)
+    }).catch(() => setStripeConnected(false))
+  }, [])
 
   async function updateItem(itemId: string, field: 'condition' | 'notes' | 'photos', value: string | null) {
     setRoomList((prev) => prev.map((r) => ({
@@ -151,12 +164,42 @@ export default function InspectionEditorPage() {
         body: JSON.stringify({ feeInCents: Math.round(fee * 100) }),
       })
       const data = await res.json()
-      if (!res.ok) { toast.error(data.error ?? 'Failed to create payment link'); return }
+      if (!res.ok) {
+        // If Stripe Connect not set up, show the instructional dialog
+        if (data.error === 'stripe_connect_required') {
+          setShowConnectDialog(true)
+          return
+        }
+        toast.error(data.error ?? 'Failed to create payment link')
+        return
+      }
       setPaymentUrl(data.paymentUrl)
+      setStripeConnected(true)
       setInspection((prev) => prev ? { ...prev, paymentStatus: 'pending', inspectionFee: Math.round(fee * 100) } : prev)
       toast.success('Payment link created!')
+      console.log('[InspectIQ] Payment link created successfully')
+    } catch (err) {
+      console.error('[InspectIQ] Payment link error:', err)
+      toast.error('Failed to create payment link. Please try again.')
     } finally {
       setGeneratingPayment(false)
+    }
+  }
+
+  async function startStripeConnect() {
+    setConnectLoading(true)
+    try {
+      const res = await fetch('/api/stripe/connect', { method: 'POST' })
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        toast.error('Failed to start Stripe setup')
+      }
+    } catch {
+      toast.error('Failed to start Stripe setup')
+    } finally {
+      setConnectLoading(false)
     }
   }
 
@@ -389,6 +432,57 @@ export default function InspectionEditorPage() {
           )
         })}
       </div>
+
+      {/* Stripe Connect Setup Dialog */}
+      <Dialog open={showConnectDialog} onOpenChange={setShowConnectDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-blue-500" />
+              Connect Your Stripe Account
+            </DialogTitle>
+            <DialogDescription>
+              To collect payments from clients, you need to connect your Stripe account. This is a one-time setup.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-3 text-sm text-slate-600">
+              <div className="flex gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-xs font-bold">1</span>
+                <p>Click the button below to open Stripe&apos;s secure setup page.</p>
+              </div>
+              <div className="flex gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-xs font-bold">2</span>
+                <p>Enter your business details and bank account info. Stripe handles everything securely — InspectIQ never sees your banking info.</p>
+              </div>
+              <div className="flex gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-xs font-bold">3</span>
+                <p>Once connected, you can generate payment links and clients pay you directly. Funds deposit to your bank in 2 business days.</p>
+              </div>
+            </div>
+            <div className="rounded-lg bg-slate-50 border border-slate-200 p-3">
+              <p className="text-xs text-slate-500">
+                InspectIQ takes a small 3% platform fee on each client payment. Stripe&apos;s standard processing fee (2.9% + 30¢) also applies. You keep the rest.
+              </p>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <Button
+                onClick={startStripeConnect}
+                disabled={connectLoading}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+              >
+                {connectLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <ExternalLink className="h-4 w-4 mr-2" />}
+                Set Up Stripe
+              </Button>
+              <Link href="/dashboard/settings">
+                <Button variant="outline" size="icon">
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

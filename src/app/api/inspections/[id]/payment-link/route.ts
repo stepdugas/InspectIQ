@@ -8,7 +8,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2026-03
 
 // POST /api/inspections/[id]/payment-link
 // Creates a Stripe Checkout Session for the inspector to share with their client.
-// The inspector sets their fee — client pays, inspection marked as paid via webhook.
+// Payment goes to the inspector's connected Stripe account via Connect.
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -28,13 +28,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   if (!inspection) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  // Get inspector profile for display name in checkout
+  // Get inspector profile — need Connect account for payment routing
   const [profile] = await db.select().from(profiles).where(eq(profiles.id, userId))
 
-  const inspectorName = profile?.companyName ?? profile?.fullName ?? 'Your Inspector'
+  if (!profile?.stripeConnectAccountId || !profile?.stripeConnectOnboarded) {
+    return NextResponse.json({ error: 'stripe_connect_required' }, { status: 400 })
+  }
+
+  const inspectorName = profile.companyName ?? profile.fullName ?? 'Your Inspector'
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 
-  // Create a one-time Stripe Checkout Session
+  // Platform fee: 3% of the inspection fee
+  const platformFee = Math.round(feeInCents * 0.03)
+
+  // Create a one-time Stripe Checkout Session with Connect destination charge
   const session = await stripe.checkout.sessions.create({
     mode: 'payment',
     payment_method_types: ['card'],
@@ -49,6 +56,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       },
       quantity: 1,
     }],
+    payment_intent_data: {
+      application_fee_amount: platformFee,
+      transfer_data: {
+        destination: profile.stripeConnectAccountId,
+      },
+    },
     customer_email: inspection.clientEmail ?? undefined,
     success_url: `${baseUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${baseUrl}/payment-cancelled`,
@@ -61,7 +74,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   // Store session ID and fee in DB
   await db
     .update(inspections)
-    .set({ inspectionFee: feeInCents, paymentStatus: 'pending', paymentSessionId: session.id })
+    .set({ inspectionFee: feeInCents, paymentStatus: 'pending', paymentSessionId: session.id, paymentCheckoutUrl: session.url })
     .where(eq(inspections.id, id))
 
   return NextResponse.json({ paymentUrl: session.url })

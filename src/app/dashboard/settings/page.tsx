@@ -10,8 +10,9 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Loader2, CreditCard, CheckCircle2, Upload, Building2, PenLine, Link2, Link2Off, Star } from 'lucide-react'
+import { Loader2, CreditCard, CheckCircle2, Upload, Building2, PenLine, Link2, Link2Off, Star, ExternalLink, DollarSign } from 'lucide-react'
 import { toast } from 'sonner'
+import SignaturePad from '@/components/SignaturePad'
 
 const ISN_ENABLED = process.env.NEXT_PUBLIC_ISN_ENABLED === 'true'
 
@@ -42,13 +43,22 @@ export default function SettingsPage() {
   const [isnDisconnecting, setIsnDisconnecting] = useState(false)
   const [portalLoading, setPortalLoading] = useState(false)
   const [hasStripeCustomer, setHasStripeCustomer] = useState(false)
+  // Stripe Connect state
+  const [stripeConnectOnboarded, setStripeConnectOnboarded] = useState(false)
+  const [stripeConnectLoading, setStripeConnectLoading] = useState(false)
+  const [showSignaturePad, setShowSignaturePad] = useState(false)
+  const [signatureSaving, setSignatureSaving] = useState(false)
   const logoInputRef = useRef<HTMLInputElement>(null)
   const signatureInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     async function load() {
-      const res = await fetch('/api/profile')
-      const data = await res.json()
+      const [profileRes, connectRes] = await Promise.all([
+        fetch('/api/profile'),
+        fetch('/api/stripe/connect'),
+      ])
+      const data = await profileRes.json()
+      const connectData = await connectRes.json()
       if (data.profile) {
         setFullName(data.profile.fullName ?? '')
         setCompanyName(data.profile.companyName ?? '')
@@ -64,9 +74,20 @@ export default function SettingsPage() {
         if (data.profile.isnCompanyKey) setIsnCompanyKey(data.profile.isnCompanyKey)
         if (data.profile.isnUsername) setIsnUsername(data.profile.isnUsername)
       }
+      setStripeConnectOnboarded(connectData.onboarded === true)
       setLoading(false)
     }
     load()
+
+    // Show success toast if returning from Stripe Connect onboarding
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('stripe_connect') === 'complete') {
+      toast.success('Stripe account connected! You can now collect client payments.')
+      window.history.replaceState({}, '', '/dashboard/settings')
+    } else if (params.get('stripe_connect') === 'refresh') {
+      toast.info('Stripe setup incomplete — click Connect again to finish.')
+      window.history.replaceState({}, '', '/dashboard/settings')
+    }
   }, [])
 
   async function saveProfile() {
@@ -108,6 +129,7 @@ export default function SettingsPage() {
     try {
       // Get signed upload params
       const paramsRes = await fetch('/api/upload/logo')
+      if (!paramsRes.ok) { toast.error('Failed to prepare upload'); return }
       const { signature, timestamp, folder, public_id, cloudName, apiKey } = await paramsRes.json()
 
       // Upload directly to Cloudinary
@@ -121,6 +143,7 @@ export default function SettingsPage() {
       form.append('api_key', apiKey)
 
       const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: 'POST', body: form })
+      if (!uploadRes.ok) { toast.error('Upload to storage failed'); return }
       const uploadData = await uploadRes.json()
       const url = uploadData.secure_url
 
@@ -128,7 +151,9 @@ export default function SettingsPage() {
       await fetch('/api/upload/logo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ logoUrl: url }) })
       setLogoUrl(url)
       toast.success('Logo uploaded!')
-    } catch {
+      console.log('[InspectIQ] Logo uploaded successfully')
+    } catch (err) {
+      console.error('[InspectIQ] Logo upload error:', err)
       toast.error('Upload failed')
     } finally {
       setLogoUploading(false)
@@ -141,6 +166,7 @@ export default function SettingsPage() {
     setSignatureUploading(true)
     try {
       const paramsRes = await fetch('/api/upload/signature')
+      if (!paramsRes.ok) { toast.error('Failed to prepare upload'); return }
       const { signature, timestamp, folder, public_id, cloudName, apiKey } = await paramsRes.json()
       const form = new FormData()
       form.append('file', file)
@@ -151,12 +177,15 @@ export default function SettingsPage() {
       form.append('overwrite', 'true')
       form.append('api_key', apiKey)
       const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: 'POST', body: form })
+      if (!uploadRes.ok) { toast.error('Upload to storage failed'); return }
       const uploadData = await uploadRes.json()
       const url = uploadData.secure_url
       await fetch('/api/upload/signature', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ signatureUrl: url }) })
       setSignatureUrl(url)
       toast.success('Signature saved!')
-    } catch {
+      console.log('[InspectIQ] Signature uploaded successfully')
+    } catch (err) {
+      console.error('[InspectIQ] Signature upload error:', err)
       toast.error('Upload failed')
     } finally {
       setSignatureUploading(false)
@@ -201,6 +230,58 @@ export default function SettingsPage() {
       toast.error('Failed to disconnect')
     }
     setIsnDisconnecting(false)
+  }
+
+  async function saveDrawnSignature(dataUrl: string) {
+    setSignatureSaving(true)
+    try {
+      // Get signed upload params from our API
+      const paramsRes = await fetch('/api/upload/signature')
+      if (!paramsRes.ok) { toast.error('Failed to prepare upload'); return }
+      const { signature, timestamp, folder, public_id, cloudName, apiKey } = await paramsRes.json()
+
+      // Convert data URL to blob for upload
+      const blob = await (await fetch(dataUrl)).blob()
+
+      const form = new FormData()
+      form.append('file', blob)
+      form.append('signature', signature)
+      form.append('timestamp', timestamp)
+      form.append('folder', folder)
+      form.append('public_id', public_id)
+      form.append('overwrite', 'true')
+      form.append('api_key', apiKey)
+
+      const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: 'POST', body: form })
+      if (!uploadRes.ok) { toast.error('Upload to storage failed'); return }
+      const uploadData = await uploadRes.json()
+      const url = uploadData.secure_url
+
+      // Save URL to profile
+      await fetch('/api/upload/signature', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ signatureUrl: url }) })
+      setSignatureUrl(url)
+      setShowSignaturePad(false)
+      toast.success('Signature saved!')
+      console.log('[InspectIQ] Signature saved successfully')
+    } catch (err) {
+      console.error('[InspectIQ] Signature save error:', err)
+      toast.error('Failed to save signature')
+    } finally {
+      setSignatureSaving(false)
+    }
+  }
+
+  async function startStripeConnect() {
+    setStripeConnectLoading(true)
+    try {
+      const res = await fetch('/api/stripe/connect', { method: 'POST' })
+      const data = await res.json()
+      if (data.url) window.location.href = data.url
+      else { toast.error('Failed to start Stripe setup'); setStripeConnectLoading(false) }
+    } catch {
+      toast.error('Failed to start Stripe setup')
+      setStripeConnectLoading(false)
+    }
   }
 
   function copyReferralLink() {
@@ -266,25 +347,36 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Signature upload */}
+          {/* Signature — draw or upload */}
           <div className="space-y-2">
             <Label>Inspector Signature</Label>
-            <div className="flex items-center gap-4">
-              <div className="h-16 w-40 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0">
-                {signatureUrl
-                  ? <img src={signatureUrl} alt="Signature" className="w-full h-full object-contain p-2" />
-                  : <PenLine className="h-5 w-5 text-slate-300" />
-                }
-              </div>
-              <div>
-                <input ref={signatureInputRef} type="file" accept="image/*" className="hidden" onChange={handleSignatureUpload} />
-                <Button type="button" variant="outline" size="sm" onClick={() => signatureInputRef.current?.click()} disabled={signatureUploading}>
-                  {signatureUploading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
-                  {signatureUrl ? 'Change Signature' : 'Upload Signature'}
-                </Button>
-                <p className="text-xs text-slate-400 mt-1">Appears at the bottom of every PDF report</p>
-              </div>
-            </div>
+            {showSignaturePad ? (
+              <SignaturePad
+                onSave={saveDrawnSignature}
+                onCancel={() => setShowSignaturePad(false)}
+                saving={signatureSaving}
+              />
+            ) : (
+              <>
+                {signatureUrl && (
+                  <div className="h-20 w-full max-w-xs rounded-xl border border-slate-200 bg-white flex items-center justify-center overflow-hidden">
+                    <img src={signatureUrl} alt="Signature" className="w-full h-full object-contain p-3" />
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={() => setShowSignaturePad(true)}>
+                    <PenLine className="h-4 w-4 mr-2" />
+                    {signatureUrl ? 'Redraw' : 'Draw Signature'}
+                  </Button>
+                  <input ref={signatureInputRef} type="file" accept="image/*" className="hidden" onChange={handleSignatureUpload} />
+                  <Button type="button" variant="ghost" size="sm" onClick={() => signatureInputRef.current?.click()} disabled={signatureUploading}>
+                    {signatureUploading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
+                    Upload Image
+                  </Button>
+                </div>
+                <p className="text-xs text-slate-400">Appears at the bottom of every PDF report</p>
+              </>
+            )}
           </div>
 
           <Button onClick={saveProfile} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
@@ -349,6 +441,58 @@ export default function SettingsPage() {
                 <span className="ml-2 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">Save $240</span>
               </Button>
               <p className="text-xs text-slate-400 text-center">Annual = $948 billed once per year</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Separator />
+
+      {/* Stripe Connect — Client Payments */}
+      <Card className="border-slate-100 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <DollarSign className="h-4 w-4 text-blue-500" />
+            Client Payments
+          </CardTitle>
+          <CardDescription>
+            Connect your Stripe account to collect inspection fees directly from clients.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {stripeConnectOnboarded ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-4 rounded-lg bg-green-50 border border-green-100">
+                <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
+                <div>
+                  <p className="font-semibold text-slate-900 text-sm">Stripe Connected</p>
+                  <p className="text-xs text-slate-500">Client payments go directly to your bank account.</p>
+                </div>
+              </div>
+              <p className="text-xs text-slate-400">
+                3% InspectIQ platform fee + Stripe processing (2.9% + 30¢) on each client payment. Payouts arrive in 2 business days.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-3 text-sm text-slate-600">
+                <div className="flex gap-3">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-xs font-bold">1</span>
+                  <p>Click below to open Stripe&apos;s secure onboarding page.</p>
+                </div>
+                <div className="flex gap-3">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-xs font-bold">2</span>
+                  <p>Enter your business details and bank account. Stripe handles everything — InspectIQ never sees your banking info.</p>
+                </div>
+                <div className="flex gap-3">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-xs font-bold">3</span>
+                  <p>Once connected, generate payment links on any inspection and clients pay you directly.</p>
+                </div>
+              </div>
+              <Button onClick={startStripeConnect} disabled={stripeConnectLoading} className="bg-blue-600 hover:bg-blue-700">
+                {stripeConnectLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <ExternalLink className="h-4 w-4 mr-2" />}
+                Connect Stripe Account
+              </Button>
             </div>
           )}
         </CardContent>
