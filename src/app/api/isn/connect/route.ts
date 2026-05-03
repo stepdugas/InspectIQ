@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { db, profiles } from '@/lib/db'
 import { eq } from 'drizzle-orm'
 import { verifyIsnCredentials } from '@/lib/isn'
+import { encrypt } from '@/lib/crypto'
 
 // POST /api/isn/connect — verify ISN credentials and save them to the user's profile
 export async function POST(request: Request) {
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
     const { isnUrl, me } = await verifyIsnCredentials(companyKey, username, password, domain || undefined)
 
     await db.update(profiles)
-      .set({ isnCompanyKey: companyKey, isnUsername: username, isnPassword: password, isnBaseUrl: isnUrl })
+      .set({ isnCompanyKey: companyKey, isnUsername: username, isnPassword: encrypt(password), isnBaseUrl: isnUrl })
       .where(eq(profiles.id, userId))
 
     return NextResponse.json({ ok: true, user: me })

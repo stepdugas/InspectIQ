@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { db, profiles } from '@/lib/db'
 import { eq } from 'drizzle-orm'
 import { createIsnClient } from '@/lib/isn'
+import { decrypt, isEncrypted } from '@/lib/crypto'
 
 // GET /api/isn/orders — fetch recent orders from this user's ISN account
 export async function GET() {
@@ -16,7 +17,8 @@ export async function GET() {
   }
 
   try {
-    const client = createIsnClient(profile.isnBaseUrl, profile.isnUsername, profile.isnPassword)
+    const password = isEncrypted(profile.isnPassword) ? decrypt(profile.isnPassword) : profile.isnPassword
+    const client = createIsnClient(profile.isnBaseUrl, profile.isnUsername, password)
     const data = await client.orders(50) as { orders?: unknown[] } | unknown[]
     // ISN may return { orders: [...] } or a top-level array depending on version
     const orders = Array.isArray(data) ? data : (data as { orders?: unknown[] }).orders ?? []

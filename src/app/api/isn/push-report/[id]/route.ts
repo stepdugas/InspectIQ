@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { db, profiles, inspections } from '@/lib/db'
 import { eq, and } from 'drizzle-orm'
 import { createIsnClient } from '@/lib/isn'
+import { decrypt, isEncrypted } from '@/lib/crypto'
 
 // POST /api/isn/push-report/[id]
 // Receives the PDF blob from the client and uploads it to the linked ISN order
@@ -30,7 +31,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!pdfFile) return NextResponse.json({ error: 'No PDF file provided' }, { status: 400 })
 
   try {
-    const client = createIsnClient(profile.isnBaseUrl, profile.isnUsername, profile.isnPassword)
+    const password = isEncrypted(profile.isnPassword) ? decrypt(profile.isnPassword) : profile.isnPassword
+    const client = createIsnClient(profile.isnBaseUrl, profile.isnUsername, password)
     const pdfBlob = new Blob([await pdfFile.arrayBuffer()], { type: 'application/pdf' })
     const filename = `InspectIQ_${inspection.propertyAddress.replace(/[^a-z0-9]/gi, '_')}.pdf`
     await client.uploadReport(inspection.isnOrderId, pdfBlob, filename)

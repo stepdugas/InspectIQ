@@ -27,7 +27,7 @@ export const profiles = pgTable('profiles', {
   // ISN integration — null means not connected
   isnCompanyKey: text('isn_company_key'),
   isnUsername: text('isn_username'),
-  isnPassword: text('isn_password'), // TODO: encrypt at rest before v1 launch
+  isnPassword: text('isn_password'), // AES-256-GCM encrypted via lib/crypto.ts
   isnBaseUrl: text('isn_base_url'),  // resolved via Admin API on connect
 }, (table) => [
   index('profiles_stripe_customer_id_idx').on(table.stripeCustomerId),
