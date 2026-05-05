@@ -3,10 +3,10 @@ import AnimatedLanding from '@/components/landing/AnimatedLanding'
 
 export const metadata: Metadata = {
   title: 'InspectIQ — Home Inspection Software That Writes Reports For You',
-  description: 'InspectIQ writes your home inspection report narratives using AI. Annotate photos, collect client payments, schedule jobs, and deliver branded PDF reports — all from your phone. InterNACHI standards pre-loaded. 14-day free trial, no credit card required.',
+  description: 'InspectIQ writes your home inspection report narratives using AI. A modern Spectora and HomeGauge alternative with photo annotation, client payments, scheduling, and branded PDF reports. InterNACHI standards pre-loaded. $99/mo, 14-day free trial.',
   openGraph: {
     title: 'InspectIQ — Home Inspection Software That Writes Reports For You',
-    description: 'AI writes your room narratives. Annotate photos, collect payments, schedule jobs, and deliver branded PDF reports — all from your phone. 14-day free trial.',
+    description: 'AI writes your room narratives. A Spectora and HomeGauge alternative with photo annotation, payments, scheduling, and branded PDF reports. 14-day free trial.',
     url: 'https://www.useinspectiq.com',
   },
   twitter: {
@@ -27,7 +27,7 @@ const jsonLd = {
       url: 'https://www.useinspectiq.com',
       applicationCategory: 'BusinessApplication',
       operatingSystem: 'iOS, Android, Web',
-      description: 'Home inspection software that writes report narratives using AI. Features include photo annotation, client payment collection, scheduling, custom templates, and branded PDF reports. InterNACHI standards pre-loaded.',
+      description: 'Home inspection software that writes report narratives using AI. A modern alternative to Spectora, HomeGauge, and Palm-Tech. Features include photo annotation, client payment collection, scheduling, custom templates, and branded PDF reports. InterNACHI standards pre-loaded.',
       offers: {
         '@type': 'Offer',
         price: '99.00',
