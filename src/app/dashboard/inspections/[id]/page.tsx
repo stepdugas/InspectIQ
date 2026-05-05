@@ -350,7 +350,7 @@ export default function InspectionEditorPage() {
   const allItems = roomList.flatMap((r) => r.items)
   const criticalCount = allItems.filter((i) => i.condition === 'poor').length
   const maintenanceCount = allItems.filter((i) => i.condition === 'fair').length
-  const satisfactoryCount = allItems.filter((i) => i.condition === 'good' || i.condition === null).length
+  const satisfactoryCount = allItems.filter((i) => i.condition === 'good').length
 
   if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-slate-300" /></div>
 

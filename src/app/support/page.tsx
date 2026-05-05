@@ -24,22 +24,22 @@ const faqs = [
   {
     question: 'How do I collect payment from clients?',
     answer:
-      'InspectIQ integrates with Stripe so you can send payment links or collect payment at the time of booking. You can set your inspection fee in your account settings, and clients pay securely online.',
+      'InspectIQ integrates with Stripe so you can send payment links or collect payment at the time of booking. You can set your fee per-inspection in the inspection editor, and clients pay securely online.',
   },
   {
     question: 'Can I use InspectIQ offline or in low-signal areas?',
     answer:
-      'InspectIQ is a web-based platform that requires an internet connection. We recommend having a stable connection when generating AI narratives and exporting reports. For on-site inspections with limited signal, you can draft notes locally and sync them when you are back online.',
+      'InspectIQ is a web-based platform that requires an internet connection. We recommend having a stable connection when generating AI narratives and exporting reports. For on-site inspections with limited signal, you can view cached inspections, but creating new content requires connectivity.',
   },
   {
     question: 'How do I create custom inspection templates?',
     answer:
-      'Go to Settings > Templates from your dashboard. You can create templates with custom sections, items, and default narratives tailored to your inspection style. Templates save time on repeat inspection types like residential, commercial, or pre-listing.',
+      'Go to the Templates page (in the sidebar) from your dashboard. You can create templates with custom sections, items, and default narratives tailored to your inspection style. Templates save time on repeat inspection types like residential, commercial, or pre-listing.',
   },
   {
     question: 'How do I connect my ISN account?',
     answer:
-      'Navigate to Settings > Integrations and select Inspection Support Network (ISN). Enter your ISN API credentials to sync scheduled inspections, client info, and agent details directly into InspectIQ.',
+      'Go to the Settings page and scroll to the ISN Integration section. Enter your ISN API credentials to sync scheduled inspections, client info, and agent details directly into InspectIQ.',
   },
   {
     question: 'How do I add my signature to reports?',

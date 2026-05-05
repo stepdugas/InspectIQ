@@ -15,7 +15,14 @@ export default async function AdminPage() {
 
   const adminEmail = process.env.ADMIN_EMAIL ?? ''
   const [allProfiles, inspectionCountResult, adminProfile] = await Promise.all([
-    db.select().from(profiles).orderBy(profiles.createdAt),
+    db.select({
+      id: profiles.id,
+      fullName: profiles.fullName,
+      email: profiles.email,
+      companyName: profiles.companyName,
+      subscriptionStatus: profiles.subscriptionStatus,
+      createdAt: profiles.createdAt,
+    }).from(profiles).orderBy(profiles.createdAt),
     db.select({ count: count() }).from(inspections),
     db.select().from(profiles).where(eq(profiles.email, adminEmail)).limit(1),
   ])

@@ -27,7 +27,7 @@ const STEPS = [
     bullets: [
       { icon: Zap, text: 'AI writes your room narratives — no more 2-hour reports' },
       { icon: FileText, text: 'Branded PDF reports with your logo and signature' },
-      { icon: CheckCircle2, text: 'Works offline in basements and crawlspaces' },
+      { icon: CheckCircle2, text: 'Install to your home screen for quick access' },
     ],
     primaryLabel: 'Get started',
     secondaryLabel: 'Skip tour',

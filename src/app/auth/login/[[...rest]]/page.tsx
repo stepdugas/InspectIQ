@@ -34,7 +34,7 @@ export default function LoginPage() {
           <div className="space-y-4">
             {[
               'AI narratives ready when you are',
-              'Offline mode — works without signal',
+              'Install to your home screen for quick access',
               'Reports delivered same day',
             ].map((b) => (
               <div key={b} className="flex items-center gap-3 text-sm text-slate-300">

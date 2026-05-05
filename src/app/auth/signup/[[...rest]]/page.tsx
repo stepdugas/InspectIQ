@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 const benefits = [
   'AI writes your room narratives — no manual typing',
-  'Works offline in basements & crawlspaces',
+  'Loads fast on spotty connections',
   'Annotate photos with arrows, boxes & text',
   'Collect client payments directly in the app',
   'InterNACHI standards pre-loaded',

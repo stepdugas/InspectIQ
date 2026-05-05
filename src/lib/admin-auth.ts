@@ -10,8 +10,8 @@ function signToken(password: string): string {
   return crypto.createHmac('sha256', secret).update(password).digest('hex')
 }
 
-async function getStoredPassword(): Promise<string> {
-  const fallback = process.env.ADMIN_PASSWORD ?? 'changeme'
+async function getStoredPassword(): Promise<string | null> {
+  const fallback = process.env.ADMIN_PASSWORD ?? null
   try {
     const [row] = await db.select().from(adminSettings).where(eq(adminSettings.key, 'admin_password')).limit(1)
     return row?.value ?? fallback
@@ -39,6 +39,7 @@ export async function isAdminAuthenticated(): Promise<boolean> {
   }
   // Legacy fallback: stored password is plaintext, compare HMAC directly
   const stored = await getStoredPassword()
+  if (!stored) return false
   return token === signToken(stored)
 }
 
@@ -68,6 +69,7 @@ export async function verifyAdminPassword(email: string, password: string): Prom
   if (email !== adminEmail) return false
 
   const stored = await getStoredPassword()
+  if (!stored) return false // No password configured — login impossible
 
   // Try bcrypt comparison first (stored value is a hash)
   if (stored.startsWith('$2')) {

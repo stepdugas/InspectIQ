@@ -125,7 +125,7 @@ const SAMPLE_ROOMS = [
       { id: 'i31', name: 'Toilets', condition: 'good', notes: null, aiNarrative: null, photos: '[]', orderIndex: 0 },
       { id: 'i32', name: 'Tub/Shower Grout & Caulk', condition: 'fair', notes: 'Grout discoloration and early deterioration at tub surround. Re-grout recommended.', aiNarrative: null, photos: '[]', orderIndex: 1 },
       { id: 'i33', name: 'Exhaust Fan — Secondary Bath', condition: 'poor', notes: 'Exhaust fan non-functional. Moisture staining on ceiling. Repair or replace fan.', aiNarrative: null, photos: '[]', orderIndex: 2 },
-      { id: 'i34', name: 'GFCI Outlets', condition: 'good', notes: null, aiNaritative: null, photos: '[]', orderIndex: 3 },
+      { id: 'i34', name: 'GFCI Outlets', condition: 'good', notes: null, aiNarrative: null, photos: '[]', orderIndex: 3 },
     ],
   },
 ]

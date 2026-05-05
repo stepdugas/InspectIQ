@@ -8,7 +8,11 @@ export async function GET() {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const profile = await getProfile()
-  return NextResponse.json({ profile })
+  if (!profile) return NextResponse.json({ profile: null })
+
+  // Strip sensitive fields the frontend doesn't need
+  const { isnPassword, stripeSubscriptionId, referredBy, referralRewarded, trialEndsAt, ...safeProfile } = profile
+  return NextResponse.json({ profile: safeProfile })
 }
 
 export async function PATCH(request: Request) {

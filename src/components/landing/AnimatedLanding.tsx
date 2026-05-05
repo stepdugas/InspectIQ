@@ -220,7 +220,7 @@ function DashboardMockup() {
           <div className="w-3 h-3 rounded-full bg-green-400" />
         </div>
         <div className="flex-1 mx-4 bg-white rounded px-3 py-1 text-xs text-slate-400 border border-slate-200">
-          app.inspectiq.com/dashboard
+          useinspectiq.com/dashboard
         </div>
       </div>
       {/* App content */}
@@ -605,10 +605,10 @@ export default function AnimatedLanding() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {[
-                    { feature: 'AI-written narratives', us: true, spectora: false, homegauge: false, palmtech: false },
+                    { feature: 'AI-written narratives', us: true, spectora: true, homegauge: false, palmtech: false },
                     { feature: 'Installs to home screen (PWA)', us: true, spectora: true, homegauge: false, palmtech: true },
                     { feature: 'Photo annotation (arrows, boxes)', us: true, spectora: true, homegauge: true, palmtech: false },
-                    { feature: 'Collect client payments in-app', us: true, spectora: true, homegauge: false, palmtech: false },
+                    { feature: 'Collect client payments in-app', us: true, spectora: true, homegauge: true, palmtech: false },
                     { feature: 'Built-in scheduling calendar', us: true, spectora: true, homegauge: true, palmtech: false },
                     { feature: 'Custom inspection templates', us: true, spectora: true, homegauge: true, palmtech: true },
                     { feature: 'InterNACHI standards pre-loaded', us: true, spectora: true, homegauge: true, palmtech: true },
