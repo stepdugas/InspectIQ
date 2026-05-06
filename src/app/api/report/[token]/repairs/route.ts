@@ -83,6 +83,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ to
 
   if (!repairRequest) return NextResponse.json({ error: 'No repair request found' }, { status: 404 })
 
+  if (repairRequest.status === 'submitted') {
+    return NextResponse.json({ error: 'Repair list has already been submitted and cannot be modified.' }, { status: 400 })
+  }
+
   const body = await request.json()
 
   // Update the repair request metadata

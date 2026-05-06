@@ -16,6 +16,25 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
   if (!report) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
+  // Check if a repair request already exists for this report
+  const [existing] = await db.select().from(repairRequests)
+    .where(eq(repairRequests.reportId, id)).limit(1)
+
+  if (existing) {
+    const existingItems = await db.select().from(repairRequestItems)
+      .where(eq(repairRequestItems.repairRequestId, existing.id))
+
+    const shareUrl = report.shareToken
+      ? `${process.env.NEXT_PUBLIC_APP_URL}/report/${report.shareToken}`
+      : null
+
+    return NextResponse.json({
+      repairRequest: existing,
+      itemCount: existingItems.length,
+      shareUrl,
+    })
+  }
+
   // Get the inspection to find its rooms and items
   const [inspection] = await db.select().from(inspections)
     .where(eq(inspections.id, report.inspectionId)).limit(1)

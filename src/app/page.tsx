@@ -3,7 +3,7 @@ import AnimatedLanding from '@/components/landing/AnimatedLanding'
 
 export const metadata: Metadata = {
   title: 'InspectIQ — Home Inspection Software That Writes Reports For You',
-  description: 'InspectIQ writes your home inspection report narratives using AI. A modern Spectora and HomeGauge alternative with photo annotation, client payments, scheduling, and branded PDF reports. InterNACHI standards pre-loaded. $99/mo, 14-day free trial.',
+  description: 'InspectIQ writes your home inspection report narratives using AI. A modern Spectora and HomeGauge alternative with photo annotation, client payments, scheduling, repair lists for agents, and branded PDF reports. InterNACHI standards pre-loaded. $99/mo, 14-day free trial.',
   openGraph: {
     title: 'InspectIQ — Home Inspection Software That Writes Reports For You',
     description: 'AI writes your room narratives. A Spectora and HomeGauge alternative with photo annotation, payments, scheduling, and branded PDF reports. 14-day free trial.',
@@ -51,6 +51,7 @@ const jsonLd = {
         'Installs to phone home screen — works in low-signal areas',
         'Email reports directly to clients',
         'Secure client share links',
+        'Client repair list for agents',
       ],
       screenshot: 'https://www.useinspectiq.com/og-image.png',
       creator: {

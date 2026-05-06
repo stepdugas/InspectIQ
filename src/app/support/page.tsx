@@ -56,6 +56,16 @@ const faqs = [
     answer:
       'You can cancel anytime from Settings > Billing. Your access continues through the end of your current billing period. No partial-month refunds are issued, but you will not be charged again after cancellation.',
   },
+  {
+    question: 'What is the Client Repair List?',
+    answer:
+      'After you complete an inspection and share the report, the buyer\'s agent (or buyer) can open the report and create a Repair List. They select the defects they want repaired, set priorities and estimated costs, add notes, and submit. You get notified instantly — no back-and-forth emails needed.',
+  },
+  {
+    question: 'How do agents use the repair list?',
+    answer:
+      'When an agent opens your shared report, they click "Create Repair List" to see all defects. They check the items they want repaired, set a priority (High, Medium, or Low) and estimated cost for each, add any notes, then hit Submit. You receive the completed repair list immediately.',
+  },
 ]
 
 export default function SupportPage() {

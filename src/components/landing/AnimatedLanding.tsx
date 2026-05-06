@@ -15,7 +15,7 @@ import {
   FileText, Zap, Clock, Shield, Star,
   ChevronRight, CheckCircle2, Building2,
   Download, Share2, Mail, PenLine,
-  WifiOff, Pencil, DollarSign, CalendarDays, LayoutTemplate,
+  WifiOff, Pencil, DollarSign, CalendarDays, LayoutTemplate, ClipboardList,
 } from 'lucide-react'
 
 // ─── Data ────────────────────────────────────────────────────────────────────
@@ -33,6 +33,7 @@ const features = [
   { icon: Share2, title: 'Secure Client Share Links', description: 'Share a secure link or download a PDF — clients get their report immediately, not 48 hours later.' },
   { icon: PenLine, title: 'Your Signature on Every Report', description: 'Draw your signature right in the app or upload an image. It appears on every PDF you generate. Looks professional, builds trust.' },
   { icon: Clock, title: 'Reports in Minutes', description: 'Cut report writing time by 80%. Finish your report on-site and deliver it to clients the same day.' },
+  { icon: ClipboardList, title: 'Client Repair List', description: 'After reviewing your report, agents select the defects they want repaired — with priorities, cost estimates, and notes. You get notified instantly. No back-and-forth emails.', isNew: true },
 ]
 
 
@@ -48,6 +49,7 @@ const pricingFeatures = [
   'Email reports directly to clients',
   'Branded PDF with your logo & signature',
   'Secure client share links',
+  'Client repair list for agents — select defects, add notes & costs',
   'Cancel anytime',
 ]
 
@@ -347,7 +349,7 @@ export default function AnimatedLanding() {
             transition={{ duration: 0.7 }}
           >
             <Badge variant="secondary" className="mb-6 text-blue-300 bg-blue-950 border-blue-800">
-              PWA · Photo Annotation · Client Payments · Scheduling · Custom Templates
+              PWA · Photo Annotation · Client Payments · Scheduling · Custom Templates · Repair Lists
             </Badge>
           </motion.div>
 
@@ -418,7 +420,7 @@ export default function AnimatedLanding() {
             {[
               'Installs to your phone — works in low-signal areas',
               'Photo annotation, payments & scheduling built in',
-              'Custom templates for every inspection type',
+              'Repair lists — agents select defects & submit requests',
             ].map((text) => (
               <div key={text} className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
@@ -615,6 +617,7 @@ export default function AnimatedLanding() {
                     { feature: 'Branded PDF reports', us: true, spectora: true, homegauge: true, palmtech: true },
                     { feature: 'ISN integration', us: true, spectora: true, homegauge: true, palmtech: false },
                     { feature: 'No per-report fees', us: true, spectora: true, homegauge: false, palmtech: true },
+                    { feature: 'Client repair list (CRL)', us: true, spectora: true, homegauge: false, palmtech: false },
                     { feature: 'Founding member price lock', us: true, spectora: false, homegauge: false, palmtech: false },
                   ].map(row => (
                     <tr key={row.feature} className="hover:bg-white transition-colors">
@@ -790,7 +793,7 @@ export default function AnimatedLanding() {
               The inspection app that works where you work.
             </h2>
             <p className="text-blue-100 text-lg mb-8">
-              Annotate photos. Collect payments directly. Schedule jobs. Draw your signature. Installs to your phone. All in one — starting at $99/month.
+              Annotate photos. Collect payments directly. Schedule jobs. Create repair lists. Draw your signature. Installs to your phone. All in one — starting at $99/month.
             </p>
             <Link href="/auth/signup">
               <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50 hover:scale-105 active:scale-95 transition-all duration-200 text-base px-8 shadow-lg">

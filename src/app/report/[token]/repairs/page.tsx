@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
+import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -167,6 +168,9 @@ export default function RepairListPage() {
     if (Object.keys(selectedItems).length === 0) return
     if (!submitterName.trim() || !submitterEmail.trim()) return
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(submitterEmail)) { toast.error('Please enter a valid email'); return }
+
     setSubmitting(true)
     try {
       const res = await fetch(`/api/report/${token}/repairs/submit`, {
@@ -193,7 +197,7 @@ export default function RepairListPage() {
         setError(result.error ?? 'Failed to submit')
       }
     } catch {
-      setError('Failed to submit repair request')
+      setError('Failed to submit repair list')
     }
     setSubmitting(false)
   }
@@ -243,9 +247,9 @@ export default function RepairListPage() {
             <div className="h-16 w-16 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="h-8 w-8 text-green-600" />
             </div>
-            <h2 className="text-xl font-bold text-slate-900 mb-2">Repair Request Submitted</h2>
+            <h2 className="text-xl font-bold text-slate-900 mb-2">Repair List Submitted</h2>
             <p className="text-slate-500 mb-6">
-              Your repair request for <span className="font-medium text-slate-700">{submitSummary.propertyAddress}</span> has been sent to the inspector.
+              Your repair list for <span className="font-medium text-slate-700">{submitSummary.propertyAddress}</span> has been sent to the inspector.
             </p>
             <div className="bg-slate-50 rounded-xl p-4 inline-block">
               <p className="text-sm text-slate-600">
@@ -384,7 +388,7 @@ export default function RepairListPage() {
                           {/* Expanded options when selected */}
                           {isSelected && (
                             <div className="mt-3 pt-3 border-t border-blue-100 space-y-3">
-                              <div className="grid grid-cols-2 gap-3">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
                                   <Label className="text-xs text-slate-500 mb-1">Priority</Label>
                                   <Select
@@ -507,7 +511,7 @@ export default function RepairListPage() {
                 ) : (
                   <>
                     <ClipboardList className="h-4 w-4 mr-2" />
-                    Submit Repair Request
+                    Submit Repair List
                   </>
                 )}
               </Button>
