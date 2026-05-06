@@ -13,12 +13,14 @@ export const metadata: Metadata = {
     description:
       'Practical guides, tips, and industry insights for home inspectors.',
     url: 'https://www.useinspectiq.com/blog',
+    images: [{ url: '/og-blog-default.png', width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'InspectIQ Blog — Home Inspection Software Tips & Guides',
     description:
       'Practical guides, tips, and industry insights for home inspectors.',
+    images: ['/og-blog-default.png'],
   },
   alternates: { canonical: 'https://www.useinspectiq.com/blog' },
 }

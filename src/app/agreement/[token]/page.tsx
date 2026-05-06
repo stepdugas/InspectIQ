@@ -1,9 +1,15 @@
 export const dynamic = 'force-dynamic'
 
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { db, inspections, profiles } from '@/lib/db'
 import { eq } from 'drizzle-orm'
 import AgreementForm from './AgreementForm'
+
+export const metadata: Metadata = {
+  title: 'Pre-Inspection Agreement',
+  robots: { index: false },
+}
 
 export default async function AgreementPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params

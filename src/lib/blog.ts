@@ -40,7 +40,7 @@ export function getAllPosts(): BlogPost[] {
         slug: data.slug ?? filename.replace('.mdx', ''),
         publishedAt: data.publishedAt ?? '',
         tags: data.tags ?? [],
-        ogImage: data.ogImage ?? '/og-blog-default.png',
+        ogImage: data.ogImage ?? '/og-image.png',
       },
       content,
     } satisfies BlogPost

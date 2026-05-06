@@ -64,11 +64,13 @@ export const metadata: Metadata = {
     type: 'website',
     url: 'https://www.useinspectiq.com',
     siteName: 'InspectIQ',
+    images: [{ url: '/og-image.png', width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'InspectIQ — Home Inspection Software That Writes Reports For You',
     description: 'AI writes your room narratives. Annotate photos, collect payments, and deliver branded PDF reports — all from your phone. 14-day free trial.',
+    images: ['/og-image.png'],
   },
   robots: {
     index: true,

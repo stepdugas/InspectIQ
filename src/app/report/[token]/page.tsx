@@ -1,10 +1,39 @@
 export const dynamic = 'force-dynamic'
 
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { db, reports, inspections, rooms, inspectionItems, profiles } from '@/lib/db'
 import { eq } from 'drizzle-orm'
 import { Building2, Calendar, User, CheckCircle2, AlertTriangle, AlertCircle, Download, Phone, Mail, ClipboardList } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ token: string }>
+}): Promise<Metadata> {
+  const { token } = await params
+
+  const [report] = await db
+    .select()
+    .from(reports)
+    .where(eq(reports.shareToken, token))
+    .limit(1)
+  if (!report) return { title: 'Report Not Found' }
+
+  const [inspection] = await db
+    .select()
+    .from(inspections)
+    .where(eq(inspections.id, report.inspectionId))
+    .limit(1)
+
+  const address = inspection?.propertyAddress ?? 'Property'
+
+  return {
+    title: `Home Inspection Report — ${address}`,
+    robots: { index: false },
+  }
+}
 
 const conditionConfig = {
   good: { label: 'Satisfactory', icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-50 border-green-100' },
