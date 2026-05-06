@@ -127,6 +127,33 @@ export const templateItems = pgTable('template_items', {
   orderIndex: integer('order_index').notNull().default(0),
 })
 
+export const repairRequests = pgTable('repair_requests', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  reportId: uuid('report_id').notNull().references(() => reports.id, { onDelete: 'cascade' }),
+  createdBy: text('created_by'), // name of person who created the list (e.g., buyer's agent)
+  createdByEmail: text('created_by_email'),
+  createdByRole: text('created_by_role'), // 'buyer_agent' | 'buyer' | 'listing_agent'
+  notes: text('notes'), // overall notes on the repair request
+  status: text('status').default('draft'), // 'draft' | 'submitted' | 'accepted' | 'countered'
+  createdAt: timestamp('created_at').defaultNow(),
+  submittedAt: timestamp('submitted_at'),
+}, (table) => [
+  index('repair_requests_report_id_idx').on(table.reportId),
+])
+
+export const repairRequestItems = pgTable('repair_request_items', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  repairRequestId: uuid('repair_request_id').notNull().references(() => repairRequests.id, { onDelete: 'cascade' }),
+  inspectionItemId: uuid('inspection_item_id').notNull().references(() => inspectionItems.id, { onDelete: 'cascade' }),
+  selected: boolean('selected').default(false),
+  priority: text('priority').default('medium'), // 'high' | 'medium' | 'low'
+  estimatedCost: integer('estimated_cost'), // in cents, optional
+  agentNotes: text('agent_notes'), // agent's notes about this specific repair
+  createdAt: timestamp('created_at').defaultNow(),
+}, (table) => [
+  index('repair_request_items_request_id_idx').on(table.repairRequestId),
+])
+
 export const adminSettings = pgTable('admin_settings', {
   key: text('key').primaryKey(),
   value: text('value').notNull(),

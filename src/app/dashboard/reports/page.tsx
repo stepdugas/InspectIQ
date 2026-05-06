@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 import lazyLoad from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { FileText, Download, Loader2, Share2, Mail, Upload, AlertTriangle } from 'lucide-react'
+import { FileText, Download, Loader2, Share2, Mail, Upload, AlertTriangle, ClipboardList } from 'lucide-react'
 import { toast } from 'sonner'
 import { pdf } from '@react-pdf/renderer'
 import PDFReport from '@/components/report/PDFReport'
@@ -249,6 +249,9 @@ export default function ReportsPage() {
                   )}
                 </div>
               </div>
+              {/* Repair List (CRL) card */}
+              <RepairListCard inspectionId={selectedId!} rooms={rooms} />
+
               {profile && (
                 <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm h-[400px] md:h-[700px]">
                   <PDFViewer width="100%" height="100%" showToolbar={false}>
@@ -261,5 +264,60 @@ export default function ReportsPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+// CRL card — shows defect count and links to the repair list via the share token
+function RepairListCard({ inspectionId, rooms }: { inspectionId: string; rooms: Room[] }) {
+  const [shareToken, setShareToken] = useState<string | null>(null)
+  const [loadingToken, setLoadingToken] = useState(false)
+
+  // Count defect items (poor or fair condition)
+  const defectCount = rooms.reduce(
+    (acc, r) => acc + r.items.filter((i) => i.condition === 'poor' || i.condition === 'fair').length,
+    0
+  )
+
+  if (defectCount === 0) return null
+
+  async function openRepairList() {
+    setLoadingToken(true)
+    try {
+      // Reuse the existing share endpoint to get/create the token
+      const res = await fetch(`/api/reports/${inspectionId}/share`, { method: 'POST' })
+      const { shareUrl } = await res.json()
+      // shareUrl is like https://useinspectiq.com/report/<token>
+      // Extract the token and navigate to the repairs page
+      const tokenFromUrl = shareUrl.split('/report/')[1]
+      if (tokenFromUrl) {
+        setShareToken(tokenFromUrl)
+        window.open(`/report/${tokenFromUrl}/repairs`, '_blank')
+      }
+    } catch {
+      toast.error('Failed to generate repair list link')
+    }
+    setLoadingToken(false)
+  }
+
+  return (
+    <Card className="border-slate-100 shadow-sm mb-4">
+      <CardContent className="py-4 px-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-lg bg-amber-50 flex items-center justify-center">
+              <ClipboardList className="h-4 w-4 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-900">Repair List</p>
+              <p className="text-xs text-slate-400">{defectCount} defect{defectCount !== 1 ? 's' : ''} found</p>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" onClick={openRepairList} disabled={loadingToken}>
+            {loadingToken ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <ClipboardList className="h-4 w-4 mr-2" />}
+            Create Repair List
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   )
 }

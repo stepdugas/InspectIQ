@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { notFound } from 'next/navigation'
 import { db, reports, inspections, rooms, inspectionItems, profiles } from '@/lib/db'
 import { eq } from 'drizzle-orm'
-import { Building2, Calendar, User, CheckCircle2, AlertTriangle, AlertCircle, Download, Phone, Mail } from 'lucide-react'
+import { Building2, Calendar, User, CheckCircle2, AlertTriangle, AlertCircle, Download, Phone, Mail, ClipboardList } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
 const conditionConfig = {
@@ -52,6 +52,15 @@ export default async function PublicReportPage({ params }: { params: Promise<{ t
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {(poorCount > 0 || fairCount > 0) && (
+              <a
+                href={`/report/${token}/repairs`}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                <ClipboardList className="h-4 w-4" />
+                Create Repair List
+              </a>
+            )}
             {report.pdfUrl && (
               <a
                 href={report.pdfUrl}
