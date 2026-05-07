@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
+import PublicNav from '@/components/layout/PublicNav'
 import {
   FileText, Zap, Clock, Shield, Star,
   ChevronRight, CheckCircle2, Building2,
@@ -306,28 +307,7 @@ export default function AnimatedLanding() {
     <div className="min-h-screen bg-white">
 
       {/* ── Nav ── */}
-      <nav className="border-b border-slate-100 sticky top-0 bg-white/95 backdrop-blur z-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-          <a href="#" className="flex items-center gap-2 shrink-0 hover:opacity-80 transition-opacity">
-            <Building2 className="h-6 w-6 text-blue-600" />
-            <span className="font-bold text-xl text-slate-900">InspectIQ</span>
-          </a>
-          <div className="hidden md:flex items-center gap-8 text-sm text-slate-600">
-            <a href="#" className="hover:text-slate-900 transition-colors">Home</a>
-            <a href="#features" className="hover:text-slate-900 transition-colors">Features</a>
-            <a href="#pricing" className="hover:text-slate-900 transition-colors">Pricing</a>
-            <a href="#founding" className="hover:text-slate-900 transition-colors">Founding Members</a>
-            <Link href="/blog" className="hover:text-slate-900 transition-colors">Blog</Link>
-            <Link href="/sample-report" className="hover:text-slate-900 transition-colors font-medium text-blue-600 hover:text-blue-700">Sample Report</Link>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Link href="/auth/login"><Button variant="ghost" size="sm" className="hover:bg-slate-100 transition-colors">Log in</Button></Link>
-            <Link href="/auth/signup">
-              <Button size="sm" className="bg-blue-600 hover:bg-blue-500 hover:scale-105 active:scale-95 transition-all duration-200 shadow-sm">Start Free Trial</Button>
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <PublicNav activePath="/" />
 
       {/* ── Hero ── */}
       <section className="bg-gradient-to-b from-slate-900 via-blue-950 to-slate-900 pt-16 sm:pt-24 pb-20 sm:pb-32 px-4 sm:px-6 text-center overflow-hidden relative">

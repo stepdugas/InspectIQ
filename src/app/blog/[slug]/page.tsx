@@ -2,7 +2,8 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { MDXRemote } from 'next-mdx-remote/rsc'
-import { Building2, ArrowLeft } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
+import PublicNav from '@/components/layout/PublicNav'
 import { getAllPosts, getPostBySlug } from '@/lib/blog'
 
 // Topic-aware accent colors for hero banners
@@ -104,49 +105,7 @@ export default async function BlogPostPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(blogPostingJsonLd) }}
       />
-      {/* Nav */}
-      <nav className="border-b border-slate-100 sticky top-0 bg-white/95 backdrop-blur z-50">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-          <Link
-            href="/"
-            className="flex items-center gap-2 shrink-0 hover:opacity-80 transition-opacity"
-          >
-            <Building2 className="h-6 w-6 text-blue-600" />
-            <span className="font-bold text-xl text-slate-900">InspectIQ</span>
-          </Link>
-          <div className="hidden md:flex items-center gap-8 text-sm text-slate-600">
-            <Link href="/" className="hover:text-slate-900 transition-colors">
-              Home
-            </Link>
-            <Link
-              href="/blog"
-              className="hover:text-slate-900 transition-colors font-medium text-blue-600"
-            >
-              Blog
-            </Link>
-            <Link
-              href="/sample-report"
-              className="hover:text-slate-900 transition-colors"
-            >
-              Sample Report
-            </Link>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Link
-              href="/auth/login"
-              className="text-sm text-slate-600 hover:text-slate-900 transition-colors px-3 py-1.5"
-            >
-              Log in
-            </Link>
-            <Link
-              href="/auth/signup"
-              className="text-sm bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-md transition-colors"
-            >
-              Start Free Trial
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <PublicNav activePath="/blog" />
 
       {/* Hero banner */}
       {(() => {
