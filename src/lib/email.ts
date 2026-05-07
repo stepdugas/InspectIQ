@@ -7,7 +7,7 @@ function escapeHtml(str: string): string {
 function getResend() {
   return new Resend(process.env.RESEND_API_KEY ?? 'placeholder')
 }
-const FROM = 'Stephanie at InspectIQ <stepdugas@gmail.com>'
+const FROM = 'Stephanie at InspectIQ <stephanie@useinspectiq.com>'
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://useinspectiq.com'
 
 export async function sendWelcomeEmail(to: string, firstName: string) {
@@ -112,7 +112,7 @@ export async function sendTrialExpiringEmail(to: string, firstName: string) {
           <h2 style="font-size:22px;margin:0 0 16px">Trial ends tomorrow ⏰</h2>
           <p style="color:#475569;line-height:1.6">Hey${firstName ? ' ' + escapeHtml(firstName) : ''} — your trial expires tomorrow. Everything you've created is saved and won't go anywhere.</p>
           <p style="color:#475569;line-height:1.6">If you're on the fence: at $99/month, you make it back on one inspection. And right now you can lock in that price as a founding member — it stays at $99 forever even after I raise it for new signups.</p>
-          <p style="color:#475569;line-height:1.6">The founding member offer closes May 31 or when the first 50 spots fill — whichever comes first.</p>
+          <p style="color:#475569;line-height:1.6">Only 50 founding member spots available — once they're gone, new signups pay a higher rate.</p>
           <a href="${APP_URL}/dashboard/settings" style="display:inline-block;background:#2563eb;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;margin-top:8px">
             Subscribe &amp; Lock In $99/mo →
           </a>

@@ -144,16 +144,17 @@ function PreviewModal({ template, onClose }: { template: SystemTemplate; onClose
 }
 
 // ── System Template Card ──
-function SystemTemplateCard({ template, onPreview }: { template: SystemTemplate; onPreview: (t: SystemTemplate) => void }) {
+function SystemTemplateCard({ template, onPreview, isDefault, onSetDefault, settingDefault }: { template: SystemTemplate; onPreview: (t: SystemTemplate) => void; isDefault?: boolean; onSetDefault?: (id: string) => void; settingDefault?: boolean }) {
   const totalItems = template.rooms.reduce((a, r) => a + r.items.length, 0)
   return (
-    <Card className="border-slate-100 shadow-sm hover:border-blue-200 transition-colors">
+    <Card className={`shadow-sm transition-colors ${isDefault ? 'border-blue-300 bg-blue-50/30' : 'border-slate-100 hover:border-blue-200'}`}>
       <CardContent className="py-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <p className="font-medium text-slate-900 text-sm">{template.name}</p>
               <BadgeLabel color={template.badgeColor}>{template.badge}</BadgeLabel>
+              {isDefault && <BadgeLabel color="blue">Your default</BadgeLabel>}
               {template.summaryPageRequired && (
                 <span className="text-[10px] text-amber-600 font-medium">+ Summary</span>
               )}
@@ -161,9 +162,16 @@ function SystemTemplateCard({ template, onPreview }: { template: SystemTemplate;
             <p className="text-xs text-slate-400 mt-1">{template.description}</p>
             <p className="text-xs text-slate-400 mt-1">{template.rooms.length} sections · {totalItems} items</p>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => onPreview(template)} className="text-slate-400 hover:text-blue-600 shrink-0">
-            <Eye className="h-4 w-4 mr-1" />Preview
-          </Button>
+          <div className="flex flex-col gap-1 shrink-0">
+            <Button variant="ghost" size="sm" onClick={() => onPreview(template)} className="text-slate-400 hover:text-blue-600">
+              <Eye className="h-4 w-4 mr-1" />Preview
+            </Button>
+            {onSetDefault && !isDefault && (
+              <Button variant="ghost" size="sm" onClick={() => onSetDefault(template.id)} disabled={settingDefault} className="text-slate-400 hover:text-blue-600 text-xs">
+                <CheckCircle2 className="h-3.5 w-3.5 mr-1" />Set as default
+              </Button>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -255,6 +263,10 @@ export default function TemplatesPage() {
   // State selector
   const [selectedState, setSelectedState] = useState('')
 
+  // Default template
+  const [defaultTemplateId, setDefaultTemplateId] = useState('')
+  const [settingDefault, setSettingDefault] = useState(false)
+
   // Preview modal
   const [previewTemplate, setPreviewTemplate] = useState<SystemTemplate | null>(null)
 
@@ -281,7 +293,16 @@ export default function TemplatesPage() {
     })
   }
 
-  useEffect(() => { loadTemplates() }, [])
+  useEffect(() => { loadTemplates(); loadProfile() }, [])
+
+  async function loadProfile() {
+    try {
+      const res = await fetch('/api/profile')
+      const data = await res.json()
+      if (data.profile?.inspectionState) setSelectedState(data.profile.inspectionState)
+      if (data.profile?.defaultTemplateId) setDefaultTemplateId(data.profile.defaultTemplateId)
+    } catch { /* profile load is non-critical */ }
+  }
 
   async function loadTemplates() {
     setLoading(true)
@@ -291,6 +312,26 @@ export default function TemplatesPage() {
       setTemplates(data.templates ?? [])
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function setAsDefault(templateId: string) {
+    setSettingDefault(true)
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ defaultTemplateId: templateId }),
+      })
+      if (!res.ok) { toast.error('Failed to set default template'); return }
+      setDefaultTemplateId(templateId)
+      const tmpl = SYSTEM_TEMPLATES.find((t) => t.id === templateId)
+      toast.success(`${tmpl?.name ?? 'Template'} set as your default`)
+      console.log(`[InspectIQ] Default template set to ${templateId}`)
+    } catch {
+      toast.error('Failed to set default template')
+    } finally {
+      setSettingDefault(false)
     }
   }
 
@@ -459,7 +500,7 @@ export default function TemplatesPage() {
             <select
               id="state-select"
               value={selectedState}
-              onChange={(e) => setSelectedState(e.target.value)}
+              onChange={(e) => { setSelectedState(e.target.value); fetch('/api/profile', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ inspectionState: e.target.value || null }) }) }}
               className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 bg-white focus:border-blue-300 focus:ring-1 focus:ring-blue-300 outline-none min-w-[180px]"
             >
               <option value="">Select your state</option>
@@ -489,17 +530,8 @@ export default function TemplatesPage() {
             </p>
           )}
           <div className="space-y-3">
-            {recommendedTemplates.map((t, i) => (
-              <div key={t.id} className="relative">
-                {i === 0 && (
-                  <div className="absolute -left-1 top-4 z-10">
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  </div>
-                )}
-                <div className={i === 0 ? 'ml-4' : 'ml-4 opacity-70'}>
-                  <SystemTemplateCard template={t} onPreview={setPreviewTemplate} />
-                </div>
-              </div>
+            {recommendedTemplates.map((t) => (
+              <SystemTemplateCard key={t.id} template={t} onPreview={setPreviewTemplate} isDefault={defaultTemplateId === t.id} onSetDefault={setAsDefault} settingDefault={settingDefault} />
             ))}
           </div>
         </div>
@@ -513,7 +545,7 @@ export default function TemplatesPage() {
           </h2>
           <div className="space-y-3">
             {(selectedState ? otherSystemTemplates : SYSTEM_TEMPLATES).map((t) => (
-              <SystemTemplateCard key={t.id} template={t} onPreview={setPreviewTemplate} />
+              <SystemTemplateCard key={t.id} template={t} onPreview={setPreviewTemplate} isDefault={defaultTemplateId === t.id} onSetDefault={setAsDefault} settingDefault={settingDefault} />
             ))}
           </div>
         </div>

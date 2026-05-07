@@ -40,6 +40,7 @@ const conditionConfig = {
   fair: { label: 'Maintenance Needed', icon: AlertTriangle, color: 'text-amber-600', bg: 'bg-amber-50 border-amber-100' },
   poor: { label: 'Critical', icon: AlertCircle, color: 'text-red-600', bg: 'bg-red-50 border-red-100' },
   na: { label: 'N/A', icon: CheckCircle2, color: 'text-slate-400', bg: 'bg-slate-50 border-slate-100' },
+  not_inspected: { label: 'Not Inspected', icon: AlertTriangle, color: 'text-slate-500', bg: 'bg-slate-50 border-slate-200' },
 }
 
 export default async function PublicReportPage({ params }: { params: Promise<{ token: string }> }) {

@@ -619,10 +619,10 @@ export default function AnimatedLanding() {
               Be one of our first 50 inspectors.<br />Lock in your rate forever.
             </h2>
             <p className="text-blue-100 text-lg mb-4 max-w-xl mx-auto leading-relaxed">
-              We&apos;re early and growing. Founding members lock in $99/month forever (or $79/month annual) — regular price goes to $149/month after the first 50 spots fill. Plus direct access to the founder to request features.
+              We&apos;re early and growing. Founding members lock in $99/month forever (or $79/month annual) — your rate never goes up, even when we raise prices for new signups. Plus direct access to the founder to request features.
             </p>
             <div className="inline-flex items-center gap-2 bg-amber-400/20 border border-amber-300/30 rounded-lg px-4 py-2 mb-4">
-              <span className="text-amber-200 text-sm font-semibold">⏰ Offer closes May 31, 2026</span>
+              <span className="text-amber-200 text-sm font-semibold">Only 50 founding spots available</span>
             </div>
 
             {/* Live spot counter */}

@@ -181,14 +181,16 @@ export default function InspectionEditorPage() {
     const { narrative, error } = await res.json()
     if (error) { toast.error('Failed to generate narrative'); setRoomList((prev) => prev.map((r) => r.id === roomId ? { ...r, generating: false } : r)); return }
 
-    await fetch(`/api/inspections/${id}/rooms/${roomId}/narrative`, {
+    const saveRes = await fetch(`/api/inspections/${id}/rooms/${roomId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ narrative }),
     })
+    if (!saveRes.ok) { toast.error('Narrative generated but failed to save'); setRoomList((prev) => prev.map((r) => r.id === roomId ? { ...r, generating: false } : r)); return }
 
     setRoomList((prev) => prev.map((r) => r.id === roomId ? { ...r, narrative, generating: false } : r))
     toast.success(`${room.name} narrative generated`)
+    console.log(`[InspectIQ] Narrative saved for room ${room.name}`)
   }
 
   async function generateAllNarratives() {

@@ -393,7 +393,7 @@ function SampleReportInner() {
               </Button>
             </Link>
             <p className="text-xs text-slate-400 mt-3">No credit card required · Cancel anytime · $99/month after trial</p>
-            <p className="text-xs text-amber-600 font-medium mt-2">Founding member pricing ($99/mo locked forever) closes May 31 or when the first 50 spots fill.</p>
+            <p className="text-xs text-amber-600 font-medium mt-2">Founding member pricing ($99/mo locked forever) — only 50 spots available.</p>
           </div>
         </div>
       </div>

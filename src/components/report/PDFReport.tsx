@@ -541,7 +541,7 @@ export default function PDFReport({ inspection, rooms, profile }: PDFReportProps
             <View style={[styles.coverMetaRow, { marginTop: 12 }]}>
               {buyerAgentName && (
                 <View>
-                  <Text style={styles.coverMetaLabel}>Buyer&apos;s Agent</Text>
+                  <Text style={styles.coverMetaLabel}>Buyer's Agent</Text>
                   <Text style={styles.coverMetaValue}>{buyerAgentName}</Text>
                 </View>
               )}

@@ -37,6 +37,7 @@ export default function PhotoUploader({ inspectionId, itemId, existingPhotos = [
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ inspectionId, itemId }),
     })
+    if (!sigRes.ok) { toast.error('Upload failed — please try again'); setUploading(false); return }
     const { signature, timestamp, folder, cloudName, apiKey } = await sigRes.json()
 
     const uploadedUrls: string[] = []
