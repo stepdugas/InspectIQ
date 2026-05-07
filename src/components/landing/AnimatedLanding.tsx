@@ -27,7 +27,7 @@ const features = [
   { icon: DollarSign, title: 'Collect Client Payments', description: 'Connect your Stripe account and collect inspection fees directly. Set your fee, generate a payment link, email it to your client — they pay online and money goes straight to your bank. No separate payment app needed.', isNew: true },
   { icon: CalendarDays, title: 'Built-In Scheduling Calendar', description: 'See all your upcoming inspections on a month, week, or day calendar. Click any day to schedule a new job. Set inspection times and store client phone numbers — everything in one place.', isNew: true },
   { icon: LayoutTemplate, title: 'Custom Inspection Templates', description: 'Build your own templates for commercial properties, pools, radon, sewer scopes, and any specialty inspection. Start from a preset or build from scratch — then use your template on any job.', isNew: true },
-  { icon: Zap, title: 'AI-Powered Narratives', description: 'Enter your findings room by room. Claude AI instantly writes professional, detailed report narratives — the kind that used to take hours to write by hand.' },
+  { icon: Zap, title: 'AI-Powered Narratives', description: 'Enter your findings room by room. AI instantly writes professional, detailed report narratives — the kind that used to take hours to write by hand.' },
   { icon: Shield, title: 'InterNACHI Standards Built-In', description: 'Pre-loaded with InterNACHI Standards of Practice checklists. Your reports reflect the highest industry standards, automatically.' },
   { icon: FileText, title: 'Branded PDF Reports', description: 'Every report includes your company logo, license number, and contact info. Professional output that wins referrals.' },
   { icon: Mail, title: 'Email Reports to Clients', description: 'Send the finished report directly to your client with one click. No copying links, no back-and-forth — they get it instantly.' },
@@ -46,7 +46,7 @@ const pricingFeatures = [
   'Client payment collection — money goes to your bank',
   'Built-in scheduling calendar',
   'Custom templates (commercial, pool, radon & more)',
-  'AI-generated professional narratives (Claude AI)',
+  'AI-generated professional narratives',
   'InterNACHI standards pre-loaded',
   'Email reports directly to clients',
   'Branded PDF with your logo & signature',
@@ -458,7 +458,7 @@ export default function AnimatedLanding() {
                     <div className="text-xs text-slate-400 font-semibold uppercase tracking-wide">Your notes</div>
                     <div className="bg-white border border-slate-200 rounded-lg p-3 text-xs text-slate-500 italic">&ldquo;Roof — missing shingles SE corner, flashing loose at chimney&rdquo;</div>
                     <div className="flex items-center gap-2 text-blue-600 text-xs font-semibold py-1">
-                      <Zap className="h-3.5 w-3.5" /> Claude AI writing narrative...
+                      <Zap className="h-3.5 w-3.5" /> AI writing narrative...
                     </div>
                     <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs text-slate-600 leading-relaxed">
                       &ldquo;The roof covering exhibited missing shingles at the southeast corner and loose flashing at the chimney penetration. Recommend evaluation and repair by a licensed roofing contractor.&rdquo;

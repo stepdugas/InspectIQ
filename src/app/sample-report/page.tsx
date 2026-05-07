@@ -282,7 +282,7 @@ function SampleReportInner() {
             {/* ── State / format selector ── */}
             <div className="mt-4">
               <label htmlFor="format-select" className="text-xs text-slate-500 block mb-1">
-                Report format
+                Your state
               </label>
               <select
                 id="format-select"
@@ -314,9 +314,10 @@ function SampleReportInner() {
         </div>
       </div>
 
-      {/* ── Report viewer ── */}
+      {/* ── Report viewer (desktop) / download prompt (mobile) ── */}
       <div className="max-w-6xl mx-auto px-6 py-10">
-        <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-lg" style={{ height: '900px' }}>
+        {/* Desktop: live PDF viewer */}
+        <div className="hidden md:block rounded-2xl overflow-hidden border border-slate-200 shadow-lg" style={{ height: '900px' }}>
           <PDFViewer width="100%" height="100%" showToolbar={false}>
             <PDFReport
               inspection={inspection as never}
@@ -324,6 +325,42 @@ function SampleReportInner() {
               profile={profile as never}
             />
           </PDFViewer>
+        </div>
+
+        {/* Mobile: download prompt + report highlights */}
+        <div className="md:hidden">
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center">
+            <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Download className="h-6 w-6 text-blue-600" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Download the full report</h3>
+            <p className="text-sm text-slate-500 mb-5 max-w-xs mx-auto">
+              PDF reports look best downloaded. Tap below to save it and view the full {rooms.length}-section report on your device.
+            </p>
+            <Button onClick={downloadSample} disabled={downloading} className="bg-blue-600 hover:bg-blue-700 w-full max-w-xs">
+              {downloading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+              Download Sample PDF
+            </Button>
+
+            {/* Report preview highlights */}
+            <div className="mt-6 text-left space-y-3">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">What&apos;s in this report</p>
+              {rooms.slice(0, 4).map((room) => (
+                <div key={room.id} className="bg-white rounded-lg border border-slate-100 p-3">
+                  <p className="text-sm font-medium text-slate-900">{room.name}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">{room.items.length} items inspected</p>
+                  {room.items.filter((i: { condition: string }) => i.condition === 'poor').length > 0 && (
+                    <span className="inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded bg-red-100 text-red-700 mt-1">
+                      {room.items.filter((i: { condition: string }) => i.condition === 'poor').length} critical
+                    </span>
+                  )}
+                </div>
+              ))}
+              {rooms.length > 4 && (
+                <p className="text-xs text-slate-400 text-center">+ {rooms.length - 4} more sections in the full report</p>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -333,7 +370,7 @@ function SampleReportInner() {
           <div className="max-w-2xl mx-auto text-center">
             <h2 className="text-2xl font-bold text-slate-900 mb-3">This is what your clients receive</h2>
             <p className="text-slate-500 mb-8">
-              Every report includes a professional cover page, summary of findings, room-by-room detail with condition ratings, and AI-generated narratives written by Claude AI — finished in minutes, not hours.
+              Every report includes a professional cover page, summary of findings, room-by-room detail with condition ratings, and AI-generated narratives — finished in minutes, not hours.
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
               {[
