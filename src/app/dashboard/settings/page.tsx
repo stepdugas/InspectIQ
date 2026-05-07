@@ -13,6 +13,7 @@ import { Separator } from '@/components/ui/separator'
 import { Loader2, CreditCard, CheckCircle2, Upload, Building2, PenLine, Link2, Link2Off, Star, ExternalLink, DollarSign } from 'lucide-react'
 import { toast } from 'sonner'
 import SignaturePad from '@/components/SignaturePad'
+import { US_STATES, SYSTEM_TEMPLATES } from '@/lib/inspection-templates'
 
 const ISN_ENABLED = process.env.NEXT_PUBLIC_ISN_ENABLED === 'true'
 
@@ -26,6 +27,8 @@ export default function SettingsPage() {
   const [companyName, setCompanyName] = useState('')
   const [licenseNumber, setLicenseNumber] = useState('')
   const [phone, setPhone] = useState('')
+  const [inspectionState, setInspectionState] = useState('')
+  const [defaultTemplateId, setDefaultTemplateId] = useState('')
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [logoUploading, setLogoUploading] = useState(false)
   const [signatureUrl, setSignatureUrl] = useState<string | null>(null)
@@ -64,6 +67,8 @@ export default function SettingsPage() {
         setCompanyName(data.profile.companyName ?? '')
         setLicenseNumber(data.profile.licenseNumber ?? '')
         setPhone(data.profile.phone ?? '')
+        setInspectionState(data.profile.inspectionState ?? '')
+        setDefaultTemplateId(data.profile.defaultTemplateId ?? '')
         setLogoUrl(data.profile.logoUrl ?? null)
         setSignatureUrl(data.profile.signatureUrl ?? null)
         setReferralCode(data.profile.referralCode ?? null)
@@ -95,7 +100,7 @@ export default function SettingsPage() {
     const res = await fetch('/api/profile', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fullName, companyName, licenseNumber, phone }),
+      body: JSON.stringify({ fullName, companyName, licenseNumber, phone, inspectionState: inspectionState || null, defaultTemplateId: defaultTemplateId || null }),
     })
     if (res.ok) toast.success('Profile saved!')
     else toast.error('Failed to save')
@@ -322,6 +327,34 @@ export default function SettingsPage() {
             <div className="space-y-2">
               <Label>Phone</Label>
               <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(555) 000-0000" />
+            </div>
+            <div className="space-y-2">
+              <Label>Your State</Label>
+              <select
+                value={inspectionState}
+                onChange={(e) => setInspectionState(e.target.value)}
+                className="w-full border border-slate-200 rounded-md px-3 py-2 text-sm bg-white focus:border-blue-300 focus:ring-1 focus:ring-blue-300 outline-none"
+              >
+                <option value="">Select your state</option>
+                {US_STATES.map((s) => (
+                  <option key={s.code} value={s.code}>{s.name}</option>
+                ))}
+              </select>
+              <p className="text-xs text-slate-400">We&apos;ll recommend the right template for your state</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Default Template</Label>
+              <select
+                value={defaultTemplateId}
+                onChange={(e) => setDefaultTemplateId(e.target.value)}
+                className="w-full border border-slate-200 rounded-md px-3 py-2 text-sm bg-white focus:border-blue-300 focus:ring-1 focus:ring-blue-300 outline-none"
+              >
+                <option value="">Auto (based on state)</option>
+                {SYSTEM_TEMPLATES.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+              <p className="text-xs text-slate-400">Pre-selected when you create a new inspection</p>
             </div>
           </div>
           <div className="text-sm text-slate-400">Email: {user?.emailAddresses[0]?.emailAddress}</div>

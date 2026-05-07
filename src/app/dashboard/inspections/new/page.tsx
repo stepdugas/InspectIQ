@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { DEFAULT_ROOMS, SYSTEM_TEMPLATES } from '@/lib/inspection-templates'
+import { DEFAULT_ROOMS, SYSTEM_TEMPLATES, US_STATES } from '@/lib/inspection-templates'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -73,10 +73,23 @@ export default function NewInspectionPage() {
     fetch('/api/templates').then(r => r.json()).then(data => {
       setCustomTemplates(data.templates ?? [])
     })
-    // Always fetch profile to pre-fill inspector name
+    // Fetch profile to pre-fill inspector name + auto-select template from state
     fetch('/api/profile').then(r => r.json()).then(data => {
       if (data.profile?.fullName) setInspectorName(data.profile.fullName)
       if (ISN_ENABLED) setIsnConnected(!!data.profile?.isnCompanyKey)
+      // Auto-select template: explicit default > state recommendation > internachi
+      if (data.profile?.defaultTemplateId) {
+        const tmpl = SYSTEM_TEMPLATES.find((t) => t.id === data.profile.defaultTemplateId)
+        if (tmpl) setSelectedSystemTemplate(tmpl.id)
+      } else if (data.profile?.inspectionState) {
+        const stateInfo = US_STATES.find((s) => s.code === data.profile.inspectionState)
+        if (stateInfo?.recommendedTemplates[0]) {
+          const recommended = stateInfo.recommendedTemplates[0]
+          if (SYSTEM_TEMPLATES.find((t) => t.id === recommended)) {
+            setSelectedSystemTemplate(recommended)
+          }
+        }
+      }
     })
   }, [])
 

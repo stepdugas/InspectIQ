@@ -20,10 +20,10 @@ export async function PATCH(request: Request) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await request.json()
-  const { fullName, companyName, licenseNumber, phone } = body
+  const { fullName, companyName, licenseNumber, phone, inspectionState, defaultTemplateId } = body
 
   // Validate string types and length
-  for (const [key, value] of Object.entries({ fullName, companyName, licenseNumber, phone })) {
+  for (const [key, value] of Object.entries({ fullName, companyName, licenseNumber, phone, inspectionState, defaultTemplateId })) {
     if (value !== undefined && value !== null) {
       if (typeof value !== 'string') {
         return NextResponse.json({ error: `${key} must be a string` }, { status: 400 })
@@ -35,7 +35,7 @@ export async function PATCH(request: Request) {
   }
 
   await db.update(profiles)
-    .set({ fullName, companyName, licenseNumber, phone })
+    .set({ fullName, companyName, licenseNumber, phone, inspectionState: inspectionState ?? null, defaultTemplateId: defaultTemplateId ?? null })
     .where(eq(profiles.id, userId))
 
   return NextResponse.json({ ok: true })

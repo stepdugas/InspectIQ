@@ -21,6 +21,9 @@ export const profiles = pgTable('profiles', {
   // Referral reward tracking — true once the referrer has been credited for this user subscribing
   referralRewarded: boolean('referral_rewarded').default(false),
   createdAt: timestamp('created_at').defaultNow(),
+  // Inspector's state — drives template recommendations and compliance badges
+  inspectionState: text('inspection_state'), // US state code, e.g. 'TX', 'OH'
+  defaultTemplateId: text('default_template_id'), // system template ID, e.g. 'trec-7-6', 'internachi'
   // Stripe Connect — inspector's own Stripe account for collecting client payments
   stripeConnectAccountId: text('stripe_connect_account_id'),
   stripeConnectOnboarded: boolean('stripe_connect_onboarded').default(false),
