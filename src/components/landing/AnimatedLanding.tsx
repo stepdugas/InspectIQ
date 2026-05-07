@@ -286,7 +286,7 @@ function DashboardMockup() {
 export default function AnimatedLanding() {
   const [stars, setStars] = useState<Array<{ left: string; top: string; opacity: number; duration: number; delay: number }>>([])
   const [foundingRemaining, setFoundingRemaining] = useState<number | null>(null)
-  const [billingAnnual, setBillingAnnual] = useState(false)
+  const [billingAnnual, setBillingAnnual] = useState(true)
 
   useEffect(() => {
     setStars([...Array(40)].map(() => ({
@@ -334,9 +334,9 @@ export default function AnimatedLanding() {
           <h1
             className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.1] mb-6"
           >
-            Home inspection software<br />
+            Stop writing reports at 11pm.<br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">
-              that writes reports for you.
+              AI does it in minutes.
             </span>
           </h1>
 
@@ -550,8 +550,8 @@ export default function AnimatedLanding() {
                     </th>
                     <th className="py-3 px-3 text-center text-slate-400 font-medium">
                       <div className="flex flex-col items-center">
-                        <span>Other Tools</span>
-                        <span className="text-xs">$69–149+/mo</span>
+                        <span>Typical Inspection Software</span>
+                        <span className="text-xs">$69–149+/mo · per-report fees common</span>
                       </div>
                     </th>
                   </tr>
@@ -569,6 +569,7 @@ export default function AnimatedLanding() {
                     { feature: 'ISN integration', us: true, others: 'some' },
                     { feature: 'No per-report fees', us: true, others: 'some' },
                     { feature: 'Client repair list (CRL)', us: true, others: 'some' },
+                    { feature: 'TREC 7-6 (Texas) built in', us: true, others: false },
                     { feature: 'Founding member price lock', us: true, others: false },
                   ].map(row => (
                     <tr key={row.feature} className="hover:bg-white transition-colors">
@@ -606,7 +607,7 @@ export default function AnimatedLanding() {
               Be one of our first 50 inspectors.<br />Lock in your rate forever.
             </h2>
             <p className="text-blue-100 text-lg mb-4 max-w-xl mx-auto leading-relaxed">
-              We&apos;re early and growing. Founding members lock in $99/month forever — regular price goes to $149/month after the first 50 spots fill. Plus direct access to the founder to request features.
+              We&apos;re early and growing. Founding members lock in $99/month forever (or $79/month annual) — regular price goes to $149/month after the first 50 spots fill. Plus direct access to the founder to request features.
             </p>
             <div className="inline-flex items-center gap-2 bg-amber-400/20 border border-amber-300/30 rounded-lg px-4 py-2 mb-4">
               <span className="text-amber-200 text-sm font-semibold">⏰ Offer closes May 31, 2026</span>
@@ -726,6 +727,7 @@ export default function AnimatedLanding() {
                   </Link>
                 </div>
                 <p className="text-center text-xs text-slate-400 mt-3">Free trial: no credit card required. Subscribe now: billed immediately.</p>
+                <p className="text-center text-xs text-green-600 font-medium mt-2">30-day money-back guarantee — not happy after your first paid month? Full refund, no questions asked.</p>
               </CardContent>
             </Card>
           </div>
