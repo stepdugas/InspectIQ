@@ -14,7 +14,7 @@ export default function PrivacyPage() {
       </nav>
       <div className="max-w-3xl mx-auto px-6 py-16 prose prose-slate">
         <h1>Privacy Policy</h1>
-        <p className="text-slate-500">Last updated: {new Date().toLocaleDateString()}</p>
+        <p className="text-slate-500">Last updated: May 7, 2026</p>
 
         <h2>Information We Collect</h2>
         <p>We collect information you provide directly, including your name, email address, company name, and license number when you create an account. We also collect the inspection data you enter into the platform.</p>
@@ -32,7 +32,7 @@ export default function PrivacyPage() {
         <p>We use cookies solely for authentication purposes to keep you signed in to your account.</p>
 
         <h2>Contact</h2>
-        <p>For privacy questions, contact us at <a href="mailto:support@inspectiq.app">support@inspectiq.app</a>.</p>
+        <p>For privacy questions, contact us at <a href="mailto:support@useinspectiq.com">support@useinspectiq.com</a>.</p>
       </div>
     </div>
   )

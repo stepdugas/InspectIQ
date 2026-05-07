@@ -38,7 +38,7 @@ export default function TermsPage() {
         <p>To the fullest extent permitted by law, InspectIQ shall not be liable for any indirect, incidental, or consequential damages arising from your use of the service.</p>
 
         <h2>Contact</h2>
-        <p>Questions about these Terms? Contact us at <a href="mailto:support@inspectiq.app">support@inspectiq.app</a>.</p>
+        <p>Questions about these Terms? Contact us at <a href="mailto:support@useinspectiq.com">support@useinspectiq.com</a>.</p>
       </div>
     </div>
   )

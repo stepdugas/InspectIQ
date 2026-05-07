@@ -15,7 +15,7 @@ import {
   FileText, Zap, Clock, Shield, Star,
   ChevronRight, CheckCircle2, Building2,
   Download, Share2, Mail, PenLine,
-  WifiOff, Pencil, DollarSign, CalendarDays, LayoutTemplate, ClipboardList,
+  WifiOff, Pencil, DollarSign, CalendarDays, LayoutTemplate, ClipboardList, FileSignature,
 } from 'lucide-react'
 
 // ─── Data ────────────────────────────────────────────────────────────────────
@@ -34,6 +34,7 @@ const features = [
   { icon: PenLine, title: 'Your Signature on Every Report', description: 'Draw your signature right in the app or upload an image. It appears on every PDF you generate. Looks professional, builds trust.' },
   { icon: Clock, title: 'Reports in Minutes', description: 'Cut report writing time by 80%. Finish your report on-site and deliver it to clients the same day.' },
   { icon: ClipboardList, title: 'Client Repair List', description: 'After reviewing your report, agents select the defects they want repaired — with priorities, cost estimates, and notes. You get notified instantly. No back-and-forth emails.', isNew: true },
+  { icon: FileSignature, title: 'Pre-Inspection Agreements', description: 'Send a pre-inspection agreement to your client for e-signature before the inspection. They sign online, you get a timestamped record with their name and IP. Covers your liability.', isNew: true },
 ]
 
 
@@ -50,6 +51,7 @@ const pricingFeatures = [
   'Branded PDF with your logo & signature',
   'Secure client share links',
   'Client repair list for agents — select defects, add notes & costs',
+  'Pre-inspection agreements with e-signature',
   'Cancel anytime',
 ]
 
