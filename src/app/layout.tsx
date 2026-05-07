@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     type: 'website',
     url: 'https://www.useinspectiq.com',
     siteName: 'InspectIQ',
-    images: [{ url: '/og-image.png', width: 1200, height: 630 }],
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'InspectIQ — Home Inspection Software That Writes Reports For You' }],
   },
   twitter: {
     card: 'summary_large_image',
