@@ -10,8 +10,10 @@ export const metadata: Metadata = {
     url: 'https://www.useinspectiq.com',
   },
   twitter: {
+    card: 'summary_large_image',
     title: 'InspectIQ — Home Inspection Software That Writes Reports For You',
     description: 'AI writes your room narratives. Annotate photos, collect payments, and deliver branded PDF reports from your phone. 14-day free trial.',
+    images: ['/og-image.png'],
   },
   alternates: { canonical: 'https://www.useinspectiq.com' },
 }

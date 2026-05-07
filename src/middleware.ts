@@ -19,6 +19,7 @@ const isPublicRoute = createRouteMatcher([
   '/api/admin/auth',
   '/blog(.*)',
   '/locations(.*)',
+  '/texas',
   '/api/founding-spots',
   '/api/cron(.*)',
   '/robots.txt',
