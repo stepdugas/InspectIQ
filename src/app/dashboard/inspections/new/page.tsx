@@ -43,6 +43,7 @@ export default function NewInspectionPage() {
   const [address, setAddress] = useState('')
   const [clientName, setClientName] = useState('')
   const [clientEmail, setClientEmail] = useState('')
+  const [clientPhone, setClientPhone] = useState('')
   const [date, setDate] = useState(searchParams.get('date') ?? new Date().toISOString().split('T')[0])
   const [selectedRooms, setSelectedRooms] = useState<string[]>(DEFAULT_ROOMS.map((r) => r.name))
   const [loading, setLoading] = useState(false)
@@ -136,7 +137,7 @@ export default function NewInspectionPage() {
     const res = await fetch('/api/inspections', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ address, clientName, clientEmail, date, selectedRooms, isnOrderId: selectedIsnOrderId, customTemplateId: templateMode === 'custom' ? selectedTemplateId : null, systemTemplateId: templateMode === 'system' ? selectedSystemTemplate : null, buyerAgentName, buyerAgentEmail, buyerAgentPhone, listingAgentName, listingAgentEmail, listingAgentPhone, inspectorName }),
+      body: JSON.stringify({ address, clientName, clientEmail, clientPhone, date, selectedRooms, isnOrderId: selectedIsnOrderId, customTemplateId: templateMode === 'custom' ? selectedTemplateId : null, systemTemplateId: templateMode === 'system' ? selectedSystemTemplate : null, buyerAgentName, buyerAgentEmail, buyerAgentPhone, listingAgentName, listingAgentEmail, listingAgentPhone, inspectorName }),
     })
 
     if (!res.ok) { toast.error('Failed to create inspection'); setLoading(false); return }
@@ -242,9 +243,15 @@ export default function NewInspectionPage() {
               <Label htmlFor="clientName">Client Name *</Label>
               <Input id="clientName" placeholder="John & Jane Doe" value={clientName} onChange={(e) => setClientName(e.target.value)} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="clientEmail">Client Email (optional)</Label>
-              <Input id="clientEmail" type="email" placeholder="clients@email.com" value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="clientEmail">Client Email (optional)</Label>
+                <Input id="clientEmail" type="email" placeholder="clients@email.com" value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="clientPhone">Client Phone (optional)</Label>
+                <Input id="clientPhone" type="tel" placeholder="(555) 000-0000" value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} />
+              </div>
             </div>
           </CardContent>
         </Card>

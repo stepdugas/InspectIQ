@@ -32,7 +32,7 @@ export async function POST(request: Request) {
   const canAccess = await hasActiveAccess()
   if (!canAccess) return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
 
-  const { address, clientName, clientEmail, date, selectedRooms, isnOrderId, customTemplateId, systemTemplateId, buyerAgentName, buyerAgentEmail, buyerAgentPhone, listingAgentName, listingAgentEmail, listingAgentPhone, inspectorName } = await request.json()
+  const { address, clientName, clientEmail, clientPhone, date, selectedRooms, isnOrderId, customTemplateId, systemTemplateId, buyerAgentName, buyerAgentEmail, buyerAgentPhone, listingAgentName, listingAgentEmail, listingAgentPhone, inspectorName } = await request.json()
 
   // Validate required fields
   if (!address || typeof address !== 'string' || !address.trim()) {
@@ -57,6 +57,7 @@ export async function POST(request: Request) {
     propertyAddress: address,
     clientName,
     clientEmail: clientEmail || null,
+    clientPhone: clientPhone || null,
     inspectionDate: date,
     status: 'in_progress',
     isnOrderId: isnOrderId || null,
