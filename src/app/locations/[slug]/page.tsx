@@ -19,8 +19,11 @@ export async function generateMetadata({
   const city = getCityBySlug(slug)
   if (!city) return {}
 
+  // Strip "| InspectIQ" suffix — the layout template appends it automatically
+  const pageTitle = city.metaTitle.replace(/\s*\|\s*InspectIQ$/, '')
+
   return {
-    title: city.metaTitle,
+    title: pageTitle,
     description: city.metaDescription,
     alternates: {
       canonical: `https://www.useinspectiq.com/locations/${slug}`,

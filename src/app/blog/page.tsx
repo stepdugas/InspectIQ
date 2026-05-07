@@ -28,8 +28,21 @@ export const metadata: Metadata = {
 export default function BlogListingPage() {
   const posts = getAllPosts()
 
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.useinspectiq.com' },
+      { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://www.useinspectiq.com/blog' },
+    ],
+  }
+
   return (
     <div className="min-h-screen bg-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       {/* Nav */}
       <nav className="border-b border-slate-100 sticky top-0 bg-white/95 backdrop-blur z-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
@@ -76,7 +89,7 @@ export default function BlogListingPage() {
 
       {/* Header */}
       <header className="max-w-4xl mx-auto px-4 sm:px-6 pt-16 pb-10">
-        <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">Blog</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">Home Inspection Tips &amp; Guides</h1>
         <p className="mt-3 text-lg text-slate-500">
           Tips, guides, and industry insights for home inspectors.
         </p>

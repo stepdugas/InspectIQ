@@ -51,8 +51,40 @@ export default async function BlogPostPage({
   const post = getPostBySlug(slug)
   if (!post) notFound()
 
+  const canonicalUrl = `https://www.useinspectiq.com/blog/${slug}`
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.useinspectiq.com' },
+      { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://www.useinspectiq.com/blog' },
+      { '@type': 'ListItem', position: 3, name: post.meta.title, item: canonicalUrl },
+    ],
+  }
+
+  const blogPostingJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.meta.title,
+    description: post.meta.description,
+    datePublished: post.meta.publishedAt,
+    author: { '@type': 'Organization', name: 'InspectIQ', url: 'https://www.useinspectiq.com' },
+    publisher: { '@type': 'Organization', name: 'InspectIQ', url: 'https://www.useinspectiq.com' },
+    mainEntityOfPage: canonicalUrl,
+    image: post.meta.ogImage,
+  }
+
   return (
     <div className="min-h-screen bg-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(blogPostingJsonLd) }}
+      />
       {/* Nav */}
       <nav className="border-b border-slate-100 sticky top-0 bg-white/95 backdrop-blur z-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">

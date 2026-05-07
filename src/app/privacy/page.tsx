@@ -23,7 +23,7 @@ export default function PrivacyPage() {
         <p>We use your information to provide and improve the InspectIQ service, process payments through Stripe, and send transactional emails. We do not sell your data to third parties.</p>
 
         <h2>Data Storage</h2>
-        <p>Your data is stored securely using Supabase (PostgreSQL) hosted on AWS infrastructure. All data is encrypted at rest and in transit.</p>
+        <p>Your data is stored securely using Neon (PostgreSQL) hosted on AWS infrastructure. All data is encrypted at rest and in transit.</p>
 
         <h2>Payment Information</h2>
         <p>Payment processing is handled by Stripe. We do not store your credit card information on our servers.</p>

@@ -154,8 +154,21 @@ export default function SampleReportPage() {
     }
   }
 
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.useinspectiq.com' },
+      { '@type': 'ListItem', position: 2, name: 'Sample Report', item: 'https://www.useinspectiq.com/sample-report' },
+    ],
+  }
+
   return (
     <div className="min-h-screen bg-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
 
       {/* ── Nav ── */}
       <nav className="border-b border-slate-100 sticky top-0 bg-white/95 backdrop-blur z-50">
