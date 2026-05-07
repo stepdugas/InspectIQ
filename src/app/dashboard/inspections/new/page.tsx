@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { DEFAULT_ROOMS } from '@/lib/inspection-templates'
+import { DEFAULT_ROOMS, SYSTEM_TEMPLATES } from '@/lib/inspection-templates'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -46,7 +46,9 @@ export default function NewInspectionPage() {
   const [date, setDate] = useState(searchParams.get('date') ?? new Date().toISOString().split('T')[0])
   const [selectedRooms, setSelectedRooms] = useState<string[]>(DEFAULT_ROOMS.map((r) => r.name))
   const [loading, setLoading] = useState(false)
-  // Custom template state
+  // Template state — 'system' uses a built-in template, 'custom' uses a user-created one
+  const [templateMode, setTemplateMode] = useState<'system' | 'custom'>('system')
+  const [selectedSystemTemplate, setSelectedSystemTemplate] = useState('internachi')
   const [customTemplates, setCustomTemplates] = useState<CustomTemplate[]>([])
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
   // ISN import state
@@ -121,7 +123,7 @@ export default function NewInspectionPage() {
     const res = await fetch('/api/inspections', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ address, clientName, clientEmail, date, selectedRooms, isnOrderId: selectedIsnOrderId, customTemplateId: selectedTemplateId, buyerAgentName, buyerAgentEmail, buyerAgentPhone, listingAgentName, listingAgentEmail, listingAgentPhone, inspectorName }),
+      body: JSON.stringify({ address, clientName, clientEmail, date, selectedRooms, isnOrderId: selectedIsnOrderId, customTemplateId: templateMode === 'custom' ? selectedTemplateId : null, systemTemplateId: templateMode === 'system' ? selectedSystemTemplate : null, buyerAgentName, buyerAgentEmail, buyerAgentPhone, listingAgentName, listingAgentEmail, listingAgentPhone, inspectorName }),
     })
 
     if (!res.ok) { toast.error('Failed to create inspection'); setLoading(false); return }
@@ -291,59 +293,55 @@ export default function NewInspectionPage() {
           )}
         </Card>
 
-        {/* Template selector — shown only if inspector has custom templates */}
-        {customTemplates.length > 0 && (
-          <Card className="border-slate-100 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-base">Inspection Template</CardTitle>
-              <CardDescription>Use a custom template or the InterNACHI standard checklist</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {/* InterNACHI default option */}
-              <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${!selectedTemplateId ? 'border-blue-300 bg-blue-50' : 'border-slate-100 hover:bg-slate-50'}`}>
-                <input
-                  type="radio"
-                  name="template"
-                  checked={!selectedTemplateId}
-                  onChange={() => setSelectedTemplateId(null)}
-                  className="text-blue-600"
-                />
-                <div>
-                  <span className="text-sm font-medium text-slate-700">InterNACHI Standard</span>
-                  <p className="text-xs text-slate-400">18 room checklist — residential home inspections</p>
+        {/* Inspection Template selector — always shown */}
+        <Card className="border-slate-100 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base">Inspection Template</CardTitle>
+            <CardDescription>Choose a standard, state-required, or custom template</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {/* All system templates — clean flat list (only 4 total) */}
+            {SYSTEM_TEMPLATES.map((st) => (
+              <label key={st.id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${templateMode === 'system' && selectedSystemTemplate === st.id ? 'border-blue-300 bg-blue-50' : 'border-slate-100 hover:bg-slate-50'}`}>
+                <input type="radio" name="template" checked={templateMode === 'system' && selectedSystemTemplate === st.id} onChange={() => { setTemplateMode('system'); setSelectedSystemTemplate(st.id); setSelectedTemplateId(null) }} className="text-blue-600" />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-medium text-slate-700">{st.name}</span>
+                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${st.badgeColor === 'red' ? 'bg-red-100 text-red-700' : st.badgeColor === 'blue' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'}`}>{st.badge}</span>
+                    {st.summaryPageRequired && <span className="text-[10px] text-amber-600 font-medium">+ Summary page</span>}
+                  </div>
+                  <p className="text-xs text-slate-400 mt-0.5">{st.description}</p>
                 </div>
               </label>
+            ))}
 
-              {/* Custom templates */}
-              {customTemplates.map((t) => (
-                <label key={t.id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${selectedTemplateId === t.id ? 'border-blue-300 bg-blue-50' : 'border-slate-100 hover:bg-slate-50'}`}>
-                  <input
-                    type="radio"
-                    name="template"
-                    checked={selectedTemplateId === t.id}
-                    onChange={() => setSelectedTemplateId(t.id)}
-                    className="text-blue-600"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <LayoutTemplate className="h-3.5 w-3.5 text-blue-400" />
-                      <span className="text-sm font-medium text-slate-700">{t.name}</span>
+            {/* Custom templates */}
+            {customTemplates.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs text-slate-500 font-medium pt-1">Custom templates</p>
+                {customTemplates.map((t) => (
+                  <label key={t.id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${templateMode === 'custom' && selectedTemplateId === t.id ? 'border-blue-300 bg-blue-50' : 'border-slate-100 hover:bg-slate-50'}`}>
+                    <input type="radio" name="template" checked={templateMode === 'custom' && selectedTemplateId === t.id} onChange={() => { setTemplateMode('custom'); setSelectedTemplateId(t.id); }} className="text-blue-600" />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <LayoutTemplate className="h-3.5 w-3.5 text-blue-400" />
+                        <span className="text-sm font-medium text-slate-700">{t.name}</span>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-0.5">{t.rooms.length} rooms · {t.rooms.reduce((a, r) => a + r.items.length, 0)} items</p>
                     </div>
-                    {t.description && <p className="text-xs text-slate-400 mt-0.5">{t.description}</p>}
-                    <p className="text-xs text-slate-400 mt-0.5">{t.rooms.length} rooms · {t.rooms.reduce((a, r) => a + r.items.length, 0)} items</p>
-                  </div>
-                </label>
-              ))}
+                  </label>
+                ))}
+              </div>
+            )}
 
-              <Link href="/dashboard/templates" className="text-xs text-blue-500 hover:text-blue-700 block mt-1">
-                Manage templates →
-              </Link>
-            </CardContent>
-          </Card>
-        )}
+            <Link href="/dashboard/templates" className="text-xs text-blue-500 hover:text-blue-700 block mt-1">
+              Browse all templates →
+            </Link>
+          </CardContent>
+        </Card>
 
-        {/* InterNACHI rooms — only shown when no custom template selected */}
-        {!selectedTemplateId && (
+        {/* InterNACHI room picker — only shown when InterNACHI system template is selected */}
+        {templateMode === 'system' && selectedSystemTemplate === 'internachi' && (
           <Card className="border-slate-100 shadow-sm">
             <CardHeader>
               <CardTitle className="text-base">Rooms to Inspect</CardTitle>
@@ -365,8 +363,32 @@ export default function NewInspectionPage() {
           </Card>
         )}
 
+        {/* Preview sections for non-InterNACHI system templates */}
+        {templateMode === 'system' && selectedSystemTemplate !== 'internachi' && (() => {
+          const st = SYSTEM_TEMPLATES.find((s) => s.id === selectedSystemTemplate)
+          if (!st) return null
+          return (
+            <Card className="border-blue-100 bg-blue-50/30 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-base text-blue-800">{st.name} — Sections</CardTitle>
+                <CardDescription>All sections and items from this template will be included</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-2">
+                  {st.rooms.map((r) => (
+                    <div key={r.name} className="p-3 rounded-lg bg-white border border-blue-100">
+                      <p className="text-sm font-medium text-slate-700">{r.name}</p>
+                      <p className="text-xs text-slate-400">{r.items.length} items</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })()}
+
         {/* Preview of selected custom template rooms */}
-        {selectedTemplateId && (() => {
+        {templateMode === 'custom' && selectedTemplateId && (() => {
           const t = customTemplates.find((ct) => ct.id === selectedTemplateId)
           if (!t) return null
           return (

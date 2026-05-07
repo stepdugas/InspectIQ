@@ -2,13 +2,12 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Textarea } from '@/components/ui/textarea'
-import { Plus, Trash2, ChevronDown, ChevronUp, Loader2, Pencil, LayoutTemplate, X, GripVertical } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Plus, Trash2, ChevronDown, ChevronUp, Loader2, Pencil, LayoutTemplate, X, GripVertical, Eye, MapPin, Shield, CheckCircle2 } from 'lucide-react'
 import {
   DndContext,
   closestCenter,
@@ -25,7 +24,8 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { toast } from 'sonner'
-import { DEFAULT_ROOMS } from '@/lib/inspection-templates'
+import { DEFAULT_ROOMS, SYSTEM_TEMPLATES, US_STATES } from '@/lib/inspection-templates'
+import type { SystemTemplate } from '@/lib/inspection-templates'
 
 interface TemplateItem {
   id?: string
@@ -34,7 +34,7 @@ interface TemplateItem {
 
 interface TemplateRoom {
   id?: string
-  _id: string  // stable client-side ID for drag-and-drop — always set before use
+  _id: string
   name: string
   items: TemplateItem[]
 }
@@ -47,7 +47,8 @@ interface CustomTemplate {
   rooms: (TemplateRoom & { id: string })[]
 }
 
-const INSPECTION_TYPE_PRESETS: Record<string, Omit<TemplateRoom, '_id'>[]> = {
+// Specialty presets for custom template editor
+const SPECIALTY_PRESETS: Record<string, Omit<TemplateRoom, '_id'>[]> = {
   'Commercial Building': [
     { name: 'Building Exterior', items: [{ name: 'Facade & cladding' }, { name: 'Parking lot & drainage' }, { name: 'Loading docks' }, { name: 'Signage & lighting' }] },
     { name: 'Roof System', items: [{ name: 'Membrane condition' }, { name: 'Drainage & scuppers' }, { name: 'HVAC curbs & penetrations' }, { name: 'Parapets & coping' }] },
@@ -76,6 +77,99 @@ const INSPECTION_TYPE_PRESETS: Record<string, Omit<TemplateRoom, '_id'>[]> = {
   ],
 }
 
+// ── Badge component ──
+function BadgeLabel({ color, children }: { color: 'red' | 'blue' | 'gray'; children: React.ReactNode }) {
+  const colors = {
+    red: 'bg-red-100 text-red-700 border-red-200',
+    blue: 'bg-blue-100 text-blue-700 border-blue-200',
+    gray: 'bg-slate-100 text-slate-600 border-slate-200',
+  }
+  return (
+    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${colors[color]}`}>
+      {children}
+    </span>
+  )
+}
+
+// ── Preview Modal ──
+function PreviewModal({ template, onClose }: { template: SystemTemplate; onClose: () => void }) {
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [onClose])
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-label={template.name} onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-slate-900">{template.name}</h3>
+            <div className="flex items-center gap-2 mt-1">
+              <BadgeLabel color={template.badgeColor}>{template.badge}</BadgeLabel>
+              {template.summaryPageRequired && (
+                <span className="text-[10px] text-amber-600 font-medium">Summary page required</span>
+              )}
+            </div>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="px-6 py-4 space-y-4">
+          <p className="text-sm text-slate-500">{template.description}</p>
+          <p className="text-xs text-slate-400">
+            {template.rooms.length} sections · {template.rooms.reduce((a, r) => a + r.items.length, 0)} inspection points
+          </p>
+          <div className="space-y-3">
+            {template.rooms.map((room) => (
+              <div key={room.name} className="border border-slate-100 rounded-lg overflow-hidden">
+                <div className="px-3 py-2 bg-slate-50">
+                  <p className="text-sm font-medium text-slate-700">{room.name}</p>
+                </div>
+                <div className="px-3 py-2 space-y-1">
+                  {room.items.map((item, i) => (
+                    <p key={i} className="text-xs text-slate-500 pl-2">
+                      <span className="text-slate-300 mr-1.5">{i + 1}.</span>{item}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── System Template Card ──
+function SystemTemplateCard({ template, onPreview }: { template: SystemTemplate; onPreview: (t: SystemTemplate) => void }) {
+  const totalItems = template.rooms.reduce((a, r) => a + r.items.length, 0)
+  return (
+    <Card className="border-slate-100 shadow-sm hover:border-blue-200 transition-colors">
+      <CardContent className="py-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="font-medium text-slate-900 text-sm">{template.name}</p>
+              <BadgeLabel color={template.badgeColor}>{template.badge}</BadgeLabel>
+              {template.summaryPageRequired && (
+                <span className="text-[10px] text-amber-600 font-medium">+ Summary</span>
+              )}
+            </div>
+            <p className="text-xs text-slate-400 mt-1">{template.description}</p>
+            <p className="text-xs text-slate-400 mt-1">{template.rooms.length} sections · {totalItems} items</p>
+          </div>
+          <Button variant="ghost" size="sm" onClick={() => onPreview(template)} className="text-slate-400 hover:text-blue-600 shrink-0">
+            <Eye className="h-4 w-4 mr-1" />Preview
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 // ── Sortable room row (used inside DnD context) ──
 function SortableRoom({
   room, roomIdx, expandedRooms, toggleRoom, updateRoomName, removeRoom,
@@ -102,7 +196,6 @@ function SortableRoom({
   return (
     <div ref={setNodeRef} style={style} className="border border-slate-100 rounded-lg overflow-hidden">
       <div className="flex items-center gap-2 px-3 py-2 bg-slate-50">
-        {/* Drag handle — only this element triggers drag */}
         <button
           {...attributes}
           {...listeners}
@@ -159,6 +252,12 @@ export default function TemplatesPage() {
   const [editing, setEditing] = useState<CustomTemplate | null>(null)
   const [isNew, setIsNew] = useState(false)
 
+  // State selector
+  const [selectedState, setSelectedState] = useState('')
+
+  // Preview modal
+  const [previewTemplate, setPreviewTemplate] = useState<SystemTemplate | null>(null)
+
   // Editor state
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -175,7 +274,6 @@ export default function TemplatesPage() {
     const newIdx = editorRooms.findIndex((r) => r._id === over.id)
     if (oldIdx === -1 || newIdx === -1) return
     setEditorRooms(arrayMove(editorRooms, oldIdx, newIdx))
-    // Keep expanded state consistent after reorder
     setExpandedRooms((prev) => {
       const arr = editorRooms.map((_, i) => prev.has(i))
       const moved = arrayMove(arr, oldIdx, newIdx)
@@ -196,13 +294,22 @@ export default function TemplatesPage() {
     }
   }
 
-  function startNew() {
+  function startNew(presetKey?: string) {
     setEditing(null)
     setIsNew(true)
-    setName('')
-    setDescription('')
-    setEditorRooms([{ _id: crypto.randomUUID(), name: '', items: [{ name: '' }] }])
-    setExpandedRooms(new Set([0]))
+    if (presetKey && SPECIALTY_PRESETS[presetKey]) {
+      const preset = SPECIALTY_PRESETS[presetKey]
+      const presetWithIds = preset.map((r) => ({ ...r, _id: crypto.randomUUID() }))
+      setName(presetKey)
+      setDescription('')
+      setEditorRooms(presetWithIds)
+      setExpandedRooms(new Set(presetWithIds.map((_, i) => i)))
+    } else {
+      setName('')
+      setDescription('')
+      setEditorRooms([{ _id: crypto.randomUUID(), name: '', items: [{ name: '' }] }])
+      setExpandedRooms(new Set([0]))
+    }
   }
 
   function startEdit(t: CustomTemplate) {
@@ -220,7 +327,7 @@ export default function TemplatesPage() {
   }
 
   function applyPreset(presetKey: string) {
-    const preset = INSPECTION_TYPE_PRESETS[presetKey]
+    const preset = SPECIALTY_PRESETS[presetKey]
     if (!preset) return
     const presetWithIds = preset.map((r) => ({ ...r, _id: crypto.randomUUID() }))
     setEditorRooms(presetWithIds)
@@ -318,164 +425,285 @@ export default function TemplatesPage() {
 
   const showEditor = isNew || !!editing
 
+  // Derive state-specific recommendations
+  const stateInfo = US_STATES.find((s) => s.code === selectedState)
+  const recommendedTemplates = stateInfo
+    ? stateInfo.recommendedTemplates
+        .map((id) => SYSTEM_TEMPLATES.find((t) => t.id === id))
+        .filter(Boolean) as SystemTemplate[]
+    : []
+
+  // Templates not shown in recommendations
+  const otherSystemTemplates = selectedState
+    ? SYSTEM_TEMPLATES.filter((t) => !stateInfo?.recommendedTemplates.includes(t.id))
+    : SYSTEM_TEMPLATES
+
   return (
     <div className="max-w-3xl">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Inspection Templates</h1>
-          <p className="text-slate-500 text-sm mt-0.5">Build custom templates for commercial, pool, radon, and any other inspection type</p>
+          <p className="text-slate-500 text-sm mt-0.5">Built-in standards, state-compliant templates, and custom checklists</p>
         </div>
-        {!showEditor && (
-          <Button onClick={startNew} className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="h-4 w-4 mr-2" />New Template
-          </Button>
+      </div>
+
+      {/* ── State Selector ── */}
+      <Card className="border-slate-100 shadow-sm mb-6">
+        <CardContent className="py-4">
+          <div className="flex items-center gap-3">
+            <MapPin className="h-4 w-4 text-blue-500 shrink-0" />
+            <div className="flex-1">
+              <Label htmlFor="state-select" className="text-sm font-medium text-slate-700">What state do you inspect in?</Label>
+              <p className="text-xs text-slate-400">We&apos;ll recommend the right template for your state&apos;s requirements</p>
+            </div>
+            <select
+              id="state-select"
+              value={selectedState}
+              onChange={(e) => setSelectedState(e.target.value)}
+              className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 bg-white focus:border-blue-300 focus:ring-1 focus:ring-blue-300 outline-none min-w-[180px]"
+            >
+              <option value="">Select your state</option>
+              {US_STATES.map((s) => (
+                <option key={s.code} value={s.code}>{s.name}</option>
+              ))}
+            </select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── State Recommendations ── */}
+      {selectedState && stateInfo && (
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <Shield className="h-4 w-4 text-blue-500" />
+            <h2 className="text-sm font-semibold text-slate-700">
+              Recommended for {stateInfo.name}
+            </h2>
+            <BadgeLabel color={stateInfo.regulation === 'mandatory_form' ? 'red' : stateInfo.regulation === 'licensed' ? 'blue' : 'gray'}>
+              {stateInfo.regulation === 'mandatory_form' ? 'State-mandated form' : stateInfo.regulation === 'licensed' ? 'Licensed state' : 'No state regulation'}
+            </BadgeLabel>
+          </div>
+          {stateInfo.regulation === 'unlicensed' && (
+            <p className="text-xs text-slate-400 mb-3">
+              {stateInfo.name} does not regulate home inspectors. Any standard report format is accepted — we recommend InterNACHI or ASHI SOP.
+            </p>
+          )}
+          <div className="space-y-3">
+            {recommendedTemplates.map((t, i) => (
+              <div key={t.id} className="relative">
+                {i === 0 && (
+                  <div className="absolute -left-1 top-4 z-10">
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  </div>
+                )}
+                <div className={i === 0 ? 'ml-4' : 'ml-4 opacity-70'}>
+                  <SystemTemplateCard template={t} onPreview={setPreviewTemplate} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── All Built-in Templates ── */}
+      {(!selectedState || otherSystemTemplates.length > 0) && (
+        <div className="mb-8">
+          <h2 className="text-sm font-semibold text-slate-700 mb-3">
+            {selectedState ? 'Other available templates' : 'Built-in residential templates'}
+          </h2>
+          <div className="space-y-3">
+            {(selectedState ? otherSystemTemplates : SYSTEM_TEMPLATES).map((t) => (
+              <SystemTemplateCard key={t.id} template={t} onPreview={setPreviewTemplate} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Specialty Inspections ── */}
+      <div className="mb-8">
+        <h2 className="text-sm font-semibold text-slate-700 mb-1">Specialty inspections</h2>
+        <p className="text-xs text-slate-400 mb-3">Create a custom template from a specialty preset</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {Object.keys(SPECIALTY_PRESETS).map((key) => {
+            const preset = SPECIALTY_PRESETS[key]
+            const totalItems = preset.reduce((a, r) => a + r.items.length, 0)
+            return (
+              <button
+                key={key}
+                onClick={() => startNew(key)}
+                className="text-left p-3 rounded-lg border border-slate-100 hover:border-blue-200 hover:bg-blue-50/50 transition-colors"
+              >
+                <p className="text-sm font-medium text-slate-700">{key}</p>
+                <p className="text-xs text-slate-400 mt-0.5">{preset.length} rooms · {totalItems} items</p>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ── Custom Templates Section ── */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-700">Your custom templates</h2>
+            <p className="text-xs text-slate-400">Templates you&apos;ve created for your specific needs</p>
+          </div>
+          {!showEditor && (
+            <Button onClick={() => startNew()} size="sm" className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="h-3.5 w-3.5 mr-1.5" />New
+            </Button>
+          )}
+        </div>
+
+        {/* ── Template Editor ── */}
+        {showEditor && (
+          <Card className="border-blue-100 shadow-sm mb-4">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">{editing ? 'Edit Template' : 'New Custom Template'}</CardTitle>
+                <button onClick={cancelEdit} className="text-slate-400 hover:text-slate-600">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Template Name *</Label>
+                  <Input placeholder="e.g. Commercial Building" value={name} onChange={(e) => setName(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Description (optional)</Label>
+                  <Input placeholder="e.g. For light commercial & retail" value={description} onChange={(e) => setDescription(e.target.value)} />
+                </div>
+              </div>
+
+              {/* Specialty presets */}
+              <div className="space-y-2">
+                <Label className="text-slate-500 text-xs uppercase tracking-wide">Start from a preset</Label>
+                <div className="flex flex-wrap gap-2">
+                  {Object.keys(SPECIALTY_PRESETS).map((key) => (
+                    <button
+                      key={key}
+                      onClick={() => applyPreset(key)}
+                      className="text-xs px-3 py-1.5 rounded-full border border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50 text-slate-600 transition-colors"
+                    >
+                      {key}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Add InterNACHI room */}
+              <div className="space-y-2">
+                <Label className="text-slate-500 text-xs uppercase tracking-wide">Add an InterNACHI room</Label>
+                <div className="flex flex-wrap gap-2">
+                  {DEFAULT_ROOMS.map((r) => (
+                    <button
+                      key={r.name}
+                      onClick={() => addInterNACHIRoom(r.name)}
+                      className="text-xs px-3 py-1.5 rounded-full border border-slate-100 bg-slate-50 hover:border-blue-200 hover:bg-blue-50 text-slate-500 transition-colors"
+                    >
+                      + {r.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Rooms editor */}
+              <div className="space-y-3">
+                <Label className="text-slate-500 text-xs uppercase tracking-wide">Rooms & Inspection Items</Label>
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                  <SortableContext items={editorRooms.map((r) => r._id)} strategy={verticalListSortingStrategy}>
+                    <div className="space-y-2">
+                      {editorRooms.map((room, roomIdx) => (
+                        <SortableRoom
+                          key={room._id}
+                          room={room}
+                          roomIdx={roomIdx}
+                          expandedRooms={expandedRooms}
+                          toggleRoom={toggleRoom}
+                          updateRoomName={updateRoomName}
+                          removeRoom={removeRoom}
+                          addItem={addItem}
+                          removeItem={removeItem}
+                          updateItem={updateItem}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+
+                <button onClick={addRoom} className="text-sm text-blue-500 hover:text-blue-700 flex items-center gap-1">
+                  <Plus className="h-4 w-4" /> Add room
+                </button>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button onClick={save} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
+                  {saving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving...</> : 'Save Template'}
+                </Button>
+                <Button variant="outline" onClick={cancelEdit}>Cancel</Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ── Custom Template List ── */}
+        {loading ? (
+          <div className="flex items-center justify-center py-8 text-slate-400">
+            <Loader2 className="h-5 w-5 animate-spin mr-2" />Loading...
+          </div>
+        ) : templates.length === 0 && !showEditor ? (
+          <Card className="border-dashed border-slate-200 shadow-none">
+            <CardContent className="flex flex-col items-center justify-center py-10 text-center">
+              <LayoutTemplate className="h-8 w-8 text-slate-300 mb-3" />
+              <p className="text-slate-500 text-sm font-medium">No custom templates yet</p>
+              <p className="text-slate-400 text-xs mt-1 max-w-xs">Use the specialty presets above or build your own from scratch</p>
+              <Button onClick={() => startNew()} size="sm" className="mt-4 bg-blue-600 hover:bg-blue-700">
+                <Plus className="h-3.5 w-3.5 mr-1.5" />Create template
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {templates.map((t) => (
+              <Card key={t.id} className="border-slate-100 shadow-sm hover:border-blue-100 transition-colors">
+                <CardContent className="py-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <LayoutTemplate className="h-4 w-4 text-blue-500 shrink-0" />
+                        <p className="font-medium text-slate-900 text-sm">{t.name}</p>
+                      </div>
+                      {t.description && <p className="text-xs text-slate-500 mt-0.5 ml-6">{t.description}</p>}
+                      <div className="flex flex-wrap gap-1.5 mt-2 ml-6">
+                        {t.rooms.map((r) => (
+                          <span key={r.id} className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
+                            {r.name} ({r.items.length})
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button variant="ghost" size="sm" onClick={() => startEdit(t)} className="text-slate-400 hover:text-slate-700">
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => deleteTemplate(t.id)} className="text-slate-300 hover:text-red-400">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         )}
       </div>
 
-      {/* ── Template Editor ── */}
-      {showEditor && (
-        <Card className="border-blue-100 shadow-sm mb-8">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base">{editing ? 'Edit Template' : 'New Template'}</CardTitle>
-              <button onClick={cancelEdit} className="text-slate-400 hover:text-slate-600">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Name + Description */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Template Name *</Label>
-                <Input placeholder="e.g. Commercial Building" value={name} onChange={(e) => setName(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Description (optional)</Label>
-                <Input placeholder="e.g. For light commercial & retail" value={description} onChange={(e) => setDescription(e.target.value)} />
-              </div>
-            </div>
-
-            {/* Presets */}
-            <div className="space-y-2">
-              <Label className="text-slate-500 text-xs uppercase tracking-wide">Start from a preset</Label>
-              <div className="flex flex-wrap gap-2">
-                {Object.keys(INSPECTION_TYPE_PRESETS).map((key) => (
-                  <button
-                    key={key}
-                    onClick={() => applyPreset(key)}
-                    className="text-xs px-3 py-1.5 rounded-full border border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50 text-slate-600 transition-colors"
-                  >
-                    {key}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Add InterNACHI room */}
-            <div className="space-y-2">
-              <Label className="text-slate-500 text-xs uppercase tracking-wide">Add an InterNACHI room</Label>
-              <div className="flex flex-wrap gap-2">
-                {DEFAULT_ROOMS.map((r) => (
-                  <button
-                    key={r.name}
-                    onClick={() => addInterNACHIRoom(r.name)}
-                    className="text-xs px-3 py-1.5 rounded-full border border-slate-100 bg-slate-50 hover:border-blue-200 hover:bg-blue-50 text-slate-500 transition-colors"
-                  >
-                    + {r.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Rooms editor — drag to reorder */}
-            <div className="space-y-3">
-              <Label className="text-slate-500 text-xs uppercase tracking-wide">Rooms & Inspection Items</Label>
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <SortableContext items={editorRooms.map((r) => r._id)} strategy={verticalListSortingStrategy}>
-                  <div className="space-y-2">
-                    {editorRooms.map((room, roomIdx) => (
-                      <SortableRoom
-                        key={room._id}
-                        room={room}
-                        roomIdx={roomIdx}
-                        expandedRooms={expandedRooms}
-                        toggleRoom={toggleRoom}
-                        updateRoomName={updateRoomName}
-                        removeRoom={removeRoom}
-                        addItem={addItem}
-                        removeItem={removeItem}
-                        updateItem={updateItem}
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
-              </DndContext>
-
-              <button onClick={addRoom} className="text-sm text-blue-500 hover:text-blue-700 flex items-center gap-1">
-                <Plus className="h-4 w-4" /> Add room
-              </button>
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <Button onClick={save} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
-                {saving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving…</> : 'Save Template'}
-              </Button>
-              <Button variant="outline" onClick={cancelEdit}>Cancel</Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ── Template List ── */}
-      {loading ? (
-        <div className="flex items-center justify-center py-12 text-slate-400">
-          <Loader2 className="h-5 w-5 animate-spin mr-2" />Loading templates…
-        </div>
-      ) : templates.length === 0 && !showEditor ? (
-        <Card className="border-dashed border-slate-200 shadow-none">
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <LayoutTemplate className="h-10 w-10 text-slate-300 mb-4" />
-            <p className="text-slate-500 font-medium">No custom templates yet</p>
-            <p className="text-slate-400 text-sm mt-1 max-w-xs">Create a template for commercial, pool, radon, or any specialty inspection type</p>
-            <Button onClick={startNew} className="mt-6 bg-blue-600 hover:bg-blue-700">
-              <Plus className="h-4 w-4 mr-2" />Create your first template
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {templates.map((t) => (
-            <Card key={t.id} className="border-slate-100 shadow-sm hover:border-blue-100 transition-colors">
-              <CardContent className="py-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <LayoutTemplate className="h-4 w-4 text-blue-500 shrink-0" />
-                      <p className="font-medium text-slate-900">{t.name}</p>
-                    </div>
-                    {t.description && <p className="text-sm text-slate-500 mt-0.5 ml-6">{t.description}</p>}
-                    <div className="flex flex-wrap gap-1.5 mt-2 ml-6">
-                      {t.rooms.map((r) => (
-                        <span key={r.id} className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
-                          {r.name} ({r.items.length})
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Button variant="ghost" size="sm" onClick={() => startEdit(t)} className="text-slate-400 hover:text-slate-700">
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => deleteTemplate(t.id)} className="text-slate-300 hover:text-red-400">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+      {/* ── Preview Modal ── */}
+      {previewTemplate && (
+        <PreviewModal template={previewTemplate} onClose={() => setPreviewTemplate(null)} />
       )}
     </div>
   )

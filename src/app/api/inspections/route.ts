@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { db, inspections, rooms, inspectionItems, customTemplates, templateRooms, templateItems } from '@/lib/db'
 import { eq, and } from 'drizzle-orm'
-import { DEFAULT_ROOMS } from '@/lib/inspection-templates'
+import { DEFAULT_ROOMS, SYSTEM_TEMPLATES } from '@/lib/inspection-templates'
 import { getProfile, hasActiveAccess } from '@/lib/auth'
 
 export async function GET(request: Request) {
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
   const canAccess = await hasActiveAccess()
   if (!canAccess) return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
 
-  const { address, clientName, clientEmail, date, selectedRooms, isnOrderId, customTemplateId, buyerAgentName, buyerAgentEmail, buyerAgentPhone, listingAgentName, listingAgentEmail, listingAgentPhone, inspectorName } = await request.json()
+  const { address, clientName, clientEmail, date, selectedRooms, isnOrderId, customTemplateId, systemTemplateId, buyerAgentName, buyerAgentEmail, buyerAgentPhone, listingAgentName, listingAgentEmail, listingAgentPhone, inspectorName } = await request.json()
 
   // Validate required fields
   if (!address || typeof address !== 'string' || !address.trim()) {
@@ -103,9 +103,28 @@ export async function POST(request: Request) {
 
     const flat = allItems.flat()
     if (flat.length > 0) await db.insert(inspectionItems).values(flat)
+  } else if (systemTemplateId && systemTemplateId !== 'internachi') {
+    // Use a built-in system template (TREC 7-6, etc.)
+    const systemTemplate = SYSTEM_TEMPLATES.find((st) => st.id === systemTemplateId)
+    if (!systemTemplate) return NextResponse.json({ error: 'System template not found' }, { status: 404 })
+
+    const roomRows = await db.insert(rooms).values(
+      systemTemplate.rooms.map((r, idx) => ({ inspectionId: inspection.id, name: r.name, orderIndex: idx }))
+    ).returning()
+
+    const allItems = roomRows.flatMap((roomRow, idx) => {
+      const templateRoom = systemTemplate.rooms[idx]
+      return templateRoom.items.map((itemName, iIdx) => ({
+        roomId: roomRow.id, name: itemName, condition: 'good', orderIndex: iIdx,
+      }))
+    })
+
+    if (allItems.length > 0) await db.insert(inspectionItems).values(allItems)
   } else {
-    // Use InterNACHI default rooms
-    const templates = DEFAULT_ROOMS.filter((r) => selectedRooms.includes(r.name))
+    // Use InterNACHI default rooms (systemTemplateId === 'internachi' or no template specified)
+    const roomFilter = Array.isArray(selectedRooms) ? selectedRooms : DEFAULT_ROOMS.map((r) => r.name)
+    const templates = DEFAULT_ROOMS.filter((r) => roomFilter.includes(r.name))
+    if (templates.length === 0) return NextResponse.json({ error: 'At least one room is required' }, { status: 400 })
     const roomRows = await db.insert(rooms).values(
       templates.map((r, idx) => ({ inspectionId: inspection.id, name: r.name, orderIndex: idx }))
     ).returning()
