@@ -130,8 +130,14 @@ export default function NewInspectionPage() {
     setSelectedRooms((prev) => prev.includes(name) ? prev.filter((r) => r !== name) : [...prev, name])
   }
 
-  async function handleCreate() {
+  const [showConfirm, setShowConfirm] = useState(false)
+
+  function handleCreateClick() {
     if (!address || !clientName || !date) { toast.error('Please fill in all required fields'); return }
+    setShowConfirm(true)
+  }
+
+  async function handleCreate() {
     setLoading(true)
 
     const res = await fetch('/api/inspections', {
@@ -145,6 +151,11 @@ export default function NewInspectionPage() {
     toast.success('Inspection created!')
     router.push(`/dashboard/inspections/${id}`)
   }
+
+  // Resolve template name for confirmation display
+  const selectedTemplateName = templateMode === 'custom'
+    ? customTemplates.find((t) => t.id === selectedTemplateId)?.name ?? 'Custom template'
+    : SYSTEM_TEMPLATES.find((t) => t.id === selectedSystemTemplate)?.name ?? 'InterNACHI Standard'
 
   return (
     <div className="max-w-2xl">
@@ -431,9 +442,31 @@ export default function NewInspectionPage() {
           )
         })()}
 
-        <Button onClick={handleCreate} disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700" size="lg">
-          {loading ? 'Creating...' : 'Create Inspection'}
-        </Button>
+        {!showConfirm ? (
+          <Button onClick={handleCreateClick} className="w-full bg-blue-600 hover:bg-blue-700" size="lg">
+            Review & Create
+          </Button>
+        ) : (
+          <Card className="border-blue-200 bg-blue-50/50 shadow-sm">
+            <CardContent className="py-4 space-y-3">
+              <p className="text-sm font-medium text-slate-700">Confirm your inspection:</p>
+              <div className="text-sm text-slate-600 space-y-1">
+                <p><span className="text-slate-400">Property:</span> {address}</p>
+                <p><span className="text-slate-400">Client:</span> {clientName}</p>
+                <p><span className="text-slate-400">Date:</span> {date}</p>
+                <p><span className="text-slate-400">Template:</span> {selectedTemplateName}</p>
+              </div>
+              <div className="flex gap-3">
+                <Button onClick={handleCreate} disabled={loading} className="flex-1 bg-blue-600 hover:bg-blue-700">
+                  {loading ? 'Creating...' : 'Create Inspection'}
+                </Button>
+                <Button variant="outline" onClick={() => setShowConfirm(false)} disabled={loading} className="shrink-0">
+                  Edit
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   )
