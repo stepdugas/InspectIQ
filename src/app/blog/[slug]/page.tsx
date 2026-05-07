@@ -5,6 +5,25 @@ import { MDXRemote } from 'next-mdx-remote/rsc'
 import { Building2, ArrowLeft } from 'lucide-react'
 import { getAllPosts, getPostBySlug } from '@/lib/blog'
 
+// Topic-aware accent colors for hero banners
+const TOPIC_THEMES: Record<string, { accent: string; gradient: string; icon: string }> = {
+  'ai': { accent: 'from-violet-600', gradient: 'to-indigo-900', icon: '🤖' },
+  'template': { accent: 'from-cyan-600', gradient: 'to-slate-900', icon: '📋' },
+  'deck': { accent: 'from-lime-600', gradient: 'to-slate-900', icon: '🏗️' },
+  'termite': { accent: 'from-amber-600', gradient: 'to-slate-900', icon: '🔍' },
+  'internachi': { accent: 'from-blue-600', gradient: 'to-slate-900', icon: '🛡️' },
+  'software': { accent: 'from-sky-600', gradient: 'to-slate-900', icon: '💻' },
+  'write': { accent: 'from-indigo-600', gradient: 'to-slate-900', icon: '✍️' },
+}
+
+function getTheme(title: string) {
+  const lower = title.toLowerCase()
+  for (const [key, theme] of Object.entries(TOPIC_THEMES)) {
+    if (lower.includes(key)) return theme
+  }
+  return { accent: 'from-blue-600', gradient: 'to-slate-900', icon: '📄' }
+}
+
 // Pre-render every blog post at build time
 export async function generateStaticParams() {
   return getAllPosts().map((post) => ({ slug: post.meta.slug }))
@@ -129,18 +148,51 @@ export default async function BlogPostPage({
         </div>
       </nav>
 
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-12">
-        {/* Back link */}
-        <Link
-          href="/blog"
-          className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-blue-600 transition-colors mb-8"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Back to blog
-        </Link>
+      {/* Hero banner */}
+      {(() => {
+        const theme = getTheme(post.meta.title)
+        const displayTitle = post.meta.title.replace(/\s*\|.*$/, '')
+        return (
+          <div className={`bg-gradient-to-br ${theme.accent} ${theme.gradient} py-16 px-6`}>
+            <div className="max-w-3xl mx-auto">
+              <Link
+                href="/blog"
+                className="inline-flex items-center gap-1.5 text-sm text-white/60 hover:text-white transition-colors mb-6"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Back to blog
+              </Link>
+              <div className="text-4xl mb-4">{theme.icon}</div>
+              <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-4">
+                {displayTitle}
+              </h1>
+              <div className="flex items-center gap-4 text-sm text-white/60">
+                <time>
+                  {new Date(post.meta.publishedAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </time>
+                {post.meta.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {post.meta.tags.slice(0, 3).map((tag) => (
+                      <span key={tag} className="bg-white/10 text-white/80 px-2.5 py-0.5 rounded-full text-xs">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
-        {/* Post header */}
-        <header className="mb-10">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-12">
+
+        {/* Post header — title is now in the hero banner above */}
+        <header className="mb-10 sr-only">
           <time className="text-sm text-slate-400">
             {new Date(post.meta.publishedAt).toLocaleDateString('en-US', {
               year: 'numeric',
