@@ -111,21 +111,27 @@ export const customTemplates = pgTable('custom_templates', {
   description: text('description'),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
-})
+}, (table) => [
+  index('custom_templates_user_id_idx').on(table.userId),
+])
 
 export const templateRooms = pgTable('template_rooms', {
   id: uuid('id').primaryKey().defaultRandom(),
   templateId: uuid('template_id').notNull().references(() => customTemplates.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   orderIndex: integer('order_index').notNull().default(0),
-})
+}, (table) => [
+  index('template_rooms_template_id_idx').on(table.templateId),
+])
 
 export const templateItems = pgTable('template_items', {
   id: uuid('id').primaryKey().defaultRandom(),
   roomId: uuid('room_id').notNull().references(() => templateRooms.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   orderIndex: integer('order_index').notNull().default(0),
-})
+}, (table) => [
+  index('template_items_room_id_idx').on(table.roomId),
+])
 
 export const repairRequests = pgTable('repair_requests', {
   id: uuid('id').primaryKey().defaultRandom(),

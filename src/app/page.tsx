@@ -3,7 +3,7 @@ import AnimatedLanding from '@/components/landing/AnimatedLanding'
 
 export const metadata: Metadata = {
   title: 'InspectIQ — Home Inspection Software That Writes Reports For You',
-  description: 'InspectIQ writes home inspection reports using AI. Spectora & HomeGauge alternative with photo annotation, payments, repair lists, and branded PDFs. 14-day free trial.',
+  description: 'InspectIQ writes home inspection reports using AI. Spectora & HomeGauge alternative with photo annotation, payments, repair lists, and branded PDFs.',
   openGraph: {
     title: 'InspectIQ — Home Inspection Software That Writes Reports For You',
     description: 'AI writes your room narratives. A Spectora and HomeGauge alternative with photo annotation, payments, scheduling, and branded PDF reports. 14-day free trial.',

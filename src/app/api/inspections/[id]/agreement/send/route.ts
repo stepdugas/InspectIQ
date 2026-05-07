@@ -24,7 +24,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
   // Generate a unique token for the agreement signing link
   const agreementToken = crypto.randomBytes(32).toString('hex')
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.useinspectiq.com'
   const agreementUrl = `${baseUrl}/agreement/${agreementToken}`
 
   // Save token and sent timestamp
