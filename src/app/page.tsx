@@ -3,10 +3,10 @@ import AnimatedLanding from '@/components/landing/AnimatedLanding'
 
 export const metadata: Metadata = {
   title: 'InspectIQ — Home Inspection Software That Writes Reports For You',
-  description: 'InspectIQ writes home inspection reports using AI. Spectora & HomeGauge alternative with photo annotation, payments, repair lists, and branded PDFs.',
+  description: 'InspectIQ writes home inspection reports using AI. Photo annotation, payments, repair lists, branded PDFs, and built-in TREC 7-6 + InterNACHI templates.',
   openGraph: {
     title: 'InspectIQ — Home Inspection Software That Writes Reports For You',
-    description: 'AI writes your room narratives. A Spectora and HomeGauge alternative with photo annotation, payments, scheduling, and branded PDF reports. 14-day free trial.',
+    description: 'AI writes your room narratives. Photo annotation, payments, scheduling, TREC 7-6 + InterNACHI templates, and branded PDF reports. 14-day free trial.',
     url: 'https://www.useinspectiq.com',
   },
   twitter: {
@@ -27,7 +27,7 @@ const jsonLd = {
       url: 'https://www.useinspectiq.com',
       applicationCategory: 'BusinessApplication',
       operatingSystem: 'iOS, Android, Web',
-      description: 'Home inspection software that writes report narratives using AI. A modern alternative to Spectora, HomeGauge, and Palm-Tech. Features include photo annotation, client payment collection, scheduling, custom templates, and branded PDF reports. InterNACHI standards pre-loaded.',
+      description: 'Home inspection software that writes report narratives using AI. Features include photo annotation, client payment collection, scheduling, TREC 7-6 and InterNACHI templates, and branded PDF reports.',
       offers: {
         '@type': 'Offer',
         price: '99.00',
@@ -73,10 +73,10 @@ const jsonLd = {
         },
         {
           '@type': 'Question',
-          name: 'Is InspectIQ a Spectora alternative?',
+          name: 'Does InspectIQ support state-specific inspection forms?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Yes. InspectIQ is a direct Spectora alternative built for licensed home inspectors. It includes AI-generated report narratives, photo annotation, client payment collection, scheduling, and custom templates — at $99/month vs Spectora\'s higher pricing. InspectIQ also installs directly to your phone\'s home screen without going through the App Store.',
+            text: 'Yes. InspectIQ includes built-in templates for TREC REI 7-6 (mandatory in Texas), ASHI Standard of Practice, InterNACHI Standards of Practice, and state-compliant templates for licensed states like NC, WI, IL, NY, MA, and NJ. You can also create custom templates for commercial, pool, radon, and specialty inspections.',
           },
         },
         {

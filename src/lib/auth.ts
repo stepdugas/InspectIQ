@@ -63,10 +63,20 @@ export async function getUserId() {
   return userId
 }
 
+// Comma-separated list of emails that bypass the paywall (owner/founders)
+const OWNER_EMAILS = (process.env.OWNER_EMAILS ?? process.env.ADMIN_EMAIL ?? '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean)
+
+export function isOwnerEmail(email: string): boolean {
+  return OWNER_EMAILS.includes(email.toLowerCase())
+}
+
 // Returns true if the user has an active subscription or valid trial
 export async function hasActiveAccess(): Promise<boolean> {
   const profile = await getProfile()
   if (!profile) return false
+
+  // Owner/founder bypass — always has access
+  if (isOwnerEmail(profile.email)) return true
 
   if (profile.subscriptionStatus === 'active') return true
 

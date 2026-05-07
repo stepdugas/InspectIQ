@@ -59,7 +59,7 @@ const pricingFeatures = [
 
 function FadeInWhenVisible({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
   const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, margin: '-80px' })
+  const isInView = useInView(ref, { once: true, margin: '-20px' })
   return (
     <motion.div
       ref={ref}
@@ -345,43 +345,35 @@ export default function AnimatedLanding() {
         </div>
 
         <div className="relative max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
-          >
+          <div>
             <Badge variant="secondary" className="mb-6 text-blue-300 bg-blue-950 border-blue-800">
               PWA · Photo Annotation · Client Payments · Scheduling · Custom Templates · Repair Lists
             </Badge>
-          </motion.div>
+          </div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1 }}
+          <h1
             className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.1] mb-6"
           >
             Home inspection software<br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">
               that writes reports for you.
             </span>
-          </motion.h1>
+          </h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.25 }}
-            className="text-xl text-slate-300 max-w-2xl mx-auto mb-10"
+          <p
+            className="text-xl text-slate-300 max-w-2xl mx-auto mb-4"
           >
             Enter your findings room by room. AI writes the professional narrative. Collect client payments, annotate photos, and deliver the report — all from one app on your phone.
-          </motion.p>
+          </p>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center"
-          >
+          <div className="flex flex-wrap items-center justify-center gap-2 mb-10">
+            <span className="text-xs px-2.5 py-1 rounded-full bg-white/10 text-slate-300 border border-white/10">TREC 7-6 (Texas)</span>
+            <span className="text-xs px-2.5 py-1 rounded-full bg-white/10 text-slate-300 border border-white/10">InterNACHI</span>
+            <span className="text-xs px-2.5 py-1 rounded-full bg-white/10 text-slate-300 border border-white/10">ASHI</span>
+            <Link href="/dashboard/templates" className="text-xs text-blue-400 hover:text-blue-300 ml-1">See all templates →</Link>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/auth/signup" className="w-full sm:w-auto">
               <Button size="lg" className="w-full sm:w-auto bg-blue-500 hover:bg-blue-400 active:bg-blue-600 text-base px-8 shadow-lg shadow-blue-900/30 transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-blue-900/40">
                 Start your free 14-day trial
@@ -393,15 +385,12 @@ export default function AnimatedLanding() {
                 See how it works
               </Button>
             </Link>
-          </motion.div>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.7 }}
+          </div>
+          <p
             className="text-sm text-slate-500 mt-4"
           >
             14-day free trial. Cancel anytime. No charge until day 15.
-          </motion.p>
+          </p>
 
           {/* Dashboard mockup */}
           <motion.div
@@ -417,20 +406,18 @@ export default function AnimatedLanding() {
 
       {/* ── Social proof bar ── */}
       <section className="border-y border-slate-100 bg-slate-50 py-5">
-        <FadeInWhenVisible>
-          <div className="max-w-4xl mx-auto px-6 flex flex-col md:flex-row items-center justify-center gap-8 text-sm text-slate-500">
-            {[
-              'Installs to your phone — works in low-signal areas',
-              'Photo annotation, payments & scheduling built in',
-              'Repair lists — agents select defects & submit requests',
-            ].map((text) => (
-              <div key={text} className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-                <span>{text}</span>
-              </div>
-            ))}
-          </div>
-        </FadeInWhenVisible>
+        <div className="max-w-4xl mx-auto px-6 flex flex-col md:flex-row items-center justify-center gap-8 text-sm text-slate-500">
+          {[
+            'Installs to your phone — works in low-signal areas',
+            'Photo annotation, payments & scheduling built in',
+            'Repair lists — agents select defects & submit requests',
+          ].map((text) => (
+            <div key={text} className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+              <span>{text}</span>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* ── House Journey (scroll animation) ── */}
@@ -438,17 +425,15 @@ export default function AnimatedLanding() {
 
       {/* ── Features ── */}
       <section id="features" className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
-        <FadeInWhenVisible>
-          <div className="text-center mb-16">
-            <Badge variant="secondary" className="mb-4 text-blue-700 bg-blue-50 border-blue-100">What&apos;s new in 2026</Badge>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-              Everything a professional inspector needs
-            </h2>
-            <p className="text-lg text-slate-500 max-w-xl mx-auto">
-              Built specifically for home inspectors — not a generic tool adapted to fit. Now matching every feature Spectora offers, and then some.
-            </p>
-          </div>
-        </FadeInWhenVisible>
+        <div className="text-center mb-16">
+          <Badge variant="secondary" className="mb-4 text-blue-700 bg-blue-50 border-blue-100">What&apos;s new in 2026</Badge>
+          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+            Everything a professional inspector needs
+          </h2>
+          <p className="text-lg text-slate-500 max-w-xl mx-auto">
+            Built specifically for home inspectors — not a generic tool adapted to fit. Built to match anything else on the market, and then some.
+          </p>
+        </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((f, i) => (
             <FadeInWhenVisible key={f.title} delay={i * 0.07}>
@@ -474,12 +459,10 @@ export default function AnimatedLanding() {
       {/* ── Feature UI Mockups ── */}
       <section className="bg-white py-16 sm:py-24">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <FadeInWhenVisible>
-            <div className="text-center mb-14">
-              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">See it in action</h2>
-              <p className="text-slate-500 text-lg max-w-xl mx-auto">Here&apos;s what your workflow looks like inside InspectIQ.</p>
-            </div>
-          </FadeInWhenVisible>
+          <div className="text-center mb-14">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">See it in action</h2>
+            <p className="text-slate-500 text-lg max-w-xl mx-auto">Here&apos;s what your workflow looks like inside InspectIQ.</p>
+          </div>
           <div className="grid md:grid-cols-3 gap-6">
             {/* Mockup 1 — AI narrative */}
             <FadeInWhenVisible delay={0}>
@@ -527,7 +510,7 @@ export default function AnimatedLanding() {
                       </div>
                     </div>
                     <div className="flex gap-2 flex-wrap">
-                      {['Arrow', 'Box', 'Circle', 'Text'].map(t => (
+                      {['Draw arrows', 'Add boxes', 'Circle defects', 'Add text labels'].map(t => (
                         <span key={t} className="text-xs bg-white border border-slate-200 text-slate-600 px-2 py-1 rounded">{t}</span>
                       ))}
                     </div>
@@ -569,12 +552,10 @@ export default function AnimatedLanding() {
       {/* ── Competitor Comparison ── */}
       <section className="bg-slate-50 py-16 sm:py-24">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <FadeInWhenVisible>
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">How InspectIQ stacks up</h2>
-              <p className="text-slate-500 text-lg">Every feature included. No per-report fees. No add-ons.</p>
-            </div>
-          </FadeInWhenVisible>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">How InspectIQ stacks up</h2>
+            <p className="text-slate-500 text-lg">Every feature included. No per-report fees. No add-ons.</p>
+          </div>
           <FadeInWhenVisible delay={0.1}>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -589,54 +570,40 @@ export default function AnimatedLanding() {
                     </th>
                     <th className="py-3 px-3 text-center text-slate-400 font-medium">
                       <div className="flex flex-col items-center">
-                        <span>Spectora</span>
-                        <span className="text-xs">$89+/mo</span>
-                      </div>
-                    </th>
-                    <th className="py-3 px-3 text-center text-slate-400 font-medium">
-                      <div className="flex flex-col items-center">
-                        <span>HomeGauge</span>
-                        <span className="text-xs">$69+/mo</span>
-                      </div>
-                    </th>
-                    <th className="py-3 px-3 text-center text-slate-400 font-medium">
-                      <div className="flex flex-col items-center">
-                        <span>Palm-Tech</span>
-                        <span className="text-xs">$149+/yr</span>
+                        <span>Other Tools</span>
+                        <span className="text-xs">$69–149+/mo</span>
                       </div>
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {[
-                    { feature: 'AI-written narratives', us: true, spectora: true, homegauge: false, palmtech: false },
-                    { feature: 'Installs to home screen (PWA)', us: true, spectora: true, homegauge: false, palmtech: true },
-                    { feature: 'Photo annotation (arrows, boxes)', us: true, spectora: true, homegauge: true, palmtech: false },
-                    { feature: 'Collect client payments in-app', us: true, spectora: true, homegauge: true, palmtech: false },
-                    { feature: 'Built-in scheduling calendar', us: true, spectora: true, homegauge: true, palmtech: false },
-                    { feature: 'Custom inspection templates', us: true, spectora: true, homegauge: true, palmtech: true },
-                    { feature: 'InterNACHI standards pre-loaded', us: true, spectora: true, homegauge: true, palmtech: true },
-                    { feature: 'Branded PDF reports', us: true, spectora: true, homegauge: true, palmtech: true },
-                    { feature: 'ISN integration', us: true, spectora: true, homegauge: true, palmtech: false },
-                    { feature: 'No per-report fees', us: true, spectora: true, homegauge: false, palmtech: true },
-                    { feature: 'Client repair list (CRL)', us: true, spectora: true, homegauge: false, palmtech: false },
-                    { feature: 'Founding member price lock', us: true, spectora: false, homegauge: false, palmtech: false },
+                    { feature: 'AI-written narratives', us: true, others: 'some' },
+                    { feature: 'Installs to home screen (PWA)', us: true, others: 'some' },
+                    { feature: 'Photo annotation (arrows, boxes)', us: true, others: 'some' },
+                    { feature: 'Collect client payments in-app', us: true, others: 'some' },
+                    { feature: 'Built-in scheduling calendar', us: true, others: 'some' },
+                    { feature: 'Custom inspection templates', us: true, others: true },
+                    { feature: 'InterNACHI standards pre-loaded', us: true, others: true },
+                    { feature: 'Branded PDF reports', us: true, others: true },
+                    { feature: 'ISN integration', us: true, others: 'some' },
+                    { feature: 'No per-report fees', us: true, others: 'some' },
+                    { feature: 'Client repair list (CRL)', us: true, others: 'some' },
+                    { feature: 'Founding member price lock', us: true, others: false },
                   ].map(row => (
                     <tr key={row.feature} className="hover:bg-white transition-colors">
                       <td className="py-3 pr-4 text-slate-700">{row.feature}</td>
-                      {[
-                        { val: row.us, highlight: true },
-                        { val: row.spectora, highlight: false },
-                        { val: row.homegauge, highlight: false },
-                        { val: row.palmtech, highlight: false },
-                      ].map((cell, i) => (
-                        <td key={i} className="py-3 px-3 text-center">
-                          {cell.val
-                            ? <span className={`text-lg ${cell.highlight ? 'text-blue-600' : 'text-green-500'}`}>✓</span>
+                      <td className="py-3 px-3 text-center">
+                        <span className="text-lg text-blue-600">✓</span>
+                      </td>
+                      <td className="py-3 px-3 text-center">
+                        {row.others === true
+                          ? <span className="text-lg text-green-500">✓</span>
+                          : row.others === 'some'
+                            ? <span className="text-xs text-slate-400 font-medium">Varies</span>
                             : <span className="text-slate-300 text-lg">✗</span>
-                          }
-                        </td>
-                      ))}
+                        }
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -722,29 +689,27 @@ export default function AnimatedLanding() {
 
       {/* ── Pricing ── */}
       <section id="pricing" className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
-        <FadeInWhenVisible>
-          <div className="text-center mb-10">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Simple, transparent pricing</h2>
-            <p className="text-lg text-slate-500">One plan. Everything included. Cancel anytime.</p>
+        <div className="text-center mb-10">
+          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Simple, transparent pricing</h2>
+          <p className="text-lg text-slate-500">One plan. Everything included. Cancel anytime.</p>
 
-            {/* Billing toggle */}
-            <div className="inline-flex items-center gap-3 mt-8 bg-slate-100 rounded-full p-1">
-              <button
-                onClick={() => setBillingAnnual(false)}
-                className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${!billingAnnual ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
-              >
-                Monthly
-              </button>
-              <button
-                onClick={() => setBillingAnnual(true)}
-                className={`px-5 py-2 rounded-full text-sm font-semibold transition-all flex items-center gap-2 ${billingAnnual ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
-              >
-                Annual
-                <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-semibold">Save $240</span>
-              </button>
-            </div>
+          {/* Billing toggle */}
+          <div className="inline-flex items-center gap-3 mt-8 bg-slate-100 rounded-full p-1">
+            <button
+              onClick={() => setBillingAnnual(false)}
+              className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${!billingAnnual ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBillingAnnual(true)}
+              className={`px-5 py-2 rounded-full text-sm font-semibold transition-all flex items-center gap-2 ${billingAnnual ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              Annual
+              <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-semibold">Save $240</span>
+            </button>
           </div>
-        </FadeInWhenVisible>
+        </div>
         <FadeInWhenVisible delay={0.1}>
           <div className="max-w-md mx-auto">
             <Card className="border-2 border-blue-600 shadow-2xl shadow-blue-100">
@@ -789,22 +754,20 @@ export default function AnimatedLanding() {
 
       {/* ── Final CTA ── */}
       <section className="bg-gradient-to-r from-blue-600 to-blue-700 py-20">
-        <FadeInWhenVisible>
-          <div className="max-w-3xl mx-auto px-6 text-center">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              The inspection app that works where you work.
-            </h2>
-            <p className="text-blue-100 text-lg mb-8">
-              Annotate photos. Collect payments directly. Schedule jobs. Create repair lists. Draw your signature. Installs to your phone. All in one — starting at $99/month.
-            </p>
-            <Link href="/auth/signup">
-              <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50 hover:scale-105 active:scale-95 transition-all duration-200 text-base px-8 shadow-lg">
-                Start your free 14-day trial
-                <ChevronRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
-        </FadeInWhenVisible>
+        <div className="max-w-3xl mx-auto px-6 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            The inspection app that works where you work.
+          </h2>
+          <p className="text-blue-100 text-lg mb-8">
+            Annotate photos. Collect payments directly. Schedule jobs. Create repair lists. Draw your signature. Installs to your phone. All in one — starting at $99/month.
+          </p>
+          <Link href="/auth/signup">
+            <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50 hover:scale-105 active:scale-95 transition-all duration-200 text-base px-8 shadow-lg">
+              Start your free 14-day trial
+              <ChevronRight className="ml-2 h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
       </section>
 
       {/* ── Footer ── */}

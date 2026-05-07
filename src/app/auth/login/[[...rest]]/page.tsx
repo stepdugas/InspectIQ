@@ -64,7 +64,25 @@ export default function LoginPage() {
             <p className="text-slate-500 text-sm mt-1">Good to have you back.</p>
           </div>
 
-          <SignIn forceRedirectUrl="/dashboard" />
+          {/* Clerk widget with loading skeleton behind it */}
+          <div className="relative min-h-[320px]">
+            {/* Skeleton — visible until Clerk renders on top */}
+            <div className="absolute inset-0 space-y-4 animate-pulse" aria-hidden="true">
+              <div className="h-10 bg-slate-200 rounded-lg w-full" />
+              <div className="h-10 bg-slate-200 rounded-lg w-full" />
+              <div className="h-10 bg-blue-200 rounded-lg w-full mt-2" />
+              <div className="flex items-center justify-center gap-3 mt-4">
+                <div className="h-px bg-slate-200 flex-1" />
+                <div className="h-4 bg-slate-200 rounded w-6" />
+                <div className="h-px bg-slate-200 flex-1" />
+              </div>
+              <div className="h-10 bg-slate-100 rounded-lg w-full border border-slate-200" />
+            </div>
+            {/* Actual Clerk component renders over the skeleton */}
+            <div className="relative z-10">
+              <SignIn forceRedirectUrl="/dashboard" />
+            </div>
+          </div>
 
           <p className="text-center text-xs text-slate-400 mt-6">
             Don&apos;t have an account?{' '}

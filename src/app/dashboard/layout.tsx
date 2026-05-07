@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
-import { getProfile } from '@/lib/auth'
+import { getProfile, isOwnerEmail } from '@/lib/auth'
 import DashboardNav from '@/components/layout/DashboardNav'
 import OfflineBanner from '@/components/layout/OfflineBanner'
 import OnboardingModal from '@/components/layout/OnboardingModal'
@@ -21,8 +21,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const profile = await getProfile()
   const isAdmin = !!profile && profile.email === ADMIN_EMAIL
+  const isOwner = !!profile && isOwnerEmail(profile.email)
   const trialStillValid = profile?.subscriptionStatus === 'trialing' && profile?.trialEndsAt && new Date(profile.trialEndsAt) > new Date()
-  const isActive = profile?.subscriptionStatus === 'active' || trialStillValid
+  const isActive = isOwner || profile?.subscriptionStatus === 'active' || trialStillValid
   const headersList = await headers()
   const pathname = headersList.get('x-pathname') ?? ''
   const isSettingsPage = pathname.includes('/settings')
