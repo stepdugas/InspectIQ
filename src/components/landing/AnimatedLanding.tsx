@@ -350,7 +350,7 @@ export default function AnimatedLanding() {
             <span className="text-xs px-2.5 py-1 rounded-full bg-white/10 text-slate-300 border border-white/10">TREC 7-6 (Texas)</span>
             <span className="text-xs px-2.5 py-1 rounded-full bg-white/10 text-slate-300 border border-white/10">InterNACHI</span>
             <span className="text-xs px-2.5 py-1 rounded-full bg-white/10 text-slate-300 border border-white/10">ASHI</span>
-            <Link href="/dashboard/templates" className="text-xs text-blue-400 hover:text-blue-300 ml-1">See all templates →</Link>
+            <Link href="/auth/signup" className="text-xs text-blue-400 hover:text-blue-300 ml-1">Start free trial →</Link>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -606,7 +606,7 @@ export default function AnimatedLanding() {
               Be one of our first 50 inspectors.<br />Lock in your rate forever.
             </h2>
             <p className="text-blue-100 text-lg mb-4 max-w-xl mx-auto leading-relaxed">
-              We&apos;re early and growing. Founding members get $99/month locked in — even when pricing goes up. Plus direct access to the founder to request features.
+              We&apos;re early and growing. Founding members lock in $99/month forever — regular price goes to $149/month after the first 50 spots fill. Plus direct access to the founder to request features.
             </p>
             <div className="inline-flex items-center gap-2 bg-amber-400/20 border border-amber-300/30 rounded-lg px-4 py-2 mb-4">
               <span className="text-amber-200 text-sm font-semibold">⏰ Offer closes May 31, 2026</span>

@@ -76,7 +76,10 @@ export async function hasActiveAccess(): Promise<boolean> {
   if (!profile) return false
 
   // Owner/founder bypass — always has access
-  if (isOwnerEmail(profile.email)) return true
+  if (isOwnerEmail(profile.email)) {
+    console.log('[InspectIQ] Owner bypass granted for:', profile.email)
+    return true
+  }
 
   if (profile.subscriptionStatus === 'active') return true
 
