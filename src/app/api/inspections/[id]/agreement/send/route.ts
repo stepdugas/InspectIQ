@@ -22,6 +22,14 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ error: 'Inspection has no client email' }, { status: 400 })
   }
 
+  // Prevent re-sending within 5 minutes
+  if (inspection.agreementSentAt) {
+    const msSinceSent = Date.now() - new Date(inspection.agreementSentAt).getTime()
+    if (msSinceSent < 5 * 60 * 1000) {
+      return NextResponse.json({ error: 'Agreement was already sent recently. Please wait a few minutes.' }, { status: 429 })
+    }
+  }
+
   // Generate a unique token for the agreement signing link
   const agreementToken = crypto.randomBytes(32).toString('hex')
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.useinspectiq.com'

@@ -74,48 +74,45 @@ export async function POST(_req: Request, { params }: { params: Promise<{ token:
     notes: overallNotes ?? null,
   }).where(eq(repairRequests.id, repairRequest.id))
 
-  // Send email notification to the inspector
-  const [inspection] = await db.select().from(inspections)
-    .where(eq(inspections.id, report.inspectionId)).limit(1)
+  // Send email notification to the inspector (non-blocking)
+  const notifyInspector = async () => {
+    const [inspection] = await db.select().from(inspections)
+      .where(eq(inspections.id, report.inspectionId)).limit(1)
+    if (!inspection) return
 
-  if (inspection) {
     const [profile] = await db.select().from(profiles)
       .where(eq(profiles.id, inspection.userId)).limit(1)
+    if (!profile?.email) return
 
-    if (profile?.email) {
-      try {
-        const resend = new Resend(process.env.RESEND_API_KEY ?? 'placeholder')
-        await resend.emails.send({
-          from: 'Stephanie at InspectIQ <stepdugas@gmail.com>',
-          to: profile.email,
-          subject: `Repair Request — ${inspection.propertyAddress}`,
-          html: `
-            <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1e293b">
-              <div style="background:#0f172a;padding:32px;border-radius:12px 12px 0 0">
-                <h1 style="color:#60a5fa;font-size:20px;margin:0">Repair Request Received</h1>
-              </div>
-              <div style="background:#ffffff;padding:32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px">
-                <h2 style="font-size:20px;margin:0 0 8px">${escapeHtml(inspection.propertyAddress)}</h2>
-                <p style="color:#475569;line-height:1.6">
-                  <strong>${submitter?.name ? escapeHtml(submitter.name) : 'An agent'}</strong>${submitter?.role ? ` (${escapeHtml(submitter.role)})` : ''} has submitted a repair request with <strong>${selectedItems.length} item${selectedItems.length !== 1 ? 's' : ''}</strong>.
-                </p>
-                ${overallNotes ? `<p style="color:#475569;line-height:1.6"><strong>Overall Notes:</strong><br/>${escapeHtml(overallNotes)}</p>` : ''}
-                ${submitter?.email ? `<p style="color:#475569;line-height:1.6">Contact: ${escapeHtml(submitter.email)}</p>` : ''}
-                <a href="${process.env.NEXT_PUBLIC_APP_URL}/report/${token}" style="display:inline-block;background:#2563eb;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;margin-top:8px">
-                  View Report
-                </a>
-                <p style="color:#94a3b8;font-size:12px;margin-top:24px;border-top:1px solid #e2e8f0;padding-top:16px">
-                  Sent via InspectIQ · useinspectiq.com
-                </p>
-              </div>
-            </div>
-          `,
-        })
-      } catch (e) {
-        console.error('Failed to send repair request email:', e)
-      }
-    }
+    const resend = new Resend(process.env.RESEND_API_KEY ?? 'placeholder')
+    await resend.emails.send({
+      from: 'Stephanie at InspectIQ <stephanie@useinspectiq.com>',
+      to: profile.email,
+      subject: `Repair Request — ${inspection.propertyAddress}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1e293b">
+          <div style="background:#0f172a;padding:32px;border-radius:12px 12px 0 0">
+            <h1 style="color:#60a5fa;font-size:20px;margin:0">Repair Request Received</h1>
+          </div>
+          <div style="background:#ffffff;padding:32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px">
+            <h2 style="font-size:20px;margin:0 0 8px">${escapeHtml(inspection.propertyAddress)}</h2>
+            <p style="color:#475569;line-height:1.6">
+              <strong>${submitter?.name ? escapeHtml(submitter.name) : 'An agent'}</strong>${submitter?.role ? ` (${escapeHtml(submitter.role)})` : ''} has submitted a repair request with <strong>${selectedItems.length} item${selectedItems.length !== 1 ? 's' : ''}</strong>.
+            </p>
+            ${overallNotes ? `<p style="color:#475569;line-height:1.6"><strong>Overall Notes:</strong><br/>${escapeHtml(overallNotes)}</p>` : ''}
+            ${submitter?.email ? `<p style="color:#475569;line-height:1.6">Contact: ${escapeHtml(submitter.email)}</p>` : ''}
+            <a href="${process.env.NEXT_PUBLIC_APP_URL ?? 'https://useinspectiq.com'}/report/${token}" style="display:inline-block;background:#2563eb;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;margin-top:8px">
+              View Report
+            </a>
+            <p style="color:#94a3b8;font-size:12px;margin-top:24px;border-top:1px solid #e2e8f0;padding-top:16px">
+              Sent via InspectIQ · useinspectiq.com
+            </p>
+          </div>
+        </div>
+      `,
+    })
   }
+  notifyInspector().catch((e) => console.error('Failed to send repair request email:', e))
 
   console.log(`[InspectIQ] CRL submitted for report ${report.id} — ${selectedItems.length} items selected`)
 

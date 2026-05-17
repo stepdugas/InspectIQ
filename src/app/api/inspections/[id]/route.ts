@@ -66,40 +66,48 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     .set(updateData)
     .where(and(eq(inspections.id, id), eq(inspections.userId, userId)))
 
-  // Auto-send report email when inspection is marked completed
+  // Auto-send report email when inspection is marked completed (non-blocking)
   if (body.status === 'completed') {
-    try {
+    const sendEmails = async () => {
       const [inspection] = await db.select().from(inspections).where(eq(inspections.id, id)).limit(1)
-      if (inspection && (inspection.clientEmail || inspection.buyerAgentEmail)) {
-        const [profile] = await db.select().from(profiles).where(eq(profiles.id, userId)).limit(1)
-        const inspectorName = profile?.fullName ?? 'Your Inspector'
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://useinspectiq.com'
+      if (!inspection || (!inspection.clientEmail && !inspection.buyerAgentEmail)) return
 
-        // Get or create share token
-        let [report] = await db.select().from(reports).where(
-          and(eq(reports.inspectionId, id), eq(reports.userId, userId))
-        ).limit(1)
-        if (!report) {
-          const shareToken = randomBytes(16).toString('hex')
-          const [created] = await db.insert(reports).values({ inspectionId: id, userId, shareToken }).returning()
-          report = created
-        }
-        const shareUrl = `${appUrl}/report/${report.shareToken}`
+      const [profile] = await db.select().from(profiles).where(eq(profiles.id, userId)).limit(1)
+      const inspectorName = profile?.fullName ?? 'Your Inspector'
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://useinspectiq.com'
 
-        // Send to client
-        if (inspection.clientEmail) {
-          await sendReportToClient(inspection.clientEmail, inspection.clientName, inspectorName, inspection.propertyAddress, shareUrl)
-        }
-        // Send copy to buyer's agent
-        if (inspection.buyerAgentEmail) {
-          await sendReportToClient(inspection.buyerAgentEmail, inspection.buyerAgentName ?? 'Agent', inspectorName, inspection.propertyAddress, shareUrl)
-        }
-        console.log('[InspectIQ] Auto-sent report to client and agent')
+      let [report] = await db.select().from(reports).where(
+        and(eq(reports.inspectionId, id), eq(reports.userId, userId))
+      ).limit(1)
+      if (!report) {
+        const shareToken = randomBytes(16).toString('hex')
+        const [created] = await db.insert(reports).values({ inspectionId: id, userId, shareToken }).returning()
+        report = created
       }
-    } catch (err) {
-      // Don't fail the PATCH if email sending fails
-      console.error('[InspectIQ] Auto-send report email failed:', err)
+      const shareUrl = `${appUrl}/report/${report.shareToken}`
+
+      const sends = []
+      if (inspection.clientEmail) {
+        sends.push(sendReportToClient(inspection.clientEmail, inspection.clientName, inspectorName, inspection.propertyAddress, shareUrl))
+      }
+      if (inspection.buyerAgentEmail) {
+        sends.push(sendReportToClient(inspection.buyerAgentEmail, inspection.buyerAgentName ?? 'Agent', inspectorName, inspection.propertyAddress, shareUrl))
+      }
+      await Promise.all(sends)
+
+      // Record delivery timestamp and schedule follow-up for 48 hours later
+      const now = new Date()
+      const followUpTime = new Date(now.getTime() + 48 * 60 * 60 * 1000)
+      await db.update(inspections).set({
+        reportDeliveredAt: now,
+        followUpStatus: 'scheduled',
+        followUpScheduledFor: followUpTime,
+      }).where(eq(inspections.id, id))
+
+      console.log('[InspectIQ] Auto-sent report to client and agent, follow-up scheduled for', followUpTime.toISOString())
     }
+    // Fire and forget — don't block the response
+    sendEmails().catch((err) => console.error('[InspectIQ] Auto-send report email failed:', err))
   }
 
   return NextResponse.json({ ok: true })

@@ -31,13 +31,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://useinspectiq.com'
   const shareUrl = `${appUrl}/report/${report.shareToken}`
 
-  await sendReportToClient(
+  // Fire and forget — don't block the response on email delivery
+  sendReportToClient(
     inspection.clientEmail,
     inspection.clientName,
     profile?.fullName ?? 'Your Inspector',
     inspection.propertyAddress,
     shareUrl
-  )
+  ).catch((err) => console.error('[InspectIQ] Failed to send report to client:', err))
 
   return NextResponse.json({ ok: true })
 }

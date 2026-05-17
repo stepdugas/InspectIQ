@@ -177,6 +177,45 @@ export async function sendAgreementEmail(to: string, clientName: string, inspect
   })
 }
 
+// 48-hour follow-up after report delivery — asks if the client has questions
+export async function sendFollowUpEmail(
+  to: string,
+  clientName: string,
+  inspectorName: string,
+  companyName: string,
+  propertyAddress: string,
+  inspectorPhone: string | null,
+  inspectorEmail: string | null,
+) {
+  const contactLines = [
+    inspectorPhone ? `Phone: <a href="tel:${escapeHtml(inspectorPhone)}" style="color:#2563eb">${escapeHtml(inspectorPhone)}</a>` : '',
+    inspectorEmail ? `Email: <a href="mailto:${escapeHtml(inspectorEmail)}" style="color:#2563eb">${escapeHtml(inspectorEmail)}</a>` : '',
+  ].filter(Boolean).join('<br/>')
+
+  await getResend().emails.send({
+    from: FROM,
+    to,
+    subject: `Quick follow-up on your inspection — ${escapeHtml(propertyAddress)}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1e293b">
+        <div style="background:#0f172a;padding:32px;border-radius:12px 12px 0 0">
+          <h1 style="color:#60a5fa;font-size:20px;margin:0">${escapeHtml(companyName)}</h1>
+        </div>
+        <div style="background:#ffffff;padding:32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px">
+          <h2 style="font-size:20px;margin:0 0 16px">Hi ${escapeHtml(clientName)},</h2>
+          <p style="color:#475569;line-height:1.6">I sent over your inspection report for <strong>${escapeHtml(propertyAddress)}</strong> a couple of days ago and just wanted to check in.</p>
+          <p style="color:#475569;line-height:1.6">Do you have any questions about the findings? I'm happy to walk through anything in the report or clarify any items your agent flagged.</p>
+          ${contactLines ? `<p style="color:#475569;line-height:1.6">${contactLines}</p>` : ''}
+          <p style="color:#475569;line-height:1.6;margin-top:8px">Best,<br/><strong>${escapeHtml(inspectorName)}</strong></p>
+          <p style="color:#94a3b8;font-size:12px;margin-top:24px;border-top:1px solid #e2e8f0;padding-top:16px">
+            Sent via InspectIQ · useinspectiq.com
+          </p>
+        </div>
+      </div>
+    `,
+  })
+}
+
 export async function sendReferralRewardEmail(to: string, referrerName: string, newUserEmail: string) {
   await getResend().emails.send({
     from: FROM,

@@ -41,6 +41,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
+      {process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview' && (
+        <div className="fixed top-0 left-0 right-0 z-[9999] bg-amber-500 text-white text-center text-xs font-semibold py-1">
+          STAGING — Not production
+        </div>
+      )}
       <OfflineBanner />
       <OnboardingModal />
       <DashboardNav profile={profile} isAdmin={isAdmin} />

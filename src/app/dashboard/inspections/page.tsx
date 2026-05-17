@@ -7,7 +7,7 @@ import { eq, desc } from 'drizzle-orm'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
-import { ClipboardList, Plus, Calendar, User } from 'lucide-react'
+import { ClipboardList, Plus, Calendar, User, Mail, Clock } from 'lucide-react'
 
 export default async function InspectionsPage() {
   const userId = await getUserId()
@@ -62,13 +62,39 @@ export default async function InspectionsPage() {
                         </span>
                       </div>
                     </div>
-                    <Badge className={
-                      inspection.status === 'completed' ? 'bg-green-100 text-green-700 border-green-100' :
-                      inspection.status === 'in_progress' ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                      'bg-slate-100 text-slate-600 border-slate-100'
-                    }>
-                      {inspection.status?.replace('_', ' ')}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      {/* Report delivery status */}
+                      {inspection.status === 'completed' && (
+                        inspection.reportDeliveredAt ? (
+                          <Badge className="bg-blue-50 text-blue-600 border-blue-100 text-xs">
+                            <Mail className="h-3 w-3 mr-1" />Sent
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-slate-50 text-slate-400 border-slate-100 text-xs">
+                            <Mail className="h-3 w-3 mr-1" />Not sent
+                          </Badge>
+                        )
+                      )}
+                      {/* Follow-up status */}
+                      {inspection.followUpStatus === 'scheduled' && (
+                        <Badge className="bg-purple-50 text-purple-600 border-purple-100 text-xs">
+                          <Clock className="h-3 w-3 mr-1" />Follow-up pending
+                        </Badge>
+                      )}
+                      {inspection.followUpStatus === 'sent' && (
+                        <Badge className="bg-purple-50 text-purple-600 border-purple-100 text-xs">
+                          <Clock className="h-3 w-3 mr-1" />Followed up
+                        </Badge>
+                      )}
+                      {/* Inspection status */}
+                      <Badge className={
+                        inspection.status === 'completed' ? 'bg-green-100 text-green-700 border-green-100' :
+                        inspection.status === 'in_progress' ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                        'bg-slate-100 text-slate-600 border-slate-100'
+                      }>
+                        {inspection.status?.replace('_', ' ')}
+                      </Badge>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

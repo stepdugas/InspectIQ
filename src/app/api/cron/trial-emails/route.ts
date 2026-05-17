@@ -1,13 +1,20 @@
 import { NextResponse } from 'next/server'
+import { timingSafeEqual } from 'node:crypto'
 import { db, profiles, inspections } from '@/lib/db'
 import { eq, count, inArray } from 'drizzle-orm'
 import { sendActivationEmail, sendTrialMidpointEmail, sendTrialExpiringEmail } from '@/lib/email'
 
+function safeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  return timingSafeEqual(Buffer.from(a), Buffer.from(b))
+}
+
 // Called daily by Vercel Cron — sends trial nudge emails at day 2, day 7, and day 13
 export async function GET(request: Request) {
-  // Protect the cron endpoint
-  const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  // Protect the cron endpoint with timing-safe comparison
+  const authHeader = request.headers.get('authorization') ?? ''
+  const expected = `Bearer ${process.env.CRON_SECRET}`
+  if (!safeCompare(authHeader, expected)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

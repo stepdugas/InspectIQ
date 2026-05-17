@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { db, reports, inspections, rooms, inspectionItems, profiles } from '@/lib/db'
-import { eq } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { Building2, Calendar, User, CheckCircle2, AlertTriangle, AlertCircle, Download, Phone, Mail, ClipboardList } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
@@ -56,12 +56,23 @@ export default async function PublicReportPage({ params }: { params: Promise<{ t
 
   const allRooms = await db.select().from(rooms).where(eq(rooms.inspectionId, inspection.id)).orderBy(rooms.orderIndex)
 
-  const roomsWithItems = await Promise.all(
-    allRooms.map(async (room) => {
-      const items = await db.select().from(inspectionItems).where(eq(inspectionItems.roomId, room.id)).orderBy(inspectionItems.orderIndex)
-      return { ...room, items }
-    })
-  )
+  // Batch-load all items in one query instead of one per room
+  const roomIds = allRooms.map((r) => r.id)
+  const allItems = roomIds.length > 0
+    ? await db.select().from(inspectionItems).where(inArray(inspectionItems.roomId, roomIds)).orderBy(inspectionItems.orderIndex)
+    : []
+
+  const itemsByRoomId = new Map<string, typeof allItems>()
+  for (const item of allItems) {
+    const list = itemsByRoomId.get(item.roomId) ?? []
+    list.push(item)
+    itemsByRoomId.set(item.roomId, list)
+  }
+
+  const roomsWithItems = allRooms.map((room) => ({
+    ...room,
+    items: itemsByRoomId.get(room.id) ?? [],
+  }))
 
   const totalItems = roomsWithItems.reduce((acc, r) => acc + r.items.length, 0)
   const poorCount = roomsWithItems.reduce((acc, r) => acc + r.items.filter((i) => i.condition === 'poor').length, 0)

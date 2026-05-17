@@ -13,6 +13,7 @@ import { ArrowLeft, Sparkles, Loader2, ChevronDown, ChevronRight, CheckCircle2, 
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import PhotoUploader from '@/components/inspection/PhotoUploader'
+import PermitBrief from '@/components/inspection/PermitBrief'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 
 type ConditionRating = 'good' | 'fair' | 'poor' | 'na' | 'not_inspected'
@@ -493,6 +494,13 @@ export default function InspectionEditorPage() {
           </div>
         )}
       </div>
+
+      {/* Pre-Inspection Brief — permit history */}
+      {inspection?.propertyAddress && (
+        <div className="mb-4">
+          <PermitBrief address={inspection.propertyAddress} />
+        </div>
+      )}
 
       {/* Agreement Card */}
       <div className="mb-4 p-4 bg-white rounded-xl border border-slate-100 shadow-sm">

@@ -79,6 +79,11 @@ export const inspections = pgTable('inspections', {
   // Duration tracking — when the inspector started/stopped on-site
   startedAt: timestamp('started_at'),
   completedAt: timestamp('completed_at'),
+  // Job tracking — report delivery and follow-up status
+  reportDeliveredAt: timestamp('report_delivered_at'),
+  followUpStatus: text('follow_up_status').default('none'), // 'none' | 'scheduled' | 'sent'
+  followUpScheduledFor: timestamp('follow_up_scheduled_for'),
+  followUpSentAt: timestamp('follow_up_sent_at'),
 }, (table) => [
   index('inspections_user_id_idx').on(table.userId),
   index('inspections_isn_order_id_idx').on(table.isnOrderId),
@@ -168,6 +173,19 @@ export const adminSettings = pgTable('admin_settings', {
   value: text('value').notNull(),
   updatedAt: timestamp('updated_at').defaultNow(),
 })
+
+// Permit history cache — avoids duplicate API calls for the same address
+export const permitCache = pgTable('permit_cache', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  addressHash: text('address_hash').notNull(), // SHA-256 of normalized address
+  addressRaw: text('address_raw').notNull(), // original address for display
+  permits: text('permits').notNull().default('[]'), // JSON array of permit records
+  source: text('source').default('shovels'), // API source
+  fetchedAt: timestamp('fetched_at').defaultNow(),
+  expiresAt: timestamp('expires_at').notNull(), // cache TTL (30 days from fetch)
+}, (table) => [
+  index('permit_cache_address_hash_idx').on(table.addressHash),
+])
 
 export const reports = pgTable('reports', {
   id: uuid('id').primaryKey().defaultRandom(),
