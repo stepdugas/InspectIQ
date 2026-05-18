@@ -4,7 +4,7 @@ import { db, profiles } from '@/lib/db'
 import { eq } from 'drizzle-orm'
 import { sendWelcomeEmail, sendReferralNotification } from '@/lib/email'
 
-function generateReferralCode(): string {
+export function generateReferralCode(): string {
   return Math.random().toString(36).substring(2, 8).toUpperCase()
 }
 

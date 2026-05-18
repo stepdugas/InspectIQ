@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 import { timingSafeEqual } from 'node:crypto'
 import { db, profiles, inspections } from '@/lib/db'
-import { eq, count, inArray } from 'drizzle-orm'
+import { eq, count, inArray, isNull } from 'drizzle-orm'
 import { sendActivationEmail, sendReferralNudgeEmail, sendTrialMidpointEmail, sendListeningCallEmail, sendTrialExpiringEmail } from '@/lib/email'
+import { generateReferralCode } from '@/lib/auth'
 
 function safeCompare(a: string, b: string): boolean {
   if (a.length !== b.length) return false
@@ -62,9 +63,14 @@ export async function GET(request: Request) {
         await sendActivationEmail(profile.email, firstName).catch(() => {})
         activationSent++
       }
-    } else if (daysLeft === 9 && profile.referralCode) {
-      // Day 5 — referral nudge (only if they have a referral code)
-      await sendReferralNudgeEmail(profile.email, firstName, profile.referralCode).catch(() => {})
+    } else if (daysLeft === 9) {
+      // Day 5 — referral nudge (auto-generate code if missing)
+      let code = profile.referralCode
+      if (!code) {
+        code = generateReferralCode()
+        await db.update(profiles).set({ referralCode: code }).where(eq(profiles.id, profile.id))
+      }
+      await sendReferralNudgeEmail(profile.email, firstName, code).catch(() => {})
       referralSent++
     } else if (daysLeft === 7) {
       await sendTrialMidpointEmail(profile.email, firstName).catch(() => {})
