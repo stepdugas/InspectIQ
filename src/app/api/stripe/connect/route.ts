@@ -14,7 +14,7 @@ export async function POST(_request: Request) {
   const [profile] = await db.select().from(profiles).where(eq(profiles.id, userId))
   if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.useinspectiq.com'
+  const { APP_URL: baseUrl } = await import('@/lib/config')
 
   let accountId = profile.stripeConnectAccountId
 

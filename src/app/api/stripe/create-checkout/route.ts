@@ -37,6 +37,10 @@ export async function POST(request: Request) {
     await db.update(profiles).set({ stripeCustomerId: customerId }).where(eq(profiles.id, userId))
   }
 
+  // Only offer trial if this user has never had one (prevents second free trial on re-subscribe)
+  const hadTrialBefore = profile.subscriptionStatus === 'canceled' || profile.trialEndsAt != null
+  const trialDays = hadTrialBefore ? undefined : 14
+
   let priceId: string
 
   if (plan === 'annual') {
@@ -49,7 +53,7 @@ export async function POST(request: Request) {
       mode: 'subscription',
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?subscription=success`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings`,
-      subscription_data: { trial_period_days: 14 },
+      subscription_data: trialDays ? { trial_period_days: trialDays } : {},
     })
     return NextResponse.json({ url: session.url })
   }
@@ -72,7 +76,7 @@ export async function POST(request: Request) {
     success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?subscription=success`,
     cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings`,
     subscription_data: {
-      trial_period_days: 14,
+      ...(trialDays ? { trial_period_days: trialDays } : {}),
       metadata: { isFoundingMember: isFoundingSlotAvailable ? 'true' : 'false' },
     },
   })

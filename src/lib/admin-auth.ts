@@ -6,7 +6,8 @@ import bcrypt from 'bcryptjs'
 
 // Sign the password so the cookie never contains the plaintext value
 function signToken(password: string): string {
-  const secret = process.env.ADMIN_COOKIE_SECRET ?? 'inspectiq-admin-secret'
+  const secret = process.env.ADMIN_COOKIE_SECRET
+  if (!secret) throw new Error('[admin-auth] ADMIN_COOKIE_SECRET is not set — configure it in environment variables')
   return crypto.createHmac('sha256', secret).update(password).digest('hex')
 }
 

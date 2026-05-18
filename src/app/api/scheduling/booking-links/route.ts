@@ -11,7 +11,7 @@ export async function GET() {
 
   const links = await db.select().from(bookingLinks).where(eq(bookingLinks.userId, userId))
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+  const { APP_URL: appUrl } = await import('@/lib/config')
   const linksWithUrls = links.map(l => ({
     ...l,
     url: `${appUrl}/book/${l.token}`,
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     autoConfirm: body.autoConfirm ?? false,
   }).returning()
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+  const { APP_URL: appUrl } = await import('@/lib/config')
 
   return NextResponse.json({
     link: { ...link, url: `${appUrl}/book/${link.token}` },

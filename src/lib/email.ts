@@ -16,7 +16,8 @@ function getResend() {
 // Default fallback — used for system emails (trial, welcome, etc.)
 // Client-facing emails should use getInspectorFrom() instead
 const SYSTEM_FROM = 'InspectIQ <stephanie@useinspectiq.com>'
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://useinspectiq.com'
+// APP_URL is imported where needed from @/lib/config
+import { APP_URL } from '@/lib/config'
 
 // Build a FROM address using the inspector's name — no InspectIQ branding
 export function getInspectorFrom(inspectorName?: string | null, companyName?: string | null): string {

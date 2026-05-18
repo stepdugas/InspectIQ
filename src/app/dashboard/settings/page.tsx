@@ -56,31 +56,37 @@ export default function SettingsPage() {
 
   useEffect(() => {
     async function load() {
-      const [profileRes, connectRes] = await Promise.all([
-        fetch('/api/profile'),
-        fetch('/api/stripe/connect'),
-      ])
-      const data = await profileRes.json()
-      const connectData = await connectRes.json()
-      if (data.profile) {
-        setFullName(data.profile.fullName ?? '')
-        setCompanyName(data.profile.companyName ?? '')
-        setLicenseNumber(data.profile.licenseNumber ?? '')
-        setPhone(data.profile.phone ?? '')
-        setInspectionState(data.profile.inspectionState ?? '')
-        setDefaultTemplateId(data.profile.defaultTemplateId ?? '')
-        setLogoUrl(data.profile.logoUrl ?? null)
-        setSignatureUrl(data.profile.signatureUrl ?? null)
-        setReferralCode(data.profile.referralCode ?? null)
-        setSubscriptionStatus(data.profile.subscriptionStatus)
-        setFoundingMemberNumber(data.profile.foundingMemberNumber ?? null)
-        setHasStripeCustomer(!!data.profile.stripeCustomerId)
-        setIsnConnected(!!data.profile.isnCompanyKey)
-        if (data.profile.isnCompanyKey) setIsnCompanyKey(data.profile.isnCompanyKey)
-        if (data.profile.isnUsername) setIsnUsername(data.profile.isnUsername)
+      try {
+        const [profileRes, connectRes] = await Promise.all([
+          fetch('/api/profile'),
+          fetch('/api/stripe/connect'),
+        ])
+        const data = await profileRes.json()
+        const connectData = await connectRes.json()
+        if (data.profile) {
+          setFullName(data.profile.fullName ?? '')
+          setCompanyName(data.profile.companyName ?? '')
+          setLicenseNumber(data.profile.licenseNumber ?? '')
+          setPhone(data.profile.phone ?? '')
+          setInspectionState(data.profile.inspectionState ?? '')
+          setDefaultTemplateId(data.profile.defaultTemplateId ?? '')
+          setLogoUrl(data.profile.logoUrl ?? null)
+          setSignatureUrl(data.profile.signatureUrl ?? null)
+          setReferralCode(data.profile.referralCode ?? null)
+          setSubscriptionStatus(data.profile.subscriptionStatus)
+          setFoundingMemberNumber(data.profile.foundingMemberNumber ?? null)
+          setHasStripeCustomer(!!data.profile.stripeCustomerId)
+          setIsnConnected(!!data.profile.isnCompanyKey)
+          if (data.profile.isnCompanyKey) setIsnCompanyKey(data.profile.isnCompanyKey)
+          if (data.profile.isnUsername) setIsnUsername(data.profile.isnUsername)
+        }
+        setStripeConnectOnboarded(connectData.onboarded === true)
+      } catch (err) {
+        console.error('[InspectIQ] Settings load error:', err)
+        toast.error('Failed to load settings. Please refresh the page.')
+      } finally {
+        setLoading(false)
       }
-      setStripeConnectOnboarded(connectData.onboarded === true)
-      setLoading(false)
     }
     load()
 

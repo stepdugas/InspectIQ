@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   const stateUserId = searchParams.get('state')
   const error = searchParams.get('error')
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+  const { APP_URL: appUrl } = await import('@/lib/config')
 
   if (error || !code || !stateUserId) {
     return NextResponse.redirect(`${appUrl}/dashboard/settings?connect=error&reason=${error ?? 'missing_code'}`)

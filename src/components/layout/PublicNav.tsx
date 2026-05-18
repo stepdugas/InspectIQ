@@ -6,12 +6,11 @@ import { Building2, Menu, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 const NAV_LINKS = [
-  { label: 'Home', href: '/' },
   { label: 'Features', href: '/#features' },
+  { label: 'Agents', href: '/#agents' },
   { label: 'Pricing', href: '/#pricing' },
-  { label: 'Founding Members', href: '/#founding' },
-  { label: 'Blog', href: '/blog' },
   { label: 'Sample Report', href: '/sample-report' },
+  { label: 'Blog', href: '/blog' },
 ]
 
 export default function PublicNav({ activePath }: { activePath?: string }) {

@@ -28,7 +28,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const [profile] = await db.select().from(profiles).where(eq(profiles.id, userId)).limit(1)
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://useinspectiq.com'
+  const { APP_URL: appUrl } = await import('@/lib/config')
   const shareUrl = `${appUrl}/report/${report.shareToken}`
 
   // Fire and forget — don't block the response on email delivery

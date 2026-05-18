@@ -11,7 +11,8 @@ export async function GET() {
     return NextResponse.json({ error: 'Google OAuth not configured' }, { status: 500 })
   }
 
-  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/api/auth/connect/google/callback`
+  const { APP_URL } = await import('@/lib/config')
+  const redirectUri = `${APP_URL}/api/auth/connect/google/callback`
 
   const scopes = [
     'https://www.googleapis.com/auth/calendar', // read/write calendar

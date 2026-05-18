@@ -87,7 +87,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
       const [profile] = await db.select().from(profiles).where(eq(profiles.id, userId)).limit(1)
       const inspectorName = profile?.fullName ?? 'Your Inspector'
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://useinspectiq.com'
+      const { APP_URL: appUrl } = await import('@/lib/config')
 
       let [report] = await db.select().from(reports).where(
         and(eq(reports.inspectionId, id), eq(reports.userId, userId))

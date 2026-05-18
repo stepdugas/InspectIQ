@@ -21,6 +21,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     await db.insert(reports).values({ inspectionId: id, userId, shareToken: token })
   }
 
-  const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://useinspectiq.com'}/report/${token}`
+  const { APP_URL } = await import('@/lib/config')
+  const shareUrl = `${APP_URL}/report/${token}`
   return NextResponse.json({ shareUrl })
 }

@@ -106,7 +106,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ token:
             </p>
             ${overallNotes ? `<p style="color:#475569;line-height:1.6"><strong>Overall Notes:</strong><br/>${escapeHtml(overallNotes)}</p>` : ''}
             ${submitter?.email ? `<p style="color:#475569;line-height:1.6">Contact: ${escapeHtml(submitter.email)}</p>` : ''}
-            <a href="${process.env.NEXT_PUBLIC_APP_URL ?? 'https://useinspectiq.com'}/report/${token}" style="display:inline-block;background:#2563eb;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;margin-top:8px">
+            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://useinspectiq.com'}/report/${token}" style="display:inline-block;background:#2563eb;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;margin-top:8px">
               View Report
             </a>
             <p style="color:#94a3b8;font-size:12px;margin-top:24px;border-top:1px solid #e2e8f0;padding-top:16px">

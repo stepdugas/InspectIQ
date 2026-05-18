@@ -36,7 +36,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   const inspectorName = profile.companyName ?? profile.fullName ?? 'Your Inspector'
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.useinspectiq.com'
+  const { APP_URL: baseUrl } = await import('@/lib/config')
 
   // Platform fee: 3% of the inspection fee
   const platformFee = Math.round(feeInCents * 0.03)
