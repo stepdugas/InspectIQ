@@ -42,8 +42,14 @@ export async function POST(request: Request) {
   const { roomName, items } = await request.json()
   if (!roomName || !items?.length) return NextResponse.json({ error: 'Missing data' }, { status: 400 })
 
-  const itemsText = items
-    .filter((item: { condition: string }) => item.condition !== 'na')
+  const inspectedItems = items
+    .filter((item: { condition: string }) => item.condition && item.condition !== 'na' && item.condition !== 'not_inspected')
+
+  if (inspectedItems.length === 0) {
+    return NextResponse.json({ narrative: 'No items were inspected in this section.' })
+  }
+
+  const itemsText = inspectedItems
     .map((item: { name: string; condition: string; notes: string }) =>
       `- ${item.name}: ${item.condition.toUpperCase()}${item.notes ? ` — Notes: ${item.notes}` : ''}`
     ).join('\n')
@@ -54,6 +60,8 @@ export async function POST(request: Request) {
     messages: [{
       role: 'user',
       content: `You are a professional home inspector writing a formal inspection report. Write a concise, professional narrative paragraph for the following room section. Use clear, objective language appropriate for a legal inspection document. Write in paragraph form only — no bullet points. Do not repeat the room name as a heading.
+
+IMPORTANT: Only write about the items listed below. Do NOT invent, assume, or mention any items, conditions, or findings that are not explicitly provided. If an item has no notes, just mention its condition briefly.
 
 Room: ${roomName}
 

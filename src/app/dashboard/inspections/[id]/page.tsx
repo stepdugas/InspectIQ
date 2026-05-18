@@ -110,7 +110,7 @@ export default function InspectionEditorPage() {
     if (!res.ok) { router.push('/dashboard/inspections'); return }
     const data = await res.json()
     setInspection(data.inspection)
-    setRoomList(data.rooms.map((r: FullRoom) => ({ ...r, expanded: true, generating: false, narrative: r.items.find((i) => i.aiNarrative)?.aiNarrative ?? '' })))
+    setRoomList(data.rooms.map((r: FullRoom) => ({ ...r, expanded: false, generating: false, narrative: r.items.find((i) => i.aiNarrative)?.aiNarrative ?? '' })))
     // Pre-fill fee input and payment URL if already set
     if (data.inspection.inspectionFee) setFeeInput(String(data.inspection.inspectionFee / 100))
     if (data.inspection.paymentCheckoutUrl) setPaymentUrl(data.inspection.paymentCheckoutUrl)
@@ -722,7 +722,7 @@ export default function InspectionEditorPage() {
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-medium text-slate-500">AI Narrative</span>
                       <Button variant="ghost" size="sm" onClick={() => generateRoomNarrative(room.id)} disabled={room.generating} className="h-7 text-xs text-blue-600 hover:text-blue-700">
-                        {room.generating ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Generating...</> : <><Sparkles className="h-3 w-3 mr-1" />Generate</>}
+                        {room.generating ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Generating...</> : <><Sparkles className="h-3 w-3 mr-1" />Generate for this section</>}
                       </Button>
                     </div>
                     {room.narrative

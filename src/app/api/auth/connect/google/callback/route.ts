@@ -14,7 +14,7 @@ export async function GET(request: Request) {
   const { APP_URL: appUrl } = await import('@/lib/config')
 
   if (error || !code || !stateUserId) {
-    return NextResponse.redirect(`${appUrl}/dashboard/settings?connect=error&reason=${error ?? 'missing_code'}`)
+    return NextResponse.redirect(`${appUrl}/dashboard/agents?connect=error&reason=${error ?? 'missing_code'}`)
   }
 
   // Validate that the OAuth state matches the currently logged-in user
@@ -82,7 +82,7 @@ export async function GET(request: Request) {
 
     console.log(`[InspectIQ] Google account connected for user ${userId}: ${email}`)
 
-    return NextResponse.redirect(`${appUrl}/dashboard/settings?connect=success&provider=google`)
+    return NextResponse.redirect(`${appUrl}/dashboard/agents?connect=success&provider=google`)
   } catch (err) {
     console.error('[InspectIQ] Google OAuth callback error:', err)
     return NextResponse.redirect(`${appUrl}/dashboard/settings?connect=error&reason=server_error`)
