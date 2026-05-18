@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { verifyAdminPassword, setAdminCookie } from '@/lib/admin-auth'
+import { verifyAdminPassword, setAdminCookie, isAdminSetUp, setupAdmin } from '@/lib/admin-auth'
 
 // Rate limiter: max 5 login attempts per IP per 15 minutes
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000
@@ -19,6 +19,29 @@ function isRateLimited(ip: string): boolean {
   return false
 }
 
+// GET — check if admin needs first-time setup
+export async function GET() {
+  const setUp = await isAdminSetUp()
+  return NextResponse.json({ needsSetup: !setUp })
+}
+
+// PUT — first-time admin setup (only works if no password exists yet)
+export async function PUT(req: Request) {
+  const alreadySetUp = await isAdminSetUp()
+  if (alreadySetUp) {
+    return NextResponse.json({ error: 'Admin account already exists. Use the login form.' }, { status: 400 })
+  }
+
+  const { email, password } = await req.json()
+  if (!email || !password) return NextResponse.json({ error: 'Email and password required' }, { status: 400 })
+  if (password.length < 8) return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 })
+
+  await setupAdmin(email, password)
+  await setAdminCookie(password)
+  return NextResponse.json({ ok: true })
+}
+
+// POST — normal login
 export async function POST(req: Request) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
     ?? req.headers.get('x-real-ip')

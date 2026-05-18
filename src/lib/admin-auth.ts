@@ -4,48 +4,69 @@ import { eq } from 'drizzle-orm'
 import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
 
-// Sign the password so the cookie never contains the plaintext value
-function signToken(password: string): string {
-  const secret = process.env.ADMIN_COOKIE_SECRET
-  if (!secret) throw new Error('[admin-auth] ADMIN_COOKIE_SECRET is not set — configure it in environment variables')
+// Get or create a cookie signing secret — stored in DB, no env var needed
+async function getCookieSecret(): Promise<string> {
+  try {
+    const [row] = await db.select().from(adminSettings).where(eq(adminSettings.key, 'cookie_secret')).limit(1)
+    if (row?.value) return row.value
+  } catch {
+    // table might not exist yet on first run
+  }
+
+  // Generate and persist a new secret
+  const secret = crypto.randomBytes(32).toString('hex')
+  try {
+    await db.insert(adminSettings)
+      .values({ key: 'cookie_secret', value: secret, updatedAt: new Date() })
+      .onConflictDoUpdate({ target: adminSettings.key, set: { value: secret, updatedAt: new Date() } })
+  } catch {
+    // If insert fails, secret still works for this session
+  }
+  return secret
+}
+
+function signToken(password: string, secret: string): string {
   return crypto.createHmac('sha256', secret).update(password).digest('hex')
 }
 
-async function getStoredPassword(): Promise<string | null> {
-  const fallback = process.env.ADMIN_PASSWORD ?? null
+// Check if admin has been set up yet (password exists in DB)
+export async function isAdminSetUp(): Promise<boolean> {
   try {
     const [row] = await db.select().from(adminSettings).where(eq(adminSettings.key, 'admin_password')).limit(1)
-    return row?.value ?? fallback
+    return !!row?.value
   } catch {
-    return fallback
+    return false
   }
+}
+
+// Get the admin email (stored in DB, falls back to env, falls back to default)
+export async function getAdminEmail(): Promise<string> {
+  try {
+    const [row] = await db.select().from(adminSettings).where(eq(adminSettings.key, 'admin_email')).limit(1)
+    if (row?.value) return row.value
+  } catch {
+    // fall through
+  }
+  return process.env.ADMIN_EMAIL ?? 'admin@useinspectiq.com'
 }
 
 export async function isAdminAuthenticated(): Promise<boolean> {
   const cookieStore = await cookies()
   const token = cookieStore.get('admin_auth')?.value
   if (!token) return false
-  // The cookie holds signToken(plaintext_password), so we recreate
-  // that from the stored password. For bcrypt hashes we can't reverse,
-  // so we compare the token against signToken of the stored hash itself
-  // -- but that won't work. Instead, we store the HMAC token alongside
-  // the hash. Simpler: the cookie is set at login time using the user's
-  // plaintext input, so we just need to verify the HMAC matches. We
-  // store the expected HMAC in a separate admin_settings key.
+
   try {
     const [row] = await db.select().from(adminSettings).where(eq(adminSettings.key, 'admin_auth_token')).limit(1)
     if (row?.value) return token === row.value
   } catch {
-    // fall through to legacy check
+    // fall through
   }
-  // Legacy fallback: stored password is plaintext, compare HMAC directly
-  const stored = await getStoredPassword()
-  if (!stored) return false
-  return token === signToken(stored)
+  return false
 }
 
 export async function setAdminCookie(password: string): Promise<void> {
-  const token = signToken(password)
+  const secret = await getCookieSecret()
+  const token = signToken(password, secret)
   const cookieStore = await cookies()
   cookieStore.set('admin_auth', token, {
     httpOnly: true,
@@ -54,41 +75,57 @@ export async function setAdminCookie(password: string): Promise<void> {
     maxAge: 60 * 60 * 24 * 7,
     path: '/',
   })
-  // Persist the expected token so isAdminAuthenticated can verify
-  // without needing the plaintext password (which is now bcrypt-hashed)
+  // Persist the token so isAdminAuthenticated can verify without the plaintext
   try {
     await db.insert(adminSettings)
       .values({ key: 'admin_auth_token', value: token, updatedAt: new Date() })
       .onConflictDoUpdate({ target: adminSettings.key, set: { value: token, updatedAt: new Date() } })
   } catch {
-    // Non-fatal: cookie still works for current session
+    // Non-fatal
   }
 }
 
+// First-time setup: set email + password
+export async function setupAdmin(email: string, password: string): Promise<void> {
+  const hashed = await bcrypt.hash(password, 12)
+  await db.insert(adminSettings)
+    .values({ key: 'admin_email', value: email, updatedAt: new Date() })
+    .onConflictDoUpdate({ target: adminSettings.key, set: { value: email, updatedAt: new Date() } })
+  await db.insert(adminSettings)
+    .values({ key: 'admin_password', value: hashed, updatedAt: new Date() })
+    .onConflictDoUpdate({ target: adminSettings.key, set: { value: hashed, updatedAt: new Date() } })
+}
+
 export async function verifyAdminPassword(email: string, password: string): Promise<boolean> {
-  const adminEmail = process.env.ADMIN_EMAIL ?? 'admin@useinspectiq.com'
+  const adminEmail = await getAdminEmail()
   if (email !== adminEmail) return false
 
-  const stored = await getStoredPassword()
-  if (!stored) return false // No password configured — login impossible
-
-  // Try bcrypt comparison first (stored value is a hash)
-  if (stored.startsWith('$2')) {
-    const match = await bcrypt.compare(password, stored)
-    return match
+  let stored: string | null = null
+  try {
+    const [row] = await db.select().from(adminSettings).where(eq(adminSettings.key, 'admin_password')).limit(1)
+    stored = row?.value ?? null
+  } catch {
+    // fall through
   }
 
-  // Fallback: stored value is still plaintext (pre-migration)
+  // Fallback to env var if DB has nothing (legacy support)
+  if (!stored) stored = process.env.ADMIN_PASSWORD ?? null
+  if (!stored) return false
+
+  // bcrypt hash
+  if (stored.startsWith('$2')) {
+    return bcrypt.compare(password, stored)
+  }
+
+  // Plaintext (legacy) — auto-migrate to bcrypt
   if (password === stored) {
-    // Auto-migrate to bcrypt on successful plaintext login
     const hashed = await bcrypt.hash(password, 12)
     try {
       await db.insert(adminSettings)
         .values({ key: 'admin_password', value: hashed, updatedAt: new Date() })
         .onConflictDoUpdate({ target: adminSettings.key, set: { value: hashed, updatedAt: new Date() } })
-      console.log('[admin-auth] Auto-migrated admin password to bcrypt')
     } catch {
-      // Non-fatal: login still succeeds, migration will retry next time
+      // Non-fatal
     }
     return true
   }
