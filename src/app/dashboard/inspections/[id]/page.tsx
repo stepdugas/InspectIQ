@@ -100,6 +100,8 @@ export default function InspectionEditorPage() {
   // Summary / overall notes
   const [summaryText, setSummaryText] = useState('')
   const summaryTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // First-time AI hint
+  const [showAiHint, setShowAiHint] = useState(false)
   // Agreement state
   const [sendingAgreement, setSendingAgreement] = useState(false)
 
@@ -195,10 +197,27 @@ export default function InspectionEditorPage() {
   }
 
   async function generateAllNarratives() {
+    // Show a hint the first time if no items have notes yet
+    const hasAnyNotes = roomList.some((r) => r.items.some((i) => i.notes && i.notes.trim().length > 0))
+    if (!hasAnyNotes && !localStorage.getItem('inspectiq_ai_hint_seen')) {
+      setShowAiHint(true)
+      return
+    }
     setGeneratingAll(true)
     for (const room of roomList) await generateRoomNarrative(room.id)
     setGeneratingAll(false)
     toast.success('All narratives generated!')
+  }
+
+  function dismissAiHintAndGenerate() {
+    localStorage.setItem('inspectiq_ai_hint_seen', '1')
+    setShowAiHint(false)
+    // Run generation anyway — some items might have condition ratings even without notes
+    setGeneratingAll(true)
+    roomList.reduce((p, room) => p.then(() => generateRoomNarrative(room.id)), Promise.resolve()).then(() => {
+      setGeneratingAll(false)
+      toast.success('All narratives generated!')
+    })
   }
 
   // Auto-save summary with debounce
@@ -250,8 +269,18 @@ export default function InspectionEditorPage() {
     console.log('[InspectIQ] Inspection timer stopped')
   }
 
+  // Live-ticking timer: re-renders every 30s while timer is running
+  const [timerTick, setTimerTick] = useState(0)
+  useEffect(() => {
+    if (inspection?.startedAt && !inspection?.completedAt) {
+      const interval = setInterval(() => setTimerTick((t) => t + 1), 30000)
+      return () => clearInterval(interval)
+    }
+  }, [inspection?.startedAt, inspection?.completedAt])
+
   function formatDuration(start: string | null, end: string | null): string {
     if (!start) return '--'
+    void timerTick // ensure re-render on tick
     const s = new Date(start).getTime()
     const e = end ? new Date(end).getTime() : Date.now()
     const diff = Math.max(0, e - s)
@@ -737,6 +766,43 @@ export default function InspectionEditorPage() {
       </div>
 
       {/* Stripe Connect Setup Dialog */}
+      {/* AI Hint Dialog — shown once when user clicks Generate with no notes */}
+      <Dialog open={showAiHint} onOpenChange={setShowAiHint}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-blue-500" />
+              How AI Generation Works
+            </DialogTitle>
+            <DialogDescription>
+              Add your field notes first — AI turns them into professional narratives.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 text-sm text-slate-600 pt-2">
+            <div className="flex gap-3">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-xs font-bold">1</span>
+              <p>Walk the property and <strong>set each item&apos;s condition</strong> (good, fair, poor).</p>
+            </div>
+            <div className="flex gap-3">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-xs font-bold">2</span>
+              <p><strong>Add quick notes</strong> on anything that needs detail — shorthand is fine. &quot;Water stains on ceiling, approx 2x3ft&quot; works great.</p>
+            </div>
+            <div className="flex gap-3">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-xs font-bold">3</span>
+              <p>Hit <strong>Generate AI</strong> and it writes a full professional narrative for each room from your notes and conditions.</p>
+            </div>
+          </div>
+          <div className="flex gap-2 pt-4">
+            <Button onClick={() => { setShowAiHint(false); localStorage.setItem('inspectiq_ai_hint_seen', '1') }} variant="outline" className="flex-1">
+              Got it, I&apos;ll add notes first
+            </Button>
+            <Button onClick={dismissAiHintAndGenerate} className="flex-1 bg-blue-600 hover:bg-blue-700">
+              Generate anyway
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={showConnectDialog} onOpenChange={setShowConnectDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
