@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { ClipboardList, Plus, Calendar, User, Mail, Clock } from 'lucide-react'
+import DeleteInspectionButton from '@/components/inspection/DeleteInspectionButton'
 
 export default async function InspectionsPage() {
   const userId = await getUserId()
@@ -89,6 +90,7 @@ export default async function InspectionsPage() {
                       }>
                         {inspection.status?.replace('_', ' ')}
                       </Badge>
+                      <DeleteInspectionButton inspectionId={inspection.id} address={inspection.propertyAddress} />
                     </div>
                   </div>
                 </CardContent>

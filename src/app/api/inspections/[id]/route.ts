@@ -135,3 +135,21 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   return NextResponse.json({ ok: true })
 }
+
+export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { id } = await params
+
+  // Verify the inspection belongs to this user
+  const [inspection] = await db.select({ id: inspections.id }).from(inspections)
+    .where(and(eq(inspections.id, id), eq(inspections.userId, userId))).limit(1)
+
+  if (!inspection) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  // Cascade deletes rooms, items, and reports automatically (DB foreign keys)
+  await db.delete(inspections).where(and(eq(inspections.id, id), eq(inspections.userId, userId)))
+
+  return NextResponse.json({ ok: true })
+}
