@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { timingSafeEqual } from 'node:crypto'
 import { db, profiles, inspections } from '@/lib/db'
 import { eq, count, inArray } from 'drizzle-orm'
-import { sendActivationEmail, sendTrialMidpointEmail, sendTrialExpiringEmail } from '@/lib/email'
+import { sendActivationEmail, sendReferralNudgeEmail, sendTrialMidpointEmail, sendListeningCallEmail, sendTrialExpiringEmail } from '@/lib/email'
 
 function safeCompare(a: string, b: string): boolean {
   if (a.length !== b.length) return false
@@ -22,7 +22,9 @@ export async function GET(request: Request) {
 
   const now = new Date()
   let activationSent = 0
+  let referralSent = 0
   let midpointSent = 0
+  let listeningSent = 0
   let expiringSent = 0
 
   // Identify day-2 candidates (daysLeft === 12) who need an inspection count check
@@ -60,14 +62,22 @@ export async function GET(request: Request) {
         await sendActivationEmail(profile.email, firstName).catch(() => {})
         activationSent++
       }
+    } else if (daysLeft === 9 && profile.referralCode) {
+      // Day 5 — referral nudge (only if they have a referral code)
+      await sendReferralNudgeEmail(profile.email, firstName, profile.referralCode).catch(() => {})
+      referralSent++
     } else if (daysLeft === 7) {
       await sendTrialMidpointEmail(profile.email, firstName).catch(() => {})
       midpointSent++
+    } else if (daysLeft === 4) {
+      // Day 10 — personal listening call offer
+      await sendListeningCallEmail(profile.email, firstName).catch(() => {})
+      listeningSent++
     } else if (daysLeft === 1) {
       await sendTrialExpiringEmail(profile.email, firstName).catch(() => {})
       expiringSent++
     }
   }
 
-  return NextResponse.json({ ok: true, activationSent, midpointSent, expiringSent })
+  return NextResponse.json({ ok: true, activationSent, referralSent, midpointSent, listeningSent, expiringSent })
 }

@@ -144,6 +144,63 @@ export async function sendTrialExpiringEmail(to: string, firstName: string) {
   })
 }
 
+// Day 5 — share your referral link, get a free month
+export async function sendReferralNudgeEmail(to: string, firstName: string, referralCode: string) {
+  const referralUrl = `${APP_URL}/auth/signup?ref=${referralCode}`
+  await getResend().emails.send({
+    from: SYSTEM_FROM,
+    to,
+    subject: `free month of InspectIQ — just share a link`,
+    html: `
+      <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1e293b">
+        <div style="background:#0f172a;padding:32px;border-radius:12px 12px 0 0">
+          <h1 style="color:#60a5fa;font-size:20px;margin:0">InspectIQ</h1>
+        </div>
+        <div style="background:#ffffff;padding:32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px">
+          <h2 style="font-size:22px;margin:0 0 16px">Know another inspector?</h2>
+          <p style="color:#475569;line-height:1.6">Hey${firstName ? ' ' + escapeHtml(firstName) : ''} — quick one: if you know another inspector who could use InspectIQ, send them your personal link below.</p>
+          <p style="color:#475569;line-height:1.6">When they sign up, <strong>you get a free month ($99 credit)</strong> and they get an extended 30-day trial instead of 14.</p>
+          <div style="background:#f1f5f9;padding:16px;border-radius:8px;margin:16px 0;text-align:center">
+            <p style="font-size:12px;color:#64748b;margin:0 0 8px">Your referral link</p>
+            <a href="${referralUrl}" style="color:#2563eb;font-weight:600;word-break:break-all">${referralUrl}</a>
+          </div>
+          <p style="color:#475569;line-height:1.6;font-size:13px">Just forward this email or text them the link. No limit on referrals.</p>
+          <p style="color:#94a3b8;font-size:13px;margin-top:24px">— Stephanie</p>
+        </div>
+      </div>
+    `,
+  })
+}
+
+// Day 10 — personal check-in, offer a call
+export async function sendListeningCallEmail(to: string, firstName: string) {
+  await getResend().emails.send({
+    from: SYSTEM_FROM,
+    to,
+    subject: `quick question about your experience`,
+    html: `
+      <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1e293b">
+        <div style="background:#0f172a;padding:32px;border-radius:12px 12px 0 0">
+          <h1 style="color:#60a5fa;font-size:20px;margin:0">InspectIQ</h1>
+        </div>
+        <div style="background:#ffffff;padding:32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px">
+          <h2 style="font-size:22px;margin:0 0 16px">How's it going so far?</h2>
+          <p style="color:#475569;line-height:1.6">Hey${firstName ? ' ' + escapeHtml(firstName) : ''} — you're about halfway through your trial and I wanted to check in personally.</p>
+          <p style="color:#475569;line-height:1.6">I'd love to hear what's working for you and what isn't. No pitch, no demo — just 15 minutes so I can make InspectIQ better for inspectors like you.</p>
+          <p style="color:#475569;line-height:1.6"><strong>Hit reply and let me know:</strong></p>
+          <ul style="color:#475569;line-height:1.8;padding-left:20px">
+            <li>What's been easier than expected?</li>
+            <li>What's been harder or confusing?</li>
+            <li>Anything you wish it did that it doesn't?</li>
+          </ul>
+          <p style="color:#475569;line-height:1.6">Or if you'd rather hop on a quick call, just reply with a time that works and I'll send a calendar link.</p>
+          <p style="color:#94a3b8;font-size:13px;margin-top:24px">— Stephanie<br/>Founder, InspectIQ</p>
+        </div>
+      </div>
+    `,
+  })
+}
+
 export async function sendReportToClient(to: string, clientName: string, inspectorName: string, propertyAddress: string, shareUrl: string) {
   await getResend().emails.send({
     from: getInspectorFrom(inspectorName),
