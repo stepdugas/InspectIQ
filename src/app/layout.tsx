@@ -4,40 +4,39 @@ import { ClerkProvider } from '@clerk/nextjs'
 import './globals.css'
 import { Toaster } from '@/components/ui/sonner'
 import Link from 'next/link'
-import { ShieldCheck } from 'lucide-react'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.useinspectiq.com'),
   title: {
-    default: 'InspectIQ — Home Inspection Software That Writes Reports For You',
+    default: 'InspectIQ — Hire Your First AI Employee for $99/month',
     template: '%s | InspectIQ',
   },
   description:
-    'InspectIQ is home inspection software that writes your report narratives using AI. Annotate photos, collect client payments, schedule jobs, and deliver branded PDF reports — all from your phone. InterNACHI standards pre-loaded. 14-day free trial.',
+    '13 AI agents that handle report writing, client follow-ups, review requests, scheduling, and marketing for home inspectors. You inspect — they handle everything else. 14-day free trial.',
   keywords: [
-    'home inspection software',
+    'AI home inspection software',
+    'home inspection AI agents',
     'home inspection report software',
     'AI home inspection reports',
-    'home inspector app',
-    'home inspection report generator',
-    'InterNACHI inspection software',
-    'home inspection photo annotation',
     'home inspector scheduling software',
-    'home inspection client payment',
-    'home inspection PDF report',
-    'TREC 7-6 inspection software',
-    'ASHI inspection software',
     'home inspection software comparison',
     'best home inspection software 2026',
-    'home inspection app for iPhone',
-    'home inspection report writer',
-    'inspection narrative generator',
+    'home inspection report generator',
+    'InterNACHI inspection software',
+    'home inspector app',
+    'AI inspection report writer',
+    'home inspection automation',
+    'home inspection business software',
+    'home inspector AI assistant',
+    'home inspection client follow up',
+    'home inspector review management',
+    'TREC 7-6 inspection software',
+    'home inspection booking page',
     'ISN integration home inspection',
-    'home inspection report template',
   ],
-  authors: [{ name: 'InspectIQ' }],
+  authors: [{ name: 'Stephanie Dugas', url: 'https://www.useinspectiq.com' }],
   creator: 'InspectIQ',
   // PWA manifest + theme
   manifest: '/manifest.json',
@@ -58,17 +57,17 @@ export const metadata: Metadata = {
     telephone: false,
   },
   openGraph: {
-    title: 'InspectIQ — Home Inspection Software That Writes Reports For You',
-    description: 'AI writes your room narratives. Annotate photos. Collect client payments. Schedule jobs. Branded PDF reports delivered the same day. 14-day free trial.',
+    title: 'InspectIQ — Hire Your First AI Employee for $99/month',
+    description: '13 autonomous AI agents handle your admin work: reports, scheduling, follow-ups, reviews, realtor nurture, and more. Built for solo home inspectors.',
     type: 'website',
     url: 'https://www.useinspectiq.com',
     siteName: 'InspectIQ',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'InspectIQ — Home Inspection Software That Writes Reports For You' }],
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'InspectIQ — 13 AI Agents for Home Inspectors' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'InspectIQ — Home Inspection Software That Writes Reports For You',
-    description: 'AI writes your room narratives. Annotate photos, collect payments, and deliver branded PDF reports — all from your phone. 14-day free trial.',
+    title: 'InspectIQ — Hire Your First AI Employee for $99/month',
+    description: '13 AI agents that run your inspection business while you inspect. Reports, scheduling, reviews, follow-ups — all autonomous. 14-day free trial.',
     images: ['/og-image.png'],
   },
   robots: {
@@ -84,6 +83,22 @@ export const metadata: Metadata = {
   },
 }
 
+const organizationSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'InspectIQ',
+  url: 'https://www.useinspectiq.com',
+  logo: 'https://www.useinspectiq.com/icon.svg',
+  description: '13 AI agents that run your home inspection business. Reports, scheduling, follow-ups, reviews, and more — all autonomous.',
+  founder: { '@type': 'Person', name: 'Stephanie Dugas' },
+  contactPoint: {
+    '@type': 'ContactPoint',
+    email: 'support@useinspectiq.com',
+    contactType: 'customer support',
+    url: 'https://www.useinspectiq.com/support',
+  },
+}
+
 export default function RootLayout({
   children,
 }: {
@@ -93,15 +108,12 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" className={`${inter.className} h-full antialiased`}>
         <body className="min-h-full flex flex-col">
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+          />
           {children}
           <Toaster />
-          <Link
-            href="/admin/login"
-            className="fixed bottom-4 right-4 z-50 flex items-center justify-center w-9 h-9 rounded-full bg-slate-800/80 hover:bg-purple-700 border border-slate-600 hover:border-purple-500 text-slate-400 hover:text-white transition-all duration-200 shadow-lg backdrop-blur-sm"
-            title="Admin"
-          >
-            <ShieldCheck className="h-4 w-4" />
-          </Link>
         </body>
       </html>
     </ClerkProvider>

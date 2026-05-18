@@ -93,8 +93,31 @@ export default async function CityPage({
 
   const { city: cityName, state, stateAbbr, bodyParagraph } = city
 
+  const localBusinessSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    name: `InspectIQ — ${cityName}, ${stateAbbr}`,
+    description: `AI-powered home inspection software for inspectors in ${cityName}, ${state}. 13 AI agents handle reports, scheduling, follow-ups, and more.`,
+    url: `https://www.useinspectiq.com/locations/${slug}`,
+    areaServed: { '@type': 'City', name: cityName, addressRegion: stateAbbr },
+    priceRange: '$99/month',
+    hasOfferCatalog: {
+      '@type': 'OfferCatalog',
+      name: 'Home Inspection AI Agents',
+      itemListElement: [
+        { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'AI Report Writing' } },
+        { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Automated Scheduling & Booking' } },
+        { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Client Follow-Up Automation' } },
+      ],
+    },
+  }
+
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
+      />
       {/* Nav */}
       <nav className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">

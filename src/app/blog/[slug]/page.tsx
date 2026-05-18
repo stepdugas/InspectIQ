@@ -89,8 +89,8 @@ export default async function BlogPostPage({
     headline: post.meta.title,
     description: post.meta.description,
     datePublished: post.meta.publishedAt,
-    author: { '@type': 'Organization', name: 'InspectIQ', url: 'https://www.useinspectiq.com' },
-    publisher: { '@type': 'Organization', name: 'InspectIQ', url: 'https://www.useinspectiq.com' },
+    author: { '@type': 'Person', name: 'Stephanie Dugas', url: 'https://www.useinspectiq.com' },
+    publisher: { '@type': 'Organization', name: 'InspectIQ', url: 'https://www.useinspectiq.com', logo: { '@type': 'ImageObject', url: 'https://www.useinspectiq.com/icon.svg' } },
     mainEntityOfPage: canonicalUrl,
     image: post.meta.ogImage,
   }
@@ -126,6 +126,8 @@ export default async function BlogPostPage({
                 {displayTitle}
               </h1>
               <div className="flex items-center gap-4 text-sm text-white/60">
+                <span>By Stephanie Dugas</span>
+                <span>·</span>
                 <time>
                   {new Date(post.meta.publishedAt).toLocaleDateString('en-US', {
                     year: 'numeric',
