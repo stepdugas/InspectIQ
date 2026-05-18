@@ -1,25 +1,15 @@
 import { NextResponse } from 'next/server'
-import { timingSafeEqual } from 'node:crypto'
 import { db, inspections, profiles } from '@/lib/db'
 import { eq, and, lte } from 'drizzle-orm'
-import { sendFollowUpEmail } from '@/lib/email'
+import { sendFollowUpEmail, sendTopFindingsFollowUp } from '@/lib/email'
+import { getAgentConfig, logAgentActivity, validateCronAuth } from '@/lib/agent-runner'
 
-function safeCompare(a: string, b: string): boolean {
-  if (a.length !== b.length) return false
-  return timingSafeEqual(Buffer.from(a), Buffer.from(b))
-}
-
-// Called daily by Vercel Cron — sends follow-up emails 48 hours after report delivery
 export async function GET(request: Request) {
-  const authHeader = request.headers.get('authorization') ?? ''
-  const expected = `Bearer ${process.env.CRON_SECRET}`
-  if (!safeCompare(authHeader, expected)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const authError = validateCronAuth(request)
+  if (authError) return authError
 
   const now = new Date()
 
-  // Find inspections where follow-up is scheduled and the time has passed
   const due = await db.select().from(inspections).where(
     and(
       eq(inspections.followUpStatus, 'scheduled'),
@@ -28,12 +18,23 @@ export async function GET(request: Request) {
   )
 
   let sent = 0
+  let skipped = 0
 
   for (const inspection of due) {
-    if (!inspection.clientEmail) {
-      // No client email — mark as sent so we don't retry
+    // Check if the follow-up agent is enabled for this inspector
+    const config = await getAgentConfig(inspection.userId, 'follow_up')
+    if (!config) {
+      // Agent disabled — mark as sent so we don't retry (atomic check)
       await db.update(inspections).set({ followUpStatus: 'sent', followUpSentAt: now })
-        .where(eq(inspections.id, inspection.id))
+        .where(and(eq(inspections.id, inspection.id), eq(inspections.followUpStatus, 'scheduled')))
+      skipped++
+      continue
+    }
+
+    if (!inspection.clientEmail) {
+      await db.update(inspections).set({ followUpStatus: 'sent', followUpSentAt: now })
+        .where(and(eq(inspections.id, inspection.id), eq(inspections.followUpStatus, 'scheduled')))
+      skipped++
       continue
     }
 
@@ -42,20 +43,56 @@ export async function GET(request: Request) {
 
     const inspectorName = profile?.fullName ?? 'Your Inspector'
     const companyName = profile?.companyName ?? inspectorName
+    const contentType = (config.content as string) ?? 'any_questions'
 
     try {
-      await sendFollowUpEmail(
-        inspection.clientEmail,
-        inspection.clientName,
-        inspectorName,
-        companyName,
-        inspection.propertyAddress,
-        profile?.phone ?? null,
-        profile?.email ?? null
-      )
+      if (contentType === 'top_findings') {
+        await sendTopFindingsFollowUp(
+          inspection.clientEmail,
+          inspection.clientName,
+          inspectorName,
+          companyName,
+          inspection.propertyAddress,
+          inspection.id,
+          profile?.phone ?? null,
+          profile?.email ?? null,
+        )
+      } else if (contentType === 'custom' && config.customMessage) {
+        await sendFollowUpEmail(
+          inspection.clientEmail,
+          inspection.clientName,
+          inspectorName,
+          companyName,
+          inspection.propertyAddress,
+          profile?.phone ?? null,
+          profile?.email ?? null,
+          config.customMessage as string,
+        )
+      } else {
+        // Default: 'any_questions'
+        await sendFollowUpEmail(
+          inspection.clientEmail,
+          inspection.clientName,
+          inspectorName,
+          companyName,
+          inspection.propertyAddress,
+          profile?.phone ?? null,
+          profile?.email ?? null,
+        )
+      }
 
-      await db.update(inspections).set({ followUpStatus: 'sent', followUpSentAt: now })
-        .where(eq(inspections.id, inspection.id))
+      // Atomic: only update if still 'scheduled' (prevents double-send on crash/retry)
+      const [updated] = await db.update(inspections).set({ followUpStatus: 'sent', followUpSentAt: now })
+        .where(and(eq(inspections.id, inspection.id), eq(inspections.followUpStatus, 'scheduled')))
+        .returning()
+
+      if (!updated) continue // Already sent by another run
+
+      await logAgentActivity(inspection.userId, 'follow_up', 'email_sent', {
+        recipient: inspection.clientEmail,
+        contentType,
+        propertyAddress: inspection.propertyAddress,
+      }, inspection.id)
 
       sent++
     } catch (err) {
@@ -63,6 +100,6 @@ export async function GET(request: Request) {
     }
   }
 
-  console.log(`[InspectIQ] Follow-up cron: ${due.length} due, ${sent} sent`)
-  return NextResponse.json({ ok: true, due: due.length, sent })
+  console.log(`[InspectIQ] Follow-up cron: ${due.length} due, ${sent} sent, ${skipped} skipped`)
+  return NextResponse.json({ ok: true, due: due.length, sent, skipped })
 }

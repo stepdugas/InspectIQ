@@ -4,6 +4,7 @@ import { db, inspections, rooms, inspectionItems, reports, profiles } from '@/li
 import { eq, and, inArray } from 'drizzle-orm'
 import { randomBytes } from 'node:crypto'
 import { sendReportToClient } from '@/lib/email'
+import { trackRealtorReferral } from '@/lib/realtor-nurture'
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { userId } = await auth()
@@ -48,9 +49,21 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const { id } = await params
   const body = await request.json()
 
+  // Fetch current inspection to validate status transitions
+  const [currentInspection] = await db.select().from(inspections)
+    .where(and(eq(inspections.id, id), eq(inspections.userId, userId))).limit(1)
+  if (!currentInspection) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
   // Build update payload — only include fields that were sent
   const updateData: Record<string, unknown> = { updatedAt: new Date() }
-  if (body.status !== undefined) updateData.status = body.status
+  if (body.status !== undefined) {
+    // Prevent re-triggering agents by blocking completed → non-completed transitions
+    const allowedFromCompleted = ['completed']
+    if (currentInspection.status === 'completed' && !allowedFromCompleted.includes(body.status)) {
+      return NextResponse.json({ error: 'Cannot change status of a completed inspection' }, { status: 400 })
+    }
+    updateData.status = body.status
+  }
   if (body.summary !== undefined) updateData.summary = body.summary
   if (body.buyerAgentName !== undefined) updateData.buyerAgentName = body.buyerAgentName
   if (body.buyerAgentEmail !== undefined) updateData.buyerAgentEmail = body.buyerAgentEmail
@@ -105,6 +118,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       }).where(eq(inspections.id, id))
 
       console.log('[InspectIQ] Auto-sent report to client and agent, follow-up scheduled for', followUpTime.toISOString())
+
+      // Track realtor referrals (Realtor Nurture Agent)
+      if (inspection.buyerAgentName || inspection.buyerAgentEmail) {
+        trackRealtorReferral(userId, inspection.buyerAgentName, inspection.buyerAgentEmail, inspection.buyerAgentPhone, id, inspection.propertyAddress)
+          .catch(err => console.error('[InspectIQ] Realtor tracking failed:', err))
+      }
+      if (inspection.listingAgentName || inspection.listingAgentEmail) {
+        trackRealtorReferral(userId, inspection.listingAgentName, inspection.listingAgentEmail, inspection.listingAgentPhone, id, inspection.propertyAddress)
+          .catch(err => console.error('[InspectIQ] Realtor tracking failed:', err))
+      }
     }
     // Fire and forget — don't block the response
     sendEmails().catch((err) => console.error('[InspectIQ] Auto-send report email failed:', err))

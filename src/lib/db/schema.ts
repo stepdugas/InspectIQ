@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, date, uuid, boolean, index } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, integer, date, uuid, boolean, index, jsonb } from 'drizzle-orm/pg-core'
 
 export const profiles = pgTable('profiles', {
   id: text('id').primaryKey(), // Clerk user ID
@@ -187,12 +187,122 @@ export const permitCache = pgTable('permit_cache', {
   index('permit_cache_address_hash_idx').on(table.addressHash),
 ])
 
+// Agent configuration — per-user per-agent toggle + settings
+export const agentConfigs = pgTable('agent_configs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('user_id').notNull().references(() => profiles.id, { onDelete: 'cascade' }),
+  agentType: text('agent_type').notNull(), // 'report_writer' | 'delivery' | 'follow_up' | 'property_research' | 'review' | 'realtor_nurture' | 'repair_summary' | 'scheduling' | 'compliance' | 'lead_qualifier' | 'business_intel' | 'after_hours' | 'marketing'
+  enabled: boolean('enabled').default(false),
+  config: jsonb('config').default({}), // agent-specific settings (timing, tone, etc.)
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+}, (table) => [
+  index('agent_configs_user_id_idx').on(table.userId),
+  index('agent_configs_user_agent_idx').on(table.userId, table.agentType),
+])
+
+// Connected third-party accounts (Google, Microsoft, etc.)
+export const connectedAccounts = pgTable('connected_accounts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('user_id').notNull().references(() => profiles.id, { onDelete: 'cascade' }),
+  provider: text('provider').notNull(), // 'google' | 'microsoft'
+  accessToken: text('access_token').notNull(), // AES-256-GCM encrypted
+  refreshToken: text('refresh_token'), // AES-256-GCM encrypted
+  scopes: text('scopes').notNull(), // comma-separated scopes granted
+  expiresAt: timestamp('expires_at'),
+  email: text('email'), // the connected account's email address
+  metadata: jsonb('metadata').default({}), // provider-specific data (e.g. GBP location ID)
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+}, (table) => [
+  index('connected_accounts_user_id_idx').on(table.userId),
+  index('connected_accounts_user_provider_idx').on(table.userId, table.provider),
+])
+
+// Agent activity log — audit trail for every action agents take
+export const agentActivityLog = pgTable('agent_activity_log', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('user_id').notNull().references(() => profiles.id, { onDelete: 'cascade' }),
+  agentType: text('agent_type').notNull(),
+  action: text('action').notNull(), // 'email_sent' | 'review_requested' | 'permit_fetched' | 'report_generated' etc.
+  details: jsonb('details').default({}), // action-specific data (recipient, inspection ID, etc.)
+  inspectionId: uuid('inspection_id'), // optional link to inspection
+  createdAt: timestamp('created_at').defaultNow(),
+}, (table) => [
+  index('agent_activity_log_user_id_idx').on(table.userId),
+  index('agent_activity_log_created_at_idx').on(table.createdAt),
+])
+
+// Scheduling — inspector availability rules (weekly template)
+export const availabilityRules = pgTable('availability_rules', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('user_id').notNull().references(() => profiles.id, { onDelete: 'cascade' }),
+  dayOfWeek: integer('day_of_week').notNull(), // 0=Sun, 1=Mon, ..., 6=Sat
+  startTime: text('start_time').notNull(), // '08:00' 24hr format
+  endTime: text('end_time').notNull(), // '17:00'
+  enabled: boolean('enabled').default(true),
+}, (table) => [
+  index('availability_rules_user_id_idx').on(table.userId),
+])
+
+// Booking links — shareable URLs realtors can send to their buyers
+export const bookingLinks = pgTable('booking_links', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('user_id').notNull().references(() => profiles.id, { onDelete: 'cascade' }),
+  token: text('token').notNull().unique(),
+  label: text('label').default('Default'), // e.g. 'Main', 'Commercial Only'
+  bufferMinutes: integer('buffer_minutes').default(30),
+  maxPerDay: integer('max_per_day').default(3),
+  serviceAreaMiles: integer('service_area_miles').default(50),
+  inspectionDurationMinutes: integer('inspection_duration_minutes').default(180), // 3 hours default
+  autoConfirm: boolean('auto_confirm').default(false),
+  active: boolean('active').default(true),
+  createdAt: timestamp('created_at').defaultNow(),
+}, (table) => [
+  index('booking_links_user_id_idx').on(table.userId),
+  index('booking_links_token_idx').on(table.token),
+])
+
+// Realtor contacts — CRM for realtor relationships
+export const realtorContacts = pgTable('realtor_contacts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('user_id').notNull().references(() => profiles.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  email: text('email'),
+  phone: text('phone'),
+  company: text('company'),
+  firstReferralAt: timestamp('first_referral_at'),
+  lastReferralAt: timestamp('last_referral_at'),
+  totalReferrals: integer('total_referrals').default(0),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').defaultNow(),
+}, (table) => [
+  index('realtor_contacts_user_id_idx').on(table.userId),
+])
+
+// Compliance tracking — CE credits, license renewals, insurance
+export const complianceItems = pgTable('compliance_items', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('user_id').notNull().references(() => profiles.id, { onDelete: 'cascade' }),
+  type: text('type').notNull(), // 'license' | 'ce_credits' | 'eao_insurance' | 'general_liability' | 'business_license'
+  description: text('description').notNull(),
+  expiresAt: timestamp('expires_at'),
+  hoursRequired: integer('hours_required'), // for CE credits
+  hoursCompleted: integer('hours_completed').default(0), // for CE credits
+  remindersSent: integer('reminders_sent').default(0),
+  lastReminderAt: timestamp('last_reminder_at'),
+  createdAt: timestamp('created_at').defaultNow(),
+}, (table) => [
+  index('compliance_items_user_id_idx').on(table.userId),
+])
+
 export const reports = pgTable('reports', {
   id: uuid('id').primaryKey().defaultRandom(),
   inspectionId: uuid('inspection_id').notNull().references(() => inspections.id, { onDelete: 'cascade' }),
   userId: text('user_id').notNull().references(() => profiles.id, { onDelete: 'cascade' }),
   pdfUrl: text('pdf_url'),
   shareToken: text('share_token').unique(),
+  shareTokenExpiresAt: timestamp('share_token_expires_at'), // null = never expires (default for now)
   createdAt: timestamp('created_at').defaultNow(),
 }, (table) => [
   index('reports_inspection_id_idx').on(table.inspectionId),

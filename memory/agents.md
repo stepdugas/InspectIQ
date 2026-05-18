@@ -6,8 +6,8 @@ The "AI employees" running InspectIQ growth. Each agent is a defined job: schedu
 
 | Agent | Status | Schedule | Owner |
 |---|---|---|---|
-| **Lead Generator** | **v1 shipped (May 3, 2026)** — code at `~/Documents/inspectiq-outreach/lead_generator.py`. Any-state NACHI scraper. | Manual run per state, on demand | Claude |
-| **Outbound Writer** | **v1 shipped (May 3, 2026)** — code at `~/Documents/inspectiq-outreach/cold_sender.py` | Daily, manual run for now | Claude |
+| **Lead Generator** | **v1 shipped (May 3, 2026)** — code at `~/Documents/inspectiq-outreach/lead_generator.py`. Any-state NACHI scraper. | **Daily at 7pm ET** (cron `0 19 * * *`) — Stephanie chose May 4 | Claude |
+| **Outbound Writer** | **v1 shipped (May 3, 2026)** — code at `~/Documents/inspectiq-outreach/cold_sender.py`. **DAILY_LIMIT bumped 30→100 on May 4.** | **Weekdays at 7am ET** (cron `0 7 * * 1-5`) — Stephanie chose May 4 | Claude |
 | **PA Email Enricher** | **v1 shipped (May 3, 2026)** — code at `~/Documents/inspectiq-outreach/enrich_pa.py`. Tested at 10% yield on sample of 10. | One-shot, run as needed | Claude |
 | Content Engine | Not started — blocked by absence of blog route in Next.js app (Task #13) | Daily 9am | Claude |
 | Customer Success | Not started — best built once first trial signups exist (currently 0 customers) | Continuous (responds to triggers) | Claude |
@@ -212,20 +212,36 @@ python cold_sender.py unsubscribe <email>            # stop + flag
 
 ---
 
-## How agents are run
+## How agents are run — UPDATED May 5, 2026 (launchd, NOT Cowork)
 
-**Cowork scheduled tasks live (May 3, 2026)** — agents run autonomously via:
+**Cowork scheduled tasks were DISABLED on May 5, 2026** because they fired unreliably for new tasks created after May 3. Diagnosis: tasks created after May 3 either never fired (one-time fireAt tasks 100% failure rate) or fired only sometimes (cron tasks). Replaced with native macOS `launchd` jobs which are rock-solid.
 
-| Task | Path | Schedule | What it does |
+**Working directory moved May 5, 2026:** `~/Documents/inspectiq-outreach/` → `~/inspectiq-outreach/` (top-level home directory). Reason: macOS TCC restricts launchd-spawned processes from accessing `~/Documents`/`~/Desktop`/`~/Downloads` even when the script chmod is correct. Moving to `~/inspectiq-outreach/` removes the TCC gate entirely. Old directory is preserved as the source for `.command` helpers Stephanie can double-click in Finder (Finder runs in user TCC context, so `~/Documents` is fine for those).
+
+**Live launchd agents:**
+
+| Agent | Plist | Schedule | What it does |
 |---|---|---|---|
-| **inspectiq-outbound-daily** | `~/Documents/Claude/Scheduled/inspectiq-outbound-daily/SKILL.md` | Weekdays 9am Eastern | Reads cold_sender's daily queue (JSON), sends each via Gmail MCP, 90s pacing, max 30/day, marks DB, notifies Stephanie at sld4ugas@yahoo.com on completion |
-| **inspectiq-lead-generator-rotation** | `~/Documents/Claude/Scheduled/inspectiq-lead-generator-rotation/SKILL.md` | Sundays 6am Eastern | Reads next state from `states_queue.txt` rotation (TX first), runs lead_generator.py, imports CSV into cold_sender, applies exclusion list, notifies Stephanie |
+| **com.erieapps.inspectiq-outbound** | `~/Library/LaunchAgents/com.erieapps.inspectiq-outbound.plist` | Weekdays 7am | Runs `cold_sender.py send --limit 100` from `~/inspectiq-outreach/`. Direct Gmail SMTP via App Password (NOT Zapier — that ran out of free tasks). 90s pacing built into script. Logs to `~/inspectiq-outreach/outbound.log`. |
+| **com.erieapps.inspectiq-leadgen** | `~/Library/LaunchAgents/com.erieapps.inspectiq-leadgen.plist` | Daily 7pm | Reads first line of `~/inspectiq-outreach/states_queue.txt`, runs `lead_generator.py --state <state>`, imports CSV into cold_sender, applies do_not_email exclusion, pops state off queue. Logs to `~/inspectiq-outreach/leadgen.log`. |
 
-**State rotation queue:** `/Users/stephaniedugas/Documents/inspectiq-outreach/states_queue.txt` — contains 48 states in priority order (skips PA, OH which are already campaigned). Each Sunday's run pops the top state.
+**Auth:** Gmail App Password `cjia mqnz tzyr dwoz` (created May 5) is hardcoded into the outbound plist's `EnvironmentVariables`. Permissions on the plist file are 600 (owner-only readable). If it ever gets revoked, generate a new one at https://myaccount.google.com/apppasswords and update the plist.
 
-**Activation:** Stephanie needs to open Cowork once and activate the schedule for each task (same as her existing `ohio-inspectiq-outreach` campaign).
+**State rotation queue:** `~/inspectiq-outreach/states_queue.txt` — Florida already done May 5, California is at top, then NY, GA, NC, IL, MI, NJ, VA, AZ, WA, MA, IN, TN, MO, MD, WI, CO, MN, SC, AL.
 
-Once activated, no human input required for daily operations except:
-- Reviewing reply emails (which land in Gmail because Reply-To = stephanie@useinspectiq.com → forwards to Gmail)
-- Marking replies via `python3 cold_sender.py mark-replied <email>` so the sequence stops for that lead
-- Watching metrics weekly (open rates, reply rates, trial signups)
+**Helper `.command` files in `~/Documents/inspectiq-outreach/`** (double-clickable from Finder):
+- `install_agents.command` — initial install of both launchd plists (already run May 5)
+- `move_to_unrestricted.command` — moves working dir out of Documents (already run May 5)
+- `check_progress.command` — peek at today's send count + active queue + launchd state
+- `unsubscribe_<email>.command` — one-shot unsubscribe a specific email (template: copy + edit)
+- `cleanup_for_tonight.command` — fixes queue + removes stale files
+- `diagnose_california.command` — diagnostic for partial CSV (kept as reference)
+- `rebuild_db.command` — full DB rebuild from CSVs (use if cold_sender.db corrupts)
+- `fix_and_run.command` — REINDEX + reload (use if integrity_check fails)
+
+**SMTP gotcha — needs fixing:** Today's run sent 100 emails successfully but exited with code 1 because the SMTP connection timed out at the end (Gmail drops idle persistent connections after ~1 hour, run took 2.5 hours). All 100 sends went out before the timeout. To fix later: add reconnect-every-N-emails logic in `cold_sender.py send_batch()`.
+
+**Daily ops once running:**
+- Reply detection: still manual. Reply lands in Gmail (Reply-To = stephanie@useinspectiq.com → forwards). Stephanie tells Claude → Claude runs unsubscribe.command or mark-replied.command.
+- Watch metrics weekly: open rate >40%, reply rate >3%, unsubscribe <2%.
+- Mac must stay on for launchd to fire. Sleep is fine (wakes for scheduled jobs). Shutdown is not.

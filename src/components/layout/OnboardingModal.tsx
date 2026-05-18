@@ -12,10 +12,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import {
   Building2, Zap, FileText, CheckCircle2,
-  ArrowRight, UserCog, ClipboardList, X,
+  ArrowRight, UserCog, ClipboardList, X, Bot,
 } from 'lucide-react'
 
-const STORAGE_KEY = 'inspectiq_onboarding_v1'
+const STORAGE_KEY = 'inspectiq_onboarding_v2'
 
 const STEPS = [
   {
@@ -23,11 +23,11 @@ const STEPS = [
     iconBg: 'bg-blue-100',
     iconColor: 'text-blue-600',
     title: 'Welcome to InspectIQ!',
-    subtitle: "You're all set up. Here's what you can do:",
+    subtitle: "You just hired your first AI employee. Here's your team:",
     bullets: [
-      { icon: Zap, text: 'AI writes your room narratives — no more 2-hour reports' },
-      { icon: FileText, text: 'Branded PDF reports with your logo and signature' },
-      { icon: CheckCircle2, text: 'Install to your home screen for quick access' },
+      { icon: Bot, text: '13 AI agents handle reports, follow-ups, reviews, scheduling, and more' },
+      { icon: Zap, text: 'You inspect — they handle everything else' },
+      { icon: CheckCircle2, text: 'Toggle each agent on or off in Settings' },
     ],
     primaryLabel: 'Get started',
     secondaryLabel: 'Skip tour',
@@ -36,12 +36,12 @@ const STEPS = [
     icon: UserCog,
     iconBg: 'bg-purple-100',
     iconColor: 'text-purple-600',
-    title: 'Set up your profile first',
-    subtitle: 'Your logo and signature appear on every report you generate. Takes 60 seconds.',
+    title: 'Set up your profile',
+    subtitle: 'Your logo and signature appear on every report. Takes 60 seconds.',
     bullets: [
       { icon: CheckCircle2, text: 'Upload your company logo' },
       { icon: CheckCircle2, text: 'Add your digital signature' },
-      { icon: CheckCircle2, text: 'Enter your license number' },
+      { icon: CheckCircle2, text: 'Connect Google for calendar sync + review requests' },
     ],
     primaryLabel: 'Go to Settings',
     secondaryLabel: 'Skip for now',
@@ -50,12 +50,12 @@ const STEPS = [
     icon: ClipboardList,
     iconBg: 'bg-green-100',
     iconColor: 'text-green-600',
-    title: "See the magic on your first inspection",
-    subtitle: "Create an inspection, add a note on any room, then hit \"Generate AI\" — your narrative is written in seconds.",
+    title: "See your AI team in action",
+    subtitle: "Create an inspection, add a note on any room, then hit \"Generate AI.\" When you mark it complete, your agents take over — delivering the report, following up with the client, and requesting a review.",
     bullets: [
       { icon: CheckCircle2, text: 'InterNACHI checklists pre-loaded — no setup' },
       { icon: Zap, text: 'Type a quick note → AI turns it into a full narrative' },
-      { icon: FileText, text: 'Export a branded PDF and share with your client' },
+      { icon: Bot, text: 'Mark complete → Delivery, Follow-Up, and Review agents activate' },
     ],
     primaryLabel: 'Create first inspection',
     secondaryLabel: 'Explore dashboard',

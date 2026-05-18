@@ -77,16 +77,53 @@ Shipped May 3, 2026 (Day 0 of sprint):
 
 Not yet shipped:
 - Customer Success agent — best built when first trial signups exist (currently 0 customers)
-- Erie Apps LLC formation — backburner, Saturday-morning task
 
-Next moves (in this order, when Stephanie has time):
-1. Generate Gmail App Password at myaccount.google.com/apppasswords
-2. Run `lead_generator.py --state texas` (or FL/GA/CA/NY) to pull a batch of 200-2000+ untouched leads
-3. Run `cold_sender.py import <new-csv> --state TX` to load them
-4. Run `cold_sender.py preview --limit 5` to verify personalization on real leads
-5. Run `cold_sender.py send --limit 30` for the first live batch (30 personalized emails over ~45 minutes due to 90s rate limit)
-6. Wait 3 days, run send again — follow-ups + new fresh leads will fire automatically
-7. After first trial signup arrives → build Customer Success agent
+## AUTONOMOUS PIPELINE LIVE (May 5, 2026)
+
+The full agent stack now runs without human input via macOS launchd:
+- **Outbound writer** fires every weekday 7am → sends 100 emails with 90s pacing → done by 9:30am
+- **Lead generator** fires every day 7pm → scrapes next state from `~/inspectiq-outreach/states_queue.txt` → ~90 min runtime
+- Working directory: `~/inspectiq-outreach/` (NOT `~/Documents/inspectiq-outreach/` — moved May 5 due to macOS TCC restrictions blocking launchd)
+- Auth: Gmail App Password baked into outbound plist
+- Cowork-scheduled tasks DISABLED (they fired unreliably — diagnosis in `memory/agents.md`)
+
+**May 5 results:**
+- 115 emails sent today (15 manual via Zapier + 100 autonomous via launchd direct SMTP)
+- 1 unsubscribe (Ramon Rivera at npiinspect.com — handled, in do_not_email)
+- Florida fully scraped (867 emails captured, 50% yield)
+- States queue order: California (next), New York, Georgia, North Carolina, Illinois, Michigan, New Jersey, Virginia, Arizona, Washington…
+
+**What Stephanie does daily:** Nothing routine. Just:
+- Tell Claude when someone replies (unsubscribe, interested, etc.)
+- Run `~/Documents/inspectiq-outreach/check_progress.command` to peek at numbers
+- Don't shut down the Mac (launchd needs it on; sleep is fine)
+
+## STRATEGY SHIFT (May 7, 2026) — moved from outreach mode to feedback mode
+
+Now that we have real trial users (Julio Paredes started May 7), priority 
+shifts from "send more cold emails" to "talk to actual users." Cold email keeps 
+running on autopilot in the background, but the leverage now is:
+
+1. **Watch trial users' actual behavior** — query cold_sender.db / Stripe / 
+   Clerk to see what they do post-signup. Did they create an inspection? Pick 
+   TREC 7-6? Generate a report? Each click is a data point.
+2. **Schedule 15-min listening calls** Day 5-7 of each trial — just listen. 
+   "Walk me through what you tried. What was easier than expected? What was 
+   harder?"
+3. **Track feature requests** — when 3+ trial users ask for the same thing, 
+   build it. One person asking = nice-to-have. Three asking = roadmap item.
+4. **Ask for testimonials Day 12-13** — happy trials get a "would you write 
+   a one-paragraph quote?" message. Most say yes if asked.
+5. **Put quotes on the homepage** the moment we have them. One real 
+   testimonial outconverts most paid ads.
+
+This is also the trigger to build **Task #6 (Customer Success agent)** — 
+Day 3/10/13 trial conversion emails need to fire automatically.
+
+**Next sprint moves (when InspectIQ has trial signups):**
+1. After first trial signup → build Customer Success agent (Task #6)
+2. After PA approves Erie Apps LLC → switch banking + apps (Task #8)
+3. Apply for grants (Task #16) — woman-owned/AI/PA-tech eligibility
 
 ## Read before doing work
 

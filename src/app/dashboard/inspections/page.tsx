@@ -63,30 +63,25 @@ export default async function InspectionsPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {/* Report delivery status */}
-                      {inspection.status === 'completed' && (
-                        inspection.reportDeliveredAt ? (
-                          <Badge className="bg-blue-50 text-blue-600 border-blue-100 text-xs">
-                            <Mail className="h-3 w-3 mr-1" />Sent
+                      {/* On mobile: show only inspection status. On desktop: show all badges */}
+                      <div className="hidden sm:flex items-center gap-2">
+                        {inspection.status === 'completed' && (
+                          inspection.reportDeliveredAt ? (
+                            <Badge className="bg-blue-50 text-blue-600 border-blue-100 text-xs">
+                              <Mail className="h-3 w-3 mr-1" />Sent
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-slate-50 text-slate-400 border-slate-100 text-xs">
+                              <Mail className="h-3 w-3 mr-1" />Not sent
+                            </Badge>
+                          )
+                        )}
+                        {inspection.followUpStatus === 'sent' && (
+                          <Badge className="bg-purple-50 text-purple-600 border-purple-100 text-xs">
+                            <Clock className="h-3 w-3 mr-1" />Followed up
                           </Badge>
-                        ) : (
-                          <Badge className="bg-slate-50 text-slate-400 border-slate-100 text-xs">
-                            <Mail className="h-3 w-3 mr-1" />Not sent
-                          </Badge>
-                        )
-                      )}
-                      {/* Follow-up status */}
-                      {inspection.followUpStatus === 'scheduled' && (
-                        <Badge className="bg-purple-50 text-purple-600 border-purple-100 text-xs">
-                          <Clock className="h-3 w-3 mr-1" />Follow-up pending
-                        </Badge>
-                      )}
-                      {inspection.followUpStatus === 'sent' && (
-                        <Badge className="bg-purple-50 text-purple-600 border-purple-100 text-xs">
-                          <Clock className="h-3 w-3 mr-1" />Followed up
-                        </Badge>
-                      )}
-                      {/* Inspection status */}
+                        )}
+                      </div>
                       <Badge className={
                         inspection.status === 'completed' ? 'bg-green-100 text-green-700 border-green-100' :
                         inspection.status === 'in_progress' ? 'bg-amber-50 text-amber-700 border-amber-100' :

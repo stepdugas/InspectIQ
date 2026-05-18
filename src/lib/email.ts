@@ -1,18 +1,37 @@
 import { Resend } from 'resend'
 
-function escapeHtml(str: string): string {
+export function escapeHtml(str: string | null | undefined): string {
+  if (!str) return ''
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
 
 function getResend() {
-  return new Resend(process.env.RESEND_API_KEY ?? 'placeholder')
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) {
+    throw new Error('[InspectIQ] RESEND_API_KEY not configured — email sending disabled')
+  }
+  return new Resend(apiKey)
 }
-const FROM = 'Stephanie at InspectIQ <stephanie@useinspectiq.com>'
+
+// Default fallback — used for system emails (trial, welcome, etc.)
+// Client-facing emails should use getInspectorFrom() instead
+const SYSTEM_FROM = 'InspectIQ <stephanie@useinspectiq.com>'
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://useinspectiq.com'
+
+// Build a FROM address using the inspector's name — no InspectIQ branding
+export function getInspectorFrom(inspectorName?: string | null, companyName?: string | null): string {
+  const name = inspectorName ?? companyName ?? 'Your Inspector'
+  // Resend requires a verified domain — send from our domain but display inspector's name
+  return `${name} <stephanie@useinspectiq.com>`
+}
+
+export function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+}
 
 export async function sendWelcomeEmail(to: string, firstName: string) {
   await getResend().emails.send({
-    from: FROM,
+    from: SYSTEM_FROM,
     to,
     // Personal, lowercase subject — feels like a real email not an automated one
     subject: `your InspectIQ trial is live${firstName ? ', ' + escapeHtml(firstName) : ''}`,
@@ -45,7 +64,7 @@ export async function sendWelcomeEmail(to: string, firstName: string) {
 // Goal: get them to actually try Generate AI before they forget about the trial.
 export async function sendActivationEmail(to: string, firstName: string) {
   await getResend().emails.send({
-    from: FROM,
+    from: SYSTEM_FROM,
     to,
     subject: `did you try Generate AI yet${firstName ? ', ' + escapeHtml(firstName) : ''}?`,
     html: `
@@ -74,7 +93,7 @@ export async function sendActivationEmail(to: string, firstName: string) {
 
 export async function sendTrialMidpointEmail(to: string, firstName: string) {
   await getResend().emails.send({
-    from: FROM,
+    from: SYSTEM_FROM,
     to,
     // Feels like a personal check-in, not a countdown clock
     subject: `quick check-in on your InspectIQ trial`,
@@ -100,7 +119,7 @@ export async function sendTrialMidpointEmail(to: string, firstName: string) {
 
 export async function sendTrialExpiringEmail(to: string, firstName: string) {
   await getResend().emails.send({
-    from: FROM,
+    from: SYSTEM_FROM,
     to,
     subject: `your InspectIQ trial ends tomorrow`,
     html: `
@@ -126,7 +145,7 @@ export async function sendTrialExpiringEmail(to: string, firstName: string) {
 
 export async function sendReportToClient(to: string, clientName: string, inspectorName: string, propertyAddress: string, shareUrl: string) {
   await getResend().emails.send({
-    from: FROM,
+    from: getInspectorFrom(inspectorName),
     to,
     subject: `Your home inspection report — ${escapeHtml(propertyAddress)}`,
     html: `
@@ -153,7 +172,7 @@ export async function sendReportToClient(to: string, clientName: string, inspect
 
 export async function sendAgreementEmail(to: string, clientName: string, inspectorCompany: string, propertyAddress: string, agreementUrl: string) {
   await getResend().emails.send({
-    from: FROM,
+    from: getInspectorFrom(inspectorCompany),
     to,
     subject: `Pre-Inspection Agreement — ${escapeHtml(propertyAddress)}`,
     html: `
@@ -169,7 +188,7 @@ export async function sendAgreementEmail(to: string, clientName: string, inspect
             Review &amp; Sign Agreement →
           </a>
           <p style="color:#94a3b8;font-size:12px;margin-top:24px;border-top:1px solid #e2e8f0;padding-top:16px">
-            Sent via InspectIQ · useinspectiq.com
+            Powered by InspectIQ
           </p>
         </div>
       </div>
@@ -186,14 +205,20 @@ export async function sendFollowUpEmail(
   propertyAddress: string,
   inspectorPhone: string | null,
   inspectorEmail: string | null,
+  customMessage?: string,
 ) {
   const contactLines = [
     inspectorPhone ? `Phone: <a href="tel:${escapeHtml(inspectorPhone)}" style="color:#2563eb">${escapeHtml(inspectorPhone)}</a>` : '',
     inspectorEmail ? `Email: <a href="mailto:${escapeHtml(inspectorEmail)}" style="color:#2563eb">${escapeHtml(inspectorEmail)}</a>` : '',
   ].filter(Boolean).join('<br/>')
 
+  const bodyText = customMessage
+    ? escapeHtml(customMessage)
+    : `I sent over your inspection report for <strong>${escapeHtml(propertyAddress)}</strong> a couple of days ago and just wanted to check in.</p>
+          <p style="color:#475569;line-height:1.6">Do you have any questions about the findings? I'm happy to walk through anything in the report or clarify any items your agent flagged.`
+
   await getResend().emails.send({
-    from: FROM,
+    from: getInspectorFrom(inspectorName, companyName),
     to,
     subject: `Quick follow-up on your inspection — ${escapeHtml(propertyAddress)}`,
     html: `
@@ -203,12 +228,82 @@ export async function sendFollowUpEmail(
         </div>
         <div style="background:#ffffff;padding:32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px">
           <h2 style="font-size:20px;margin:0 0 16px">Hi ${escapeHtml(clientName)},</h2>
-          <p style="color:#475569;line-height:1.6">I sent over your inspection report for <strong>${escapeHtml(propertyAddress)}</strong> a couple of days ago and just wanted to check in.</p>
-          <p style="color:#475569;line-height:1.6">Do you have any questions about the findings? I'm happy to walk through anything in the report or clarify any items your agent flagged.</p>
+          <p style="color:#475569;line-height:1.6">${bodyText}</p>
           ${contactLines ? `<p style="color:#475569;line-height:1.6">${contactLines}</p>` : ''}
           <p style="color:#475569;line-height:1.6;margin-top:8px">Best,<br/><strong>${escapeHtml(inspectorName)}</strong></p>
           <p style="color:#94a3b8;font-size:12px;margin-top:24px;border-top:1px solid #e2e8f0;padding-top:16px">
-            Sent via InspectIQ · useinspectiq.com
+            Powered by InspectIQ
+          </p>
+        </div>
+      </div>
+    `,
+  })
+}
+
+// Follow-up with AI-generated top findings summary
+export async function sendTopFindingsFollowUp(
+  to: string,
+  clientName: string,
+  inspectorName: string,
+  companyName: string,
+  propertyAddress: string,
+  inspectionId: string,
+  inspectorPhone: string | null,
+  inspectorEmail: string | null,
+) {
+  // Pull top findings from the inspection
+  const { db: database, rooms, inspectionItems } = await import('@/lib/db')
+  const { eq, inArray } = await import('drizzle-orm')
+
+  const allRooms = await database.select().from(rooms).where(eq(rooms.inspectionId, inspectionId))
+  const roomIds = allRooms.map(r => r.id)
+  const allItems = roomIds.length > 0
+    ? await database.select().from(inspectionItems).where(inArray(inspectionItems.roomId, roomIds))
+    : []
+
+  const criticalItems = allItems.filter(i => i.condition === 'poor')
+  const maintenanceItems = allItems.filter(i => i.condition === 'fair')
+
+  // Build a plain-English summary
+  const findings: string[] = []
+  for (const item of criticalItems.slice(0, 3)) {
+    const room = allRooms.find(r => r.id === item.roomId)
+    findings.push(`<strong>${escapeHtml(item.name)}</strong> (${escapeHtml(room?.name ?? 'Unknown')}) — needs immediate attention${item.notes ? ': ' + escapeHtml(item.notes) : ''}`)
+  }
+  for (const item of maintenanceItems.slice(0, 2)) {
+    const room = allRooms.find(r => r.id === item.roomId)
+    findings.push(`<strong>${escapeHtml(item.name)}</strong> (${escapeHtml(room?.name ?? 'Unknown')}) — maintenance recommended${item.notes ? ': ' + escapeHtml(item.notes) : ''}`)
+  }
+
+  const contactLines = [
+    inspectorPhone ? `Phone: <a href="tel:${escapeHtml(inspectorPhone)}" style="color:#2563eb">${escapeHtml(inspectorPhone)}</a>` : '',
+    inspectorEmail ? `Email: <a href="mailto:${escapeHtml(inspectorEmail)}" style="color:#2563eb">${escapeHtml(inspectorEmail)}</a>` : '',
+  ].filter(Boolean).join('<br/>')
+
+  const findingsHtml = findings.length > 0
+    ? `<p style="color:#475569;line-height:1.6">Here's a quick recap of the top items from your report:</p>
+       <ul style="color:#475569;line-height:2;margin:0;padding-left:20px">${findings.map(f => `<li>${f}</li>`).join('')}</ul>
+       <p style="color:#475569;line-height:1.6;margin-top:16px">I'm happy to walk through any of these over the phone or answer questions your agent might have.</p>`
+    : `<p style="color:#475569;line-height:1.6">Everything looked good overall. If any questions come up as you review the full report, don't hesitate to reach out.</p>`
+
+  await getResend().emails.send({
+    from: getInspectorFrom(inspectorName, companyName),
+    to,
+    subject: `Top findings from your inspection — ${escapeHtml(propertyAddress)}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1e293b">
+        <div style="background:#0f172a;padding:32px;border-radius:12px 12px 0 0">
+          <h1 style="color:#60a5fa;font-size:20px;margin:0">${escapeHtml(companyName)}</h1>
+        </div>
+        <div style="background:#ffffff;padding:32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px">
+          <h2 style="font-size:20px;margin:0 0 16px">Hi ${escapeHtml(clientName)},</h2>
+          <p style="color:#475569;line-height:1.6">I sent over the full inspection report for <strong>${escapeHtml(propertyAddress)}</strong> and wanted to follow up with a quick summary.</p>
+          ${findingsHtml}
+          <p style="color:#94a3b8;font-size:11px;font-style:italic;margin-top:16px;padding:12px;background:#f8fafc;border-radius:6px">This is a brief highlight of key items only. Please review your complete inspection report for all findings, recommendations, and details.</p>
+          ${contactLines ? `<p style="color:#475569;line-height:1.6">${contactLines}</p>` : ''}
+          <p style="color:#475569;line-height:1.6;margin-top:8px">Best,<br/><strong>${escapeHtml(inspectorName)}</strong></p>
+          <p style="color:#94a3b8;font-size:12px;margin-top:24px;border-top:1px solid #e2e8f0;padding-top:16px">
+            Powered by InspectIQ
           </p>
         </div>
       </div>
@@ -218,7 +313,7 @@ export async function sendFollowUpEmail(
 
 export async function sendReferralRewardEmail(to: string, referrerName: string, newUserEmail: string) {
   await getResend().emails.send({
-    from: FROM,
+    from: SYSTEM_FROM,
     to,
     subject: 'You earned a free month on InspectIQ 🎉',
     html: `
@@ -243,7 +338,7 @@ export async function sendReferralRewardEmail(to: string, referrerName: string, 
 
 export async function sendReferralNotification(to: string, referrerName: string, newUserEmail: string) {
   await getResend().emails.send({
-    from: FROM,
+    from: SYSTEM_FROM,
     to,
     subject: 'Someone just signed up with your InspectIQ referral link! 🎉',
     html: `

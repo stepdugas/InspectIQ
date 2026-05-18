@@ -2,13 +2,18 @@ import { NextResponse } from 'next/server'
 import { db, reports, repairRequests, repairRequestItems, inspections, profiles } from '@/lib/db'
 import { eq, and } from 'drizzle-orm'
 import { Resend } from 'resend'
-
-function escapeHtml(str: string): string {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-}
+import { escapeHtml } from '@/lib/email'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
 
 // POST /api/report/[token]/repairs/submit — agent submits the repair list
 export async function POST(_req: Request, { params }: { params: Promise<{ token: string }> }) {
+  // Rate limit: 3 repair submissions per IP per 10 minutes
+  const ip = getClientIp(_req)
+  const limit = rateLimit(`repair:${ip}`, 3, 10 * 60 * 1000)
+  if (!limit.allowed) {
+    return NextResponse.json({ error: 'Too many submissions. Please try again later.' }, { status: 429 })
+  }
+
   const { token } = await params
 
   const body = await _req.json()
@@ -84,9 +89,9 @@ export async function POST(_req: Request, { params }: { params: Promise<{ token:
       .where(eq(profiles.id, inspection.userId)).limit(1)
     if (!profile?.email) return
 
-    const resend = new Resend(process.env.RESEND_API_KEY ?? 'placeholder')
+    const apiKey = process.env.RESEND_API_KEY; if (!apiKey) throw new Error('RESEND_API_KEY not set'); const resend = new Resend(apiKey)
     await resend.emails.send({
-      from: 'Stephanie at InspectIQ <stephanie@useinspectiq.com>',
+      from: 'InspectIQ <stephanie@useinspectiq.com>',
       to: profile.email,
       subject: `Repair Request — ${inspection.propertyAddress}`,
       html: `

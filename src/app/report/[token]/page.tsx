@@ -49,6 +49,11 @@ export default async function PublicReportPage({ params }: { params: Promise<{ t
   const [report] = await db.select().from(reports).where(eq(reports.shareToken, token)).limit(1)
   if (!report) notFound()
 
+  // Check share token expiration if set
+  if (report.shareTokenExpiresAt && new Date(report.shareTokenExpiresAt) < new Date()) {
+    notFound()
+  }
+
   const [inspection] = await db.select().from(inspections).where(eq(inspections.id, report.inspectionId)).limit(1)
   if (!inspection) notFound()
 

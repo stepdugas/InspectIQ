@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useClerk } from '@clerk/nextjs'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Building2, LayoutDashboard, ClipboardList, FileText, Settings, LogOut, Home, LayoutTemplate, CalendarDays } from 'lucide-react'
+import { Building2, LayoutDashboard, ClipboardList, FileText, Settings, LogOut, Home, LayoutTemplate, CalendarDays, Bot } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const navItems = [
@@ -14,6 +14,7 @@ const navItems = [
   { href: '/dashboard/schedule', label: 'Schedule', icon: CalendarDays },
   { href: '/dashboard/reports', label: 'Reports', icon: FileText },
   { href: '/dashboard/templates', label: 'Templates', icon: LayoutTemplate },
+  { href: '/dashboard/agents', label: 'AI Agents', icon: Bot },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
   { href: '/', label: 'Home', icon: Home },
 ]

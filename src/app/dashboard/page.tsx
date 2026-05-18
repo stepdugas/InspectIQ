@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { ClipboardList, FileText, Plus, TrendingUp, DollarSign, CalendarDays, ArrowUpRight, ArrowDownRight } from 'lucide-react'
 import { Suspense } from 'react'
 import CheckoutRedirect from '@/components/CheckoutRedirect'
+import AgentActivityFeed from '@/components/agents/AgentActivityFeed'
 
 function formatMoney(cents: number) {
   return `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 0 })}`
@@ -250,6 +251,20 @@ export default async function DashboardPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* ── Agent Activity ── */}
+      <div className="mt-6">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h2 className="text-base font-semibold text-slate-900">Agent Activity</h2>
+            <p className="text-xs text-slate-400">What your AI agents have been doing</p>
+          </div>
+          <Link href="/dashboard/agents">
+            <Button variant="ghost" size="sm" className="text-blue-600">Manage agents</Button>
+          </Link>
+        </div>
+        <AgentActivityFeed limit={10} />
+      </div>
     </div>
   )
 }
