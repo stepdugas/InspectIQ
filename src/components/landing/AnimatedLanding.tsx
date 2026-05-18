@@ -1,824 +1,372 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState } from 'react'
 import Link from 'next/link'
-import {
-  motion,
-  useScroll,
-  useTransform,
-  useInView,
-} from 'framer-motion'
+import { motion, useInView } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import PublicNav from '@/components/layout/PublicNav'
 import {
-  FileText, Zap, Clock, Shield, Star,
-  ChevronRight, CheckCircle2, Building2,
-  Download, Share2, Mail, PenLine,
-  WifiOff, Pencil, DollarSign, CalendarDays, LayoutTemplate, ClipboardList, FileSignature,
+  FileText, Zap, Clock, Mail, Star, Users, CalendarDays,
+  CheckCircle2, ChevronDown, ChevronRight, Shield, Search,
+  MessageSquare, Wrench, BarChart3, Phone, Brain, Megaphone,
+  Bot, ArrowRight, Sparkles,
 } from 'lucide-react'
 
-// ─── Data ────────────────────────────────────────────────────────────────────
+// ─── Agent Data ──────────────────────────────────────────────────────────────
 
-const features = [
-  { icon: WifiOff, title: 'Install to Your Home Screen', description: 'InspectIQ installs as an app directly on your phone — no App Store needed. Loads instantly and lets you view cached inspections in low-signal areas. Creating inspections and uploading photos requires an internet connection.', isNew: true },
-  { icon: Pencil, title: 'Photo Annotation', description: 'Draw arrows, boxes, circles, and text directly on your inspection photos — right inside the app. Circle the cracked flashing. Arrow the double-tapped breaker. Make every defect crystal clear to your client.', isNew: true },
-  { icon: DollarSign, title: 'Collect Client Payments', description: 'Connect your Stripe account and collect inspection fees directly. Set your fee, generate a payment link, email it to your client — they pay online and money goes straight to your bank. No separate payment app needed.', isNew: true },
-  { icon: CalendarDays, title: 'Built-In Scheduling Calendar', description: 'See all your upcoming inspections on a month, week, or day calendar. Click any day to schedule a new job. Set inspection times and store client phone numbers — everything in one place.', isNew: true },
-  { icon: LayoutTemplate, title: 'Custom Inspection Templates', description: 'Build your own templates for commercial properties, pools, radon, sewer scopes, and any specialty inspection. Start from a preset or build from scratch — then use your template on any job.', isNew: true },
-  { icon: Zap, title: 'AI-Powered Narratives', description: 'Enter your findings room by room. AI instantly writes professional, detailed report narratives — the kind that used to take hours to write by hand.' },
-  { icon: Shield, title: 'InterNACHI Standards Built-In', description: 'Pre-loaded with InterNACHI Standards of Practice checklists. Your reports reflect the highest industry standards, automatically.' },
-  { icon: FileText, title: 'Branded PDF Reports', description: 'Every report includes your company logo, license number, and contact info. Professional output that wins referrals.' },
-  { icon: Mail, title: 'Email Reports to Clients', description: 'Send the finished report directly to your client with one click. No copying links, no back-and-forth — they get it instantly.' },
-  { icon: Share2, title: 'Secure Client Share Links', description: 'Share a secure link or download a PDF — clients get their report immediately, not 48 hours later.' },
-  { icon: PenLine, title: 'Your Signature on Every Report', description: 'Draw your signature right in the app or upload an image. It appears on every PDF you generate. Looks professional, builds trust.' },
-  { icon: Clock, title: 'Reports in Minutes', description: 'Cut report writing time by 80%. Finish your report on-site and deliver it to clients the same day.' },
-  { icon: ClipboardList, title: 'Client Repair List', description: 'After reviewing your report, agents select the defects they want repaired — with priorities, cost estimates, and notes. You get notified instantly. No back-and-forth emails.', isNew: true },
-  { icon: FileSignature, title: 'Pre-Inspection Agreements', description: 'Send a pre-inspection agreement to your client for e-signature before the inspection. They sign online, you get a timestamped record with their name and IP. Covers your liability.', isNew: true },
+const agentCategories = [
+  {
+    name: 'Report & Delivery',
+    agents: [
+      { icon: FileText, title: 'Report Writer', description: 'Writes professional narratives from your findings — room by room, in seconds.' },
+      { icon: Mail, title: 'Report Delivery', description: 'Sends finished reports to clients with branded emails and secure share links.' },
+      { icon: Wrench, title: 'Repair Summaries', description: 'Generates prioritized repair lists with cost estimates for agents and buyers.' },
+    ],
+  },
+  {
+    name: 'Client & Realtor',
+    agents: [
+      { icon: MessageSquare, title: 'Client Follow-Ups', description: 'Sends check-in sequences after delivery — keeps you top-of-mind without lifting a finger.' },
+      { icon: Star, title: 'Google Review Requests', description: 'Asks happy clients for Google reviews at the perfect time — growing your rating on autopilot.' },
+      { icon: Users, title: 'Realtor Nurture', description: 'Maintains relationships with referring agents — birthday notes, market updates, thank-yous.' },
+    ],
+  },
+  {
+    name: 'Operations',
+    agents: [
+      { icon: CalendarDays, title: 'Scheduling & Booking', description: 'Your own branded booking page. Realtors pick a time, you get the job. No phone tag.' },
+      { icon: Search, title: 'Property Research', description: 'Pulls permit history, prior sales, and property details before you arrive on-site.' },
+      { icon: Shield, title: 'Compliance Tracking', description: 'Monitors license renewals, CE requirements, and insurance expirations so nothing lapses.' },
+      { icon: Phone, title: 'After-Hours Email', description: 'Responds to inquiries nights and weekends — so leads never go cold.' },
+    ],
+  },
+  {
+    name: 'Growth',
+    agents: [
+      { icon: Brain, title: 'Lead Qualification', description: 'Scores incoming leads and routes hot ones to you first. No more wasting time on tire-kickers.' },
+      { icon: BarChart3, title: 'Business Intelligence', description: 'Tracks revenue, inspection volume, agent referrals, and trends — your business at a glance.' },
+      { icon: Megaphone, title: 'Marketing', description: 'Creates and publishes SEO content, social posts, and email campaigns to attract new clients.' },
+    ],
+  },
 ]
 
+const steps = [
+  { number: '1', title: 'Sign up in 2 minutes', description: 'No credit card. No setup calls. Just your email and you are in.' },
+  { number: '2', title: 'Connect your tools', description: 'Link your email, calendar, and Stripe. Takes about 10 minutes.' },
+  { number: '3', title: 'Your AI team gets to work', description: 'Agents start handling admin immediately. You focus on inspections.' },
+]
+
+const faqs = [
+  {
+    q: 'Is it really autonomous? Do the agents work without me?',
+    a: 'Yes. Once configured, agents run on their own — sending follow-ups, requesting reviews, responding to inquiries, and more. You get a dashboard showing everything they do, and you can override or pause any agent at any time.',
+  },
+  {
+    q: 'What if I only want some of the agents?',
+    a: 'Every agent can be toggled on or off from your dashboard. Start with just the Report Writer if you want, then enable more as you get comfortable. You only use what you need.',
+  },
+  {
+    q: 'Do I need to be technical?',
+    a: 'Not at all. If you can send an email, you can use InspectIQ. There is no code to write, no integrations to build. Setup is a guided 10-minute walkthrough.',
+  },
+  {
+    q: 'How is this different from Spectora or ISN?',
+    a: 'Spectora and ISN are tools — they help you do work faster. InspectIQ is a workforce — it does the work for you. Spectora offers AI text suggestions. InspectIQ has 13 autonomous agents that actually execute tasks: writing reports, sending emails, requesting reviews, nurturing realtors, and marketing your business.',
+  },
+  {
+    q: 'What happens after my 14-day trial?',
+    a: 'If you love it, you pay $99/month — everything included, all 13 agents, unlimited inspections. If not, you walk away. No charge, no hassle, no awkward cancellation call.',
+  },
+  {
+    q: 'Can I cancel anytime?',
+    a: 'Yes. Monthly billing, cancel with one click. No contracts, no termination fees.',
+  },
+]
 
 const pricingFeatures = [
+  'All 13 AI agents included',
   'Unlimited inspections & reports',
-  'Installs to home screen — works in low-signal areas',
-  'Photo annotation — arrows, boxes, text on photos',
-  'Client payment collection — money goes to your bank',
-  'Built-in scheduling calendar',
-  'Custom templates (commercial, pool, radon & more)',
-  'AI-generated professional narratives',
-  'InterNACHI standards pre-loaded',
-  'Email reports directly to clients',
-  'Branded PDF with your logo & signature',
-  'Secure client share links',
-  'Client repair list for agents — select defects, add notes & costs',
-  'Pre-inspection agreements with e-signature',
-  'Cancel anytime',
+  'Branded booking page',
+  'Automated client follow-ups',
+  'Google review requests on autopilot',
+  'Realtor nurture sequences',
+  'After-hours email handling',
+  'Business intelligence dashboard',
+  'All future agents we build — free',
 ]
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── Animated Section Wrapper ────────────────────────────────────────────────
 
-function FadeInWhenVisible({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+function Section({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, margin: '-20px' })
+  const isInView = useInView(ref, { once: true, margin: '-80px' })
   return (
-    <motion.div
+    <motion.section
       ref={ref}
       initial={{ opacity: 0, y: 32 }}
       animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.6, delay, ease: [0.21, 0.47, 0.32, 0.98] }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+      className={className}
     >
       {children}
-    </motion.div>
+    </motion.section>
   )
 }
 
-// The "go inside the house" scroll section
-function HouseJourney() {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ['start end', 'end start'],
-  })
+// ─── FAQ Accordion ───────────────────────────────────────────────────────────
 
-  const scale = useTransform(scrollYProgress, [0, 0.5], [1, 2.2])
-  const opacity = useTransform(scrollYProgress, [0, 0.2, 0.45, 0.55], [1, 1, 0.3, 0])
-  const interiorOpacity = useTransform(scrollYProgress, [0.55, 0.75], [0, 1])
-  const interiorY = useTransform(scrollYProgress, [0.55, 0.75], [40, 0])
-  const textY = useTransform(scrollYProgress, [0, 0.4], [0, -60])
-
-  const rooms = [
-    { emoji: '🔌', label: 'Electrical', color: 'bg-amber-50 border-amber-200 text-amber-700' },
-    { emoji: '🚿', label: 'Plumbing', color: 'bg-blue-50 border-blue-200 text-blue-700' },
-    { emoji: '🔥', label: 'HVAC', color: 'bg-orange-50 border-orange-200 text-orange-700' },
-    { emoji: '🏗️', label: 'Structure', color: 'bg-slate-50 border-slate-200 text-slate-700' },
-    { emoji: '🍳', label: 'Kitchen', color: 'bg-green-50 border-green-200 text-green-700' },
-    { emoji: '🛁', label: 'Bathrooms', color: 'bg-purple-50 border-purple-200 text-purple-700' },
-  ]
-
+function FaqItem({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = useState(false)
   return (
-    <section
-      ref={containerRef}
-      className="relative h-[200vh] bg-gradient-to-b from-slate-900 to-slate-800 overflow-hidden"
-    >
-      <div className="sticky top-0 h-screen flex flex-col items-center justify-center overflow-hidden">
-        {/* Exterior view — zooms in on scroll */}
-        <motion.div
-          style={{ scale, opacity }}
-          className="absolute inset-0 flex items-center justify-center"
-        >
-          <div className="relative select-none">
-            {/* House SVG illustration */}
-            <svg width="480" height="380" viewBox="0 0 480 380" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-2xl">
-              {/* Sky gradient */}
-              <defs>
-                <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#1e3a5f" />
-                  <stop offset="100%" stopColor="#2563eb" stopOpacity="0.3" />
-                </linearGradient>
-              </defs>
-              {/* Ground */}
-              <rect x="0" y="300" width="480" height="80" fill="#1e293b" />
-              <rect x="0" y="295" width="480" height="10" fill="#334155" />
-              {/* House body */}
-              <rect x="100" y="180" width="280" height="150" fill="#1e40af" rx="2" />
-              <rect x="100" y="180" width="280" height="150" fill="url(#houseGrad)" rx="2" />
-              <defs>
-                <linearGradient id="houseGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#1d4ed8" />
-                  <stop offset="100%" stopColor="#1e3a8a" />
-                </linearGradient>
-              </defs>
-              {/* Roof */}
-              <polygon points="80,180 240,60 400,180" fill="#0f172a" />
-              <polygon points="80,180 240,60 400,180" fill="#1e293b" />
-              {/* Roof highlight */}
-              <line x1="240" y1="60" x2="80" y2="180" stroke="#334155" strokeWidth="3" />
-              <line x1="240" y1="60" x2="400" y2="180" stroke="#334155" strokeWidth="3" />
-              {/* Chimney */}
-              <rect x="320" y="80" width="30" height="60" fill="#0f172a" />
-              <rect x="316" y="76" width="38" height="10" fill="#1e293b" />
-              {/* Chimney smoke puffs */}
-              <circle cx="335" cy="65" r="8" fill="#374151" opacity="0.5" />
-              <circle cx="340" cy="50" r="6" fill="#374151" opacity="0.3" />
-              <circle cx="332" cy="38" r="4" fill="#374151" opacity="0.2" />
-              {/* Windows — lit up */}
-              <rect x="130" y="210" width="70" height="55" fill="#fbbf24" rx="3" opacity="0.9" />
-              <rect x="130" y="210" width="70" height="55" fill="#f59e0b" rx="3" opacity="0.4" />
-              <line x1="165" y1="210" x2="165" y2="265" stroke="#92400e" strokeWidth="2" />
-              <line x1="130" y1="237" x2="200" y2="237" stroke="#92400e" strokeWidth="2" />
-              <rect x="280" y="210" width="70" height="55" fill="#fbbf24" rx="3" opacity="0.9" />
-              <rect x="280" y="210" width="70" height="55" fill="#f59e0b" rx="3" opacity="0.4" />
-              <line x1="315" y1="210" x2="315" y2="265" stroke="#92400e" strokeWidth="2" />
-              <line x1="280" y1="237" x2="350" y2="237" stroke="#92400e" strokeWidth="2" />
-              {/* Door */}
-              <rect x="195" y="240" width="90" height="90" fill="#0f172a" rx="2" />
-              <rect x="198" y="243" width="84" height="84" fill="#1e293b" rx="1" />
-              <circle cx="277" cy="285" r="5" fill="#fbbf24" />
-              {/* Door window */}
-              <rect x="220" y="250" width="40" height="28" fill="#fbbf24" rx="2" opacity="0.6" />
-              {/* Walkway */}
-              <rect x="220" y="330" width="40" height="30" fill="#334155" />
-              {/* Trees */}
-              <ellipse cx="55" cy="250" rx="35" ry="50" fill="#064e3b" />
-              <rect x="50" y="295" width="10" height="35" fill="#78350f" />
-              <ellipse cx="420" cy="255" rx="30" ry="45" fill="#064e3b" />
-              <rect x="415" y="295" width="10" height="30" fill="#78350f" />
-              {/* Stars */}
-              <circle cx="80" cy="30" r="2" fill="white" opacity="0.8" />
-              <circle cx="150" cy="15" r="1.5" fill="white" opacity="0.6" />
-              <circle cx="380" cy="25" r="2" fill="white" opacity="0.7" />
-              <circle cx="430" cy="50" r="1.5" fill="white" opacity="0.5" />
-              <circle cx="50" cy="70" r="1" fill="white" opacity="0.5" />
-            </svg>
-          </div>
-        </motion.div>
-
-        {/* Text overlay on exterior */}
-        <motion.div style={{ y: textY }} className="absolute bottom-24 text-center z-10">
-          <p className="text-slate-300 text-lg font-light tracking-wide">Every home has a story.</p>
-          <p className="text-slate-400 text-sm mt-1">Scroll to go inside.</p>
-          <motion.div
-            animate={{ y: [0, 8, 0] }}
-            transition={{ repeat: Infinity, duration: 1.4 }}
-            className="mt-3 flex justify-center"
-          >
-            <ChevronRight className="rotate-90 text-blue-400 h-5 w-5" />
-          </motion.div>
-        </motion.div>
-
-        {/* Interior reveal */}
-        <motion.div
-          style={{ opacity: interiorOpacity, y: interiorY }}
-          className="absolute inset-0 flex flex-col items-center justify-center px-6 z-20"
-        >
-          <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-3">
-            Inspect every corner.<br />
-            <span className="text-blue-400">Document everything.</span>
-          </h2>
-          <p className="text-slate-300 text-center max-w-lg mb-10">
-            InspectIQ walks you through every system in the home — powered by InterNACHI standards — then writes the report for you.
-          </p>
-          <div className="grid grid-cols-3 gap-4 max-w-xl">
-            {rooms.map((room) => (
-              <div key={room.label} className={`flex flex-col items-center gap-2 p-4 rounded-xl border bg-white/5 border-white/10 backdrop-blur`}>
-                <span className="text-3xl">{room.emoji}</span>
-                <span className="text-sm text-slate-200 font-medium">{room.label}</span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      </div>
-    </section>
-  )
-}
-
-// Dashboard mockup — shows what the product looks like
-function DashboardMockup() {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white shadow-2xl overflow-hidden">
-      {/* Browser chrome */}
-      <div className="bg-slate-100 border-b border-slate-200 px-4 py-2 flex items-center gap-2">
-        <div className="flex gap-1.5">
-          <div className="w-3 h-3 rounded-full bg-red-400" />
-          <div className="w-3 h-3 rounded-full bg-amber-400" />
-          <div className="w-3 h-3 rounded-full bg-green-400" />
-        </div>
-        <div className="flex-1 mx-4 bg-white rounded px-3 py-1 text-xs text-slate-400 border border-slate-200">
-          useinspectiq.com/dashboard
-        </div>
-      </div>
-      {/* App content */}
-      <div className="flex h-80">
-        {/* Sidebar */}
-        <div className="w-44 bg-white border-r border-slate-100 p-3 flex flex-col gap-1">
-          <div className="flex items-center gap-2 px-2 py-2 mb-2">
-            <Building2 className="h-4 w-4 text-blue-600" />
-            <span className="text-sm font-bold text-slate-900">InspectIQ</span>
-          </div>
-          {[
-            { label: 'Dashboard', active: false },
-            { label: 'Inspections', active: true },
-            { label: 'Schedule', active: false },
-            { label: 'Reports', active: false },
-            { label: 'Templates', active: false },
-          ].map((item) => (
-            <div key={item.label} className={`px-2 py-1.5 rounded-lg text-xs font-medium ${item.active ? 'bg-blue-50 text-blue-700' : 'text-slate-500'}`}>
-              {item.label}
-            </div>
-          ))}
-        </div>
-        {/* Content */}
-        <div className="flex-1 p-4 bg-slate-50">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <div className="h-4 w-32 bg-slate-800 rounded mb-1" />
-              <div className="h-2.5 w-24 bg-slate-300 rounded" />
-            </div>
-            <div className="h-7 w-28 bg-blue-600 rounded-lg" />
-          </div>
-          <div className="space-y-2">
-            {[
-              { addr: '142 Maple Grove Drive', status: 'completed', color: 'bg-green-100 text-green-700' },
-              { addr: '2847 Fixer Upper Lane', status: 'completed', color: 'bg-green-100 text-green-700' },
-              { addr: '918 Victorian Heights', status: 'in_progress', color: 'bg-amber-100 text-amber-700' },
-              { addr: '4421 Modern Oaks Ct', status: 'completed', color: 'bg-green-100 text-green-700' },
-            ].map((item) => (
-              <div key={item.addr} className="bg-white rounded-lg border border-slate-100 px-3 py-2 flex items-center justify-between shadow-sm">
-                <div>
-                  <div className="text-xs font-medium text-slate-800">{item.addr}</div>
-                  <div className="text-xs text-slate-400 mt-0.5">Client · Apr 2026</div>
-                </div>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${item.color}`}>
-                  {item.status.replace('_', ' ')}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+    <div className="border-b border-slate-200 last:border-0">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center justify-between py-5 text-left text-base font-medium text-slate-900 hover:text-blue-600 transition-colors"
+      >
+        {q}
+        <ChevronDown className={`h-5 w-5 shrink-0 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && <p className="pb-5 text-slate-600 leading-relaxed">{a}</p>}
     </div>
   )
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function AnimatedLanding() {
-  const [stars, setStars] = useState<Array<{ left: string; top: string; opacity: number; duration: number; delay: number }>>([])
-  const [foundingRemaining, setFoundingRemaining] = useState<number | null>(null)
-  const [billingAnnual, setBillingAnnual] = useState(true)
-  const [showExitPopup, setShowExitPopup] = useState(false)
-  const exitShownRef = useRef(false)
-
-  useEffect(() => {
-    setStars([...Array(40)].map(() => ({
-      left: `${Math.random() * 100}%`,
-      top: `${Math.random() * 100}%`,
-      opacity: Math.random() * 0.6 + 0.1,
-      duration: 2 + Math.random() * 3,
-      delay: Math.random() * 3,
-    })))
-    // Fetch live founding member spot count
-    fetch('/api/founding-spots')
-      .then(r => r.json())
-      .then(data => setFoundingRemaining(data.remaining))
-      .catch(() => {}) // non-critical, UI falls back to static copy
-
-    // Exit-intent popup — desktop only, fires once when mouse leaves viewport top
-    const handleMouseLeave = (e: MouseEvent) => {
-      if (e.clientY <= 0 && !exitShownRef.current) {
-        exitShownRef.current = true
-        setShowExitPopup(true)
-      }
-    }
-    document.addEventListener('mouseleave', handleMouseLeave)
-    return () => document.removeEventListener('mouseleave', handleMouseLeave)
-  }, [])
-
   return (
     <div className="min-h-screen bg-white">
-
-      {/* ── Nav ── */}
-      <PublicNav activePath="/" />
+      <PublicNav />
 
       {/* ── Hero ── */}
-      <section className="bg-gradient-to-b from-slate-900 via-blue-950 to-slate-900 pt-16 sm:pt-24 pb-20 sm:pb-32 px-4 sm:px-6 text-center overflow-hidden relative">
-        {/* Background stars */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {stars.map((star, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-0.5 h-0.5 bg-white rounded-full"
-              style={{ left: star.left, top: star.top, opacity: star.opacity }}
-              animate={{ opacity: [0.1, 0.7, 0.1] }}
-              transition={{ duration: star.duration, repeat: Infinity, delay: star.delay }}
-            />
-          ))}
-        </div>
-
-        <div className="relative max-w-4xl mx-auto">
-          <div>
-            <Badge variant="secondary" className="mb-6 text-blue-300 bg-blue-950 border-blue-800">
-              PWA · Photo Annotation · Client Payments · Scheduling · Custom Templates · Repair Lists
-            </Badge>
-          </div>
-
-          <h1
-            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.1] mb-6"
-          >
-            Stop writing reports at 11pm.<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">
-              AI does it in minutes.
-            </span>
+      <section className="relative overflow-hidden bg-gradient-to-b from-slate-50 to-white pt-24 pb-20 md:pt-32 md:pb-28">
+        <div className="mx-auto max-w-5xl px-6 text-center">
+          <Badge variant="secondary" className="mb-6 text-sm font-medium px-4 py-1.5">
+            <Bot className="mr-1.5 h-3.5 w-3.5" /> 13 AI Agents Working For You
+          </Badge>
+          <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl md:text-6xl leading-tight">
+            Hire your first AI employee<br className="hidden sm:block" /> for $99/month
           </h1>
-
-          <p
-            className="text-xl text-slate-300 max-w-2xl mx-auto mb-4"
-          >
-            Enter your findings room by room. AI writes the professional narrative. Collect client payments, annotate photos, and deliver the report — all from one app on your phone.
+          <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-600 leading-relaxed">
+            You do the inspections. Your AI team handles everything else — reports,
+            follow-ups, review requests, scheduling, realtor nurture, and marketing.
+            13 agents. Zero admin work.
           </p>
-
-          <div className="flex flex-wrap items-center justify-center gap-2 mb-10">
-            <span className="text-xs px-2.5 py-1 rounded-full bg-white/10 text-slate-300 border border-white/10">TREC 7-6 (Texas)</span>
-            <span className="text-xs px-2.5 py-1 rounded-full bg-white/10 text-slate-300 border border-white/10">InterNACHI</span>
-            <span className="text-xs px-2.5 py-1 rounded-full bg-white/10 text-slate-300 border border-white/10">ASHI</span>
-            <Link href="/auth/signup" className="text-xs text-blue-400 hover:text-blue-300 ml-1">Start free trial →</Link>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/auth/signup" className="w-full sm:w-auto">
-              <Button size="lg" className="w-full sm:w-auto bg-blue-500 hover:bg-blue-400 active:bg-blue-600 text-base px-8 shadow-lg shadow-blue-900/30 transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-blue-900/40">
-                Start your free 14-day trial
-                <ChevronRight className="ml-2 h-4 w-4" />
+          <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+            <Link href="/sign-up">
+              <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-base font-semibold rounded-xl shadow-lg shadow-blue-600/20">
+                Start your free trial <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
-            <Link href="#features" className="w-full sm:w-auto">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto text-base px-8 border-2 border-slate-400 text-white bg-white/10 hover:bg-white/20 hover:border-white hover:scale-105 active:scale-95 transition-all duration-200 backdrop-blur-sm">
-                See how it works
-              </Button>
-            </Link>
+            <p className="text-sm text-slate-500">14-day free trial. No credit card required.</p>
           </div>
-          <p
-            className="text-sm text-slate-500 mt-4"
-          >
-            14-day free trial. Cancel anytime. No charge until day 15.
+          <div className="mt-12 flex items-center justify-center gap-8 text-sm text-slate-500">
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-green-500" /> No credit card</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-green-500" /> Cancel anytime</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-green-500" /> Setup in 10 min</span>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Social Proof ── */}
+      <Section className="py-12 bg-slate-50 border-y border-slate-100">
+        <div className="mx-auto max-w-4xl px-6 text-center">
+          <p className="text-sm font-medium text-slate-500 uppercase tracking-wide">
+            Trusted by home inspectors across the country
           </p>
-
-          {/* Dashboard mockup */}
-          <motion.div
-            initial={{ opacity: 0, y: 60, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 1, delay: 0.5, ease: [0.21, 0.47, 0.32, 0.98] }}
-            className="mt-12 sm:mt-16 max-w-3xl mx-auto overflow-hidden"
-          >
-            <DashboardMockup />
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ── Social proof bar ── */}
-      <section className="border-y border-slate-100 bg-slate-50 py-5">
-        <div className="max-w-4xl mx-auto px-6 flex flex-col md:flex-row items-center justify-center gap-8 text-sm text-slate-500">
-          {[
-            'Installs to your phone — works in low-signal areas',
-            'Photo annotation, payments & scheduling built in',
-            'Repair lists — agents select defects & submit requests',
-          ].map((text) => (
-            <div key={text} className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-              <span>{text}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── House Journey (scroll animation) ── */}
-      <HouseJourney />
-
-      {/* ── Features ── */}
-      <section id="features" className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
-        <div className="text-center mb-16">
-          <Badge variant="secondary" className="mb-4 text-blue-700 bg-blue-50 border-blue-100">What&apos;s new in 2026</Badge>
-          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-            Everything a professional inspector needs
-          </h2>
-          <p className="text-lg text-slate-500 max-w-xl mx-auto">
-            Built specifically for home inspectors — not a generic tool adapted to fit. Built to match anything else on the market, and then some.
-          </p>
-        </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {features.map((f, i) => (
-            <FadeInWhenVisible key={f.title} delay={i * 0.07}>
-              <Card className={`shadow-sm hover:shadow-md transition-all hover:-translate-y-1 h-full ${(f as { isNew?: boolean }).isNew ? 'border-blue-200 bg-blue-50/30' : 'border-slate-100'}`}>
-                <CardContent className="pt-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${(f as { isNew?: boolean }).isNew ? 'bg-blue-100' : 'bg-blue-50'}`}>
-                      <f.icon className="h-5 w-5 text-blue-600" />
-                    </div>
-                    {(f as { isNew?: boolean }).isNew && (
-                      <span className="text-xs font-semibold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">NEW</span>
-                    )}
+          {/* Placeholder for testimonials — replace when real quotes come in */}
+          <div className="mt-8 grid gap-6 md:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="border-slate-200 bg-white">
+                <CardContent className="p-6">
+                  <div className="flex gap-1 mb-3">
+                    {[...Array(5)].map((_, j) => <Star key={j} className="h-4 w-4 fill-yellow-400 text-yellow-400" />)}
                   </div>
-                  <h3 className="font-semibold text-slate-900 mb-2">{f.title}</h3>
-                  <p className="text-sm text-slate-500 leading-relaxed">{f.description}</p>
+                  <p className="text-slate-600 text-sm italic">&quot;Testimonial coming soon&quot;</p>
+                  <p className="mt-3 text-xs text-slate-400">— Inspector Name, State</p>
                 </CardContent>
               </Card>
-            </FadeInWhenVisible>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Feature UI Mockups ── */}
-      <section className="bg-white py-16 sm:py-24">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">See it in action</h2>
-            <p className="text-slate-500 text-lg max-w-xl mx-auto">Here&apos;s what your workflow looks like inside InspectIQ.</p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            {/* Mockup 1 — AI narrative */}
-            <FadeInWhenVisible delay={0}>
-              <Card className="bg-slate-50 border-slate-100 overflow-hidden h-full">
-                <CardContent className="p-0">
-                  <div className="bg-slate-800 rounded-t-xl px-4 py-3 flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
-                    <span className="ml-2 text-slate-400 text-xs">AI Narrative Generator</span>
-                  </div>
-                  <div className="p-5 space-y-3">
-                    <div className="text-xs text-slate-400 font-semibold uppercase tracking-wide">Your notes</div>
-                    <div className="bg-white border border-slate-200 rounded-lg p-3 text-xs text-slate-500 italic">&ldquo;Roof — missing shingles SE corner, flashing loose at chimney&rdquo;</div>
-                    <div className="flex items-center gap-2 text-blue-600 text-xs font-semibold py-1">
-                      <Zap className="h-3.5 w-3.5" /> AI writing narrative...
-                    </div>
-                    <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs text-slate-600 leading-relaxed">
-                      &ldquo;The roof covering exhibited missing shingles at the southeast corner and loose flashing at the chimney penetration. Recommend evaluation and repair by a licensed roofing contractor.&rdquo;
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </FadeInWhenVisible>
-
-            {/* Mockup 2 — Photo annotation */}
-            <FadeInWhenVisible delay={0.1}>
-              <Card className="bg-slate-50 border-slate-100 overflow-hidden h-full">
-                <CardContent className="p-0">
-                  <div className="bg-slate-800 rounded-t-xl px-4 py-3 flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
-                    <span className="ml-2 text-slate-400 text-xs">Photo Annotation</span>
-                  </div>
-                  <div className="p-5 space-y-3">
-                    <div className="bg-slate-200 rounded-lg aspect-video flex items-center justify-center relative overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-br from-slate-300 to-slate-200 flex items-center justify-center">
-                        <span className="text-slate-400 text-xs">inspection photo</span>
-                      </div>
-                      <div className="absolute top-4 left-6 w-10 h-10 border-2 border-red-500 rounded" />
-                      <div className="absolute bottom-6 right-5 flex items-center gap-1">
-                        <div className="w-8 h-0.5 bg-red-500" />
-                        <div className="w-0 h-0 border-t-4 border-b-4 border-l-6 border-transparent border-l-red-500" />
-                      </div>
-                    </div>
-                    <div className="flex gap-2 flex-wrap">
-                      {['Draw arrows', 'Add boxes', 'Circle defects', 'Add text labels'].map(t => (
-                        <span key={t} className="text-xs bg-white border border-slate-200 text-slate-600 px-2 py-1 rounded">{t}</span>
-                      ))}
-                    </div>
-                    <p className="text-xs text-slate-500">Circle defects, add arrows, label issues — right inside the app.</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </FadeInWhenVisible>
-
-            {/* Mockup 3 — Payment link */}
-            <FadeInWhenVisible delay={0.2}>
-              <Card className="bg-slate-50 border-slate-100 overflow-hidden h-full">
-                <CardContent className="p-0">
-                  <div className="bg-slate-800 rounded-t-xl px-4 py-3 flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
-                    <span className="ml-2 text-slate-400 text-xs">Client Payment</span>
-                  </div>
-                  <div className="p-5 space-y-3">
-                    <div className="text-xs text-slate-400 font-semibold uppercase tracking-wide">Inspection fee</div>
-                    <div className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-semibold text-slate-800">$450.00</div>
-                    <div className="bg-blue-600 rounded-lg px-3 py-2 text-white text-xs font-semibold text-center flex items-center justify-center gap-2">
-                      <DollarSign className="h-3.5 w-3.5" /> Generate Payment Link
-                    </div>
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
-                      <CheckCircle2 className="h-4 w-4 text-green-600 mx-auto mb-1" />
-                      <p className="text-xs text-green-700 font-semibold">Payment link ready</p>
-                      <p className="text-xs text-slate-500 mt-0.5">Money goes straight to your bank.</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </FadeInWhenVisible>
+            ))}
           </div>
         </div>
-      </section>
+      </Section>
 
-      {/* ── Competitor Comparison ── */}
-      <section className="bg-slate-50 py-16 sm:py-24">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">How InspectIQ stacks up</h2>
-            <p className="text-slate-500 text-lg">Every feature included. No per-report fees. No add-ons.</p>
+      {/* ── How It Works ── */}
+      <Section className="py-20 md:py-28">
+        <div className="mx-auto max-w-4xl px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-slate-900 sm:text-4xl">Up and running in 10 minutes</h2>
+            <p className="mt-4 text-slate-600 text-lg">No onboarding calls. No implementation fee. No IT department.</p>
           </div>
-          <FadeInWhenVisible delay={0.1}>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr>
-                    <th className="text-left py-3 pr-4 text-slate-500 font-medium w-1/3">Feature</th>
-                    <th className="py-3 px-3 text-center">
-                      <div className="inline-flex flex-col items-center">
-                        <span className="text-blue-600 font-bold text-base">InspectIQ</span>
-                        <span className="text-xs text-slate-400">$99/mo</span>
-                      </div>
-                    </th>
-                    <th className="py-3 px-3 text-center text-slate-400 font-medium">
-                      <div className="flex flex-col items-center">
-                        <span>Typical Inspection Software</span>
-                        <span className="text-xs">$69–149+/mo · per-report fees common</span>
-                      </div>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {[
-                    { feature: 'AI-written narratives', us: true, others: 'some' },
-                    { feature: 'Installs to home screen (PWA)', us: true, others: 'some' },
-                    { feature: 'Photo annotation (arrows, boxes)', us: true, others: 'some' },
-                    { feature: 'Collect client payments in-app', us: true, others: 'some' },
-                    { feature: 'Built-in scheduling calendar', us: true, others: 'some' },
-                    { feature: 'Custom inspection templates', us: true, others: true },
-                    { feature: 'InterNACHI standards pre-loaded', us: true, others: true },
-                    { feature: 'Branded PDF reports', us: true, others: true },
-                    { feature: 'ISN integration', us: true, others: 'some' },
-                    { feature: 'No per-report fees', us: true, others: 'some' },
-                    { feature: 'Client repair list (CRL)', us: true, others: 'some' },
-                    { feature: 'TREC 7-6 (Texas) built in', us: true, others: false },
-                    { feature: 'Founding member price lock', us: true, others: false },
-                  ].map(row => (
-                    <tr key={row.feature} className="hover:bg-white transition-colors">
-                      <td className="py-3 pr-4 text-slate-700">{row.feature}</td>
-                      <td className="py-3 px-3 text-center">
-                        <span className="text-lg text-blue-600">✓</span>
-                      </td>
-                      <td className="py-3 px-3 text-center">
-                        {row.others === true
-                          ? <span className="text-lg text-green-500">✓</span>
-                          : row.others === 'some'
-                            ? <span className="text-xs text-slate-400 font-medium">Varies</span>
-                            : <span className="text-slate-300 text-lg">✗</span>
-                        }
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <p className="text-center text-xs text-slate-400 mt-6">Competitor pricing and features based on publicly available information. Subject to change.</p>
-          </FadeInWhenVisible>
+          <div className="grid gap-8 md:grid-cols-3">
+            {steps.map((step) => (
+              <div key={step.number} className="text-center">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 text-blue-600 text-xl font-bold mb-4">
+                  {step.number}
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900">{step.title}</h3>
+                <p className="mt-2 text-slate-600">{step.description}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </section>
+      </Section>
 
-      {/* ── Founding Member Pitch ── */}
-      <section id="founding" className="bg-gradient-to-br from-blue-600 to-blue-700 py-16 sm:py-24">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
-          <FadeInWhenVisible>
-            <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 mb-8">
-              <Star className="h-3.5 w-3.5 fill-amber-300 text-amber-300" />
-              <span className="text-white text-xs font-semibold">Founding Member Offer</span>
-            </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-5 leading-tight">
-              Be one of our first 50 inspectors.<br />Lock in your rate forever.
-            </h2>
-            <p className="text-blue-100 text-lg mb-4 max-w-xl mx-auto leading-relaxed">
-              We&apos;re early and growing. Founding members lock in $99/month forever (or $79/month annual) — your rate never goes up, even when we raise prices for new signups. Plus direct access to the founder to request features.
+      {/* ── Agent Showcase ── */}
+      <Section className="py-20 md:py-28 bg-slate-50">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="text-center mb-16">
+            <Badge variant="secondary" className="mb-4 text-sm px-3 py-1">
+              <Sparkles className="mr-1.5 h-3.5 w-3.5" /> Your AI Workforce
+            </Badge>
+            <h2 className="text-3xl font-bold text-slate-900 sm:text-4xl">13 agents. One subscription.</h2>
+            <p className="mt-4 text-slate-600 text-lg max-w-2xl mx-auto">
+              Each agent handles a specific part of running your inspection business — autonomously, 24/7.
             </p>
-            <div className="inline-flex items-center gap-2 bg-amber-400/20 border border-amber-300/30 rounded-lg px-4 py-2 mb-4">
-              <span className="text-amber-200 text-sm font-semibold">Only 50 founding spots available</span>
-            </div>
-
-            {/* Live spot counter */}
-            {foundingRemaining !== null && (
-              <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-xl px-5 py-3 mb-8">
-                <div className="flex gap-1">
-                  {Array.from({ length: 10 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className={`h-2 w-5 rounded-full ${
-                        i < Math.round((foundingRemaining / 50) * 10) ? 'bg-amber-300' : 'bg-white/20'
-                      }`}
-                    />
+          </div>
+          <div className="space-y-12">
+            {agentCategories.map((category) => (
+              <div key={category.name}>
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500 mb-4">{category.name}</h3>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {category.agents.map((agent) => (
+                    <Card key={agent.title} className="border-slate-200 hover:border-blue-200 hover:shadow-md transition-all">
+                      <CardContent className="p-5">
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                            <agent.icon className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-slate-900 text-sm">{agent.title}</h4>
+                            <p className="mt-1 text-sm text-slate-600 leading-relaxed">{agent.description}</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
-                <span className="text-white text-sm font-semibold ml-1">
-                  {foundingRemaining > 0
-                    ? `${foundingRemaining} of 50 spots remaining`
-                    : 'Founding spots are full — subscribe at regular price'}
-                </span>
               </div>
-            )}
-
-            <ul className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10 text-sm text-blue-100">
-              {[
-                'Price locked in forever',
-                'Feature request priority',
-                'Early access to every new tool',
-              ].map(b => (
-                <li key={b} className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-blue-300 shrink-0" />
-                  {b}
-                </li>
-              ))}
-            </ul>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              {foundingRemaining === 0 ? (
-                <Link href="/auth/signup">
-                  <Button size="lg" className="bg-white text-blue-700 hover:bg-blue-50 font-semibold px-8">
-                    Start 14-day free trial
-                    <ChevronRight className="ml-1 h-4 w-4" />
-                  </Button>
-                </Link>
-              ) : (
-                <Link href="/auth/signup">
-                  <Button size="lg" className="bg-white text-blue-700 hover:bg-blue-50 font-semibold px-8">
-                    Claim founding member spot
-                    <ChevronRight className="ml-1 h-4 w-4" />
-                  </Button>
-                </Link>
-              )}
-            </div>
-            <p className="text-blue-200 text-xs mt-5">14-day free trial · No credit card required · Cancel anytime</p>
-          </FadeInWhenVisible>
+            ))}
+          </div>
         </div>
-      </section>
+      </Section>
+
+      {/* ── Scheduling Feature Highlight ── */}
+      <Section className="py-20 md:py-28">
+        <div className="mx-auto max-w-4xl px-6">
+          <div className="grid gap-12 md:grid-cols-2 items-center">
+            <div>
+              <Badge variant="secondary" className="mb-4 text-sm px-3 py-1">
+                <CalendarDays className="mr-1.5 h-3.5 w-3.5" /> Scheduling Agent
+              </Badge>
+              <h2 className="text-3xl font-bold text-slate-900">Your own branded booking page</h2>
+              <p className="mt-4 text-slate-600 leading-relaxed">
+                Share a single link with realtors. They pick a time, enter the property address,
+                and your calendar fills up — no phone tag, no back-and-forth texts.
+              </p>
+              <ul className="mt-6 space-y-3">
+                {['Branded with your logo and colors', 'Syncs with your existing calendar', 'Collects property details upfront', 'Sends confirmation and reminders automatically'].map((item) => (
+                  <li key={item} className="flex items-center gap-2 text-sm text-slate-700">
+                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-8 flex items-center justify-center min-h-[280px]">
+              <div className="text-center text-slate-400">
+                <CalendarDays className="h-16 w-16 mx-auto mb-3 text-blue-300" />
+                <p className="text-sm">Booking page preview</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Section>
 
       {/* ── Pricing ── */}
-      <section id="pricing" className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Simple, transparent pricing</h2>
-          <p className="text-lg text-slate-500">One plan. Everything included. Cancel anytime.</p>
+      <Section className="py-20 md:py-28 bg-slate-50">
+        <div className="mx-auto max-w-3xl px-6 text-center">
+          <h2 className="text-3xl font-bold text-slate-900 sm:text-4xl">One price. Everything included.</h2>
+          <p className="mt-4 text-slate-600 text-lg">No per-agent fees. No usage limits. No surprises.</p>
+          <Card className="mt-12 border-blue-200 shadow-lg shadow-blue-600/5">
+            <CardContent className="p-8 md:p-12">
+              <div className="flex items-baseline justify-center gap-1">
+                <span className="text-5xl font-bold text-slate-900">$99</span>
+                <span className="text-xl text-slate-500">/month</span>
+              </div>
+              <p className="mt-2 text-slate-500">14-day free trial. No credit card required.</p>
+              <div className="mt-8 grid gap-3 text-left max-w-sm mx-auto">
+                {pricingFeatures.map((feature) => (
+                  <div key={feature} className="flex items-center gap-2.5 text-sm text-slate-700">
+                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                    {feature}
+                  </div>
+                ))}
+              </div>
+              <Link href="/sign-up">
+                <Button size="lg" className="mt-10 bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-base font-semibold rounded-xl w-full sm:w-auto">
+                  Start your free trial <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+          <p className="mt-6 text-sm text-slate-500">
+            Compare: Spectora is $109/mo with zero AI agents. ISN is $49/mo with no report writing. InspectIQ gives you 13 autonomous agents for $99/mo.
+          </p>
+        </div>
+      </Section>
 
-          {/* Billing toggle */}
-          <div className="inline-flex items-center gap-3 mt-8 bg-slate-100 rounded-full p-1">
-            <button
-              onClick={() => setBillingAnnual(false)}
-              className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${!billingAnnual ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setBillingAnnual(true)}
-              className={`px-5 py-2 rounded-full text-sm font-semibold transition-all flex items-center gap-2 ${billingAnnual ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
-            >
-              Annual
-              <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-semibold">Save $240</span>
-            </button>
+      {/* ── FAQ ── */}
+      <Section className="py-20 md:py-28">
+        <div className="mx-auto max-w-2xl px-6">
+          <h2 className="text-3xl font-bold text-slate-900 text-center sm:text-4xl">Frequently asked questions</h2>
+          <div className="mt-12">
+            {faqs.map((faq) => (
+              <FaqItem key={faq.q} q={faq.q} a={faq.a} />
+            ))}
           </div>
         </div>
-        <FadeInWhenVisible delay={0.1}>
-          <div className="max-w-md mx-auto">
-            <Card className="border-2 border-blue-600 shadow-2xl shadow-blue-100">
-              <CardContent className="pt-8 pb-8">
-                <div className="text-center mb-8">
-                  <div className="flex items-end justify-center gap-1">
-                    <span className="text-5xl font-bold text-slate-900">{billingAnnual ? '$79' : '$99'}</span>
-                    <span className="text-slate-500 mb-2">/month</span>
-                  </div>
-                  {billingAnnual ? (
-                    <p className="text-slate-500 text-sm mt-2">Billed as $948/year · Save $240 vs monthly</p>
-                  ) : (
-                    <p className="text-slate-500 text-sm mt-2">Billed monthly. Cancel anytime.</p>
-                  )}
-                </div>
-                <ul className="space-y-3 mb-8">
-                  {pricingFeatures.map((f) => (
-                    <li key={f} className="flex items-start gap-3 text-sm text-slate-700">
-                      <CheckCircle2 className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <div className="space-y-3">
-                  <Link href="/auth/signup" className="block">
-                    <Button className="w-full bg-blue-600 hover:bg-blue-700" size="lg">
-                      Start 14-day free trial
-                    </Button>
-                  </Link>
-                  <Link href={billingAnnual ? '/auth/signup?checkout=annual' : '/auth/signup?checkout=1'} className="block">
-                    <Button variant="outline" className="w-full border-blue-200 text-blue-700 hover:bg-blue-50" size="lg">
-                      Subscribe now — {billingAnnual ? '$948/year' : '$99/mo'}
-                    </Button>
-                  </Link>
-                </div>
-                <p className="text-center text-xs text-slate-400 mt-3">Free trial: no credit card required. Subscribe now: billed immediately.</p>
-                <p className="text-center text-xs text-green-600 font-medium mt-2">30-day money-back guarantee — not happy after your first paid month? Full refund, no questions asked.</p>
-              </CardContent>
-            </Card>
-          </div>
-        </FadeInWhenVisible>
-      </section>
+      </Section>
 
       {/* ── Final CTA ── */}
-      <section className="bg-gradient-to-r from-blue-600 to-blue-700 py-20">
-        <div className="max-w-3xl mx-auto px-6 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            The inspection app that works where you work.
+      <section className="py-20 md:py-28 bg-gradient-to-b from-blue-600 to-blue-700">
+        <div className="mx-auto max-w-3xl px-6 text-center">
+          <h2 className="text-3xl font-bold text-white sm:text-4xl">
+            Stop doing admin work.<br />Start growing your business.
           </h2>
-          <p className="text-blue-100 text-lg mb-8">
-            Annotate photos. Collect payments directly. Schedule jobs. Create repair lists. Draw your signature. Installs to your phone. All in one — starting at $99/month.
+          <p className="mt-4 text-blue-100 text-lg">
+            13 AI agents. $99/month. 14-day free trial. No credit card required.
           </p>
-          <Link href="/auth/signup">
-            <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50 hover:scale-105 active:scale-95 transition-all duration-200 text-base px-8 shadow-lg">
-              Start your free 14-day trial
-              <ChevronRight className="ml-2 h-4 w-4" />
+          <Link href="/sign-up">
+            <Button size="lg" className="mt-10 bg-white hover:bg-slate-50 text-blue-700 px-8 py-6 text-base font-semibold rounded-xl shadow-lg">
+              Start your free trial <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </Link>
         </div>
       </section>
 
       {/* ── Footer ── */}
-      <footer className="border-t border-slate-100 py-10">
-        <div className="max-w-6xl mx-auto px-6 space-y-6">
-          {/* Trust badges */}
-          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
-            {[
-              { label: 'InterNACHI Standards', icon: Shield },
-              { label: 'Stripe-Secured Payments', icon: CheckCircle2 },
-              { label: 'SSL Encrypted', icon: Shield },
-              { label: 'AI-Powered Reports', icon: Zap },
-            ].map(({ label, icon: Icon }) => (
-              <div key={label} className="flex items-center gap-1.5 text-slate-400">
-                <Icon className="h-3.5 w-3.5 text-slate-300 shrink-0" />
-                <span className="text-xs">{label}</span>
-              </div>
-            ))}
+      <footer className="bg-slate-900 py-12">
+        <div className="mx-auto max-w-5xl px-6">
+          <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
+            <div>
+              <p className="text-lg font-bold text-white">InspectIQ</p>
+              <p className="mt-1 text-sm text-slate-400">Your AI inspection workforce.</p>
+            </div>
+            <div className="flex gap-6 text-sm text-slate-400">
+              <Link href="/sign-up" className="hover:text-white transition-colors">Sign Up</Link>
+              <Link href="/sign-in" className="hover:text-white transition-colors">Log In</Link>
+              <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+              <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
+            </div>
           </div>
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-400 border-t border-slate-100 pt-6">
-            <div className="flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-blue-600" />
-              <span className="font-semibold text-slate-700">InspectIQ</span>
-            </div>
-            <div className="flex gap-6">
-              <Link href="/blog" className="hover:text-slate-600 transition-colors">Blog</Link>
-              <Link href="/privacy" className="hover:text-slate-600 transition-colors">Privacy</Link>
-              <Link href="/terms" className="hover:text-slate-600 transition-colors">Terms</Link>
-              <Link href="/support" className="hover:text-slate-600 transition-colors">Support</Link>
-            </div>
-            <p>© {new Date().getFullYear()} InspectIQ. All rights reserved.</p>
+          <div className="mt-8 border-t border-slate-800 pt-6 text-center text-xs text-slate-500">
+            &copy; {new Date().getFullYear()} InspectIQ. All rights reserved.
           </div>
         </div>
       </footer>
-
-      {/* Exit-intent popup — desktop only, fires once */}
-      {showExitPopup && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" onClick={() => setShowExitPopup(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center" onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => setShowExitPopup(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
-              <span className="sr-only">Close</span>
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">Before you go...</h3>
-            <p className="text-sm text-slate-500 mb-6">See what your reports could look like — a real sample report generated by InspectIQ.</p>
-            <div className="space-y-3">
-              <Link href="/sample-report" onClick={() => setShowExitPopup(false)}>
-                <Button className="w-full bg-blue-600 hover:bg-blue-700" size="lg">View Sample Report</Button>
-              </Link>
-              <Link href="/auth/signup" onClick={() => setShowExitPopup(false)}>
-                <Button variant="outline" className="w-full" size="lg">Start 14-Day Free Trial</Button>
-              </Link>
-            </div>
-            <p className="text-xs text-slate-400 mt-4">No credit card required · Cancel anytime</p>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

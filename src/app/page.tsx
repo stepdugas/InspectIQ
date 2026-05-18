@@ -2,24 +2,22 @@ import type { Metadata } from 'next'
 import AnimatedLanding from '@/components/landing/AnimatedLanding'
 
 export const metadata: Metadata = {
-  title: 'InspectIQ — Home Inspection Software That Writes Reports For You',
-  description: 'InspectIQ writes home inspection reports using AI. Photo annotation, payments, repair lists, branded PDFs, and built-in TREC 7-6 + InterNACHI templates.',
+  title: 'InspectIQ — Hire Your First AI Employee for $99/month',
+  description: '13 AI agents that handle report writing, client follow-ups, review requests, scheduling, and marketing — so you can focus on inspections. 14-day free trial, no credit card required.',
   openGraph: {
-    title: 'InspectIQ — Home Inspection Software That Writes Reports For You',
-    description: 'AI writes your room narratives. Photo annotation, payments, scheduling, TREC 7-6 + InterNACHI templates, and branded PDF reports. 14-day free trial.',
+    title: 'InspectIQ — Hire Your First AI Employee for $99/month',
+    description: '13 autonomous AI agents handle your admin work: reports, scheduling, follow-ups, reviews, marketing, and more. Built for solo home inspectors doing 2-3 inspections/day.',
     url: 'https://www.useinspectiq.com',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'InspectIQ — Home Inspection Software That Writes Reports For You',
-    description: 'AI writes your room narratives. Annotate photos, collect payments, and deliver branded PDF reports from your phone. 14-day free trial.',
+    title: 'InspectIQ — Hire Your First AI Employee for $99/month',
+    description: '13 AI agents that run your inspection business while you inspect. Reports, scheduling, reviews, follow-ups — all autonomous. 14-day free trial.',
     images: ['/og-image.png'],
   },
   alternates: { canonical: 'https://www.useinspectiq.com' },
 }
 
-// JSON-LD structured data — tells Google this is software with a price/trial,
-// and FAQ schema generates accordion rich results in search (more SERP real estate = more clicks)
 const jsonLd = {
   '@context': 'https://schema.org',
   '@graph': [
@@ -28,8 +26,8 @@ const jsonLd = {
       name: 'InspectIQ',
       url: 'https://www.useinspectiq.com',
       applicationCategory: 'BusinessApplication',
-      operatingSystem: 'iOS, Android, Web',
-      description: 'Home inspection software that writes report narratives using AI. Features include photo annotation, client payment collection, scheduling, TREC 7-6 and InterNACHI templates, and branded PDF reports.',
+      operatingSystem: 'Web',
+      description: 'AI-powered home inspection platform with 13 autonomous agents that handle report writing, scheduling, client follow-ups, Google review requests, realtor nurture, marketing, and more.',
       offers: {
         '@type': 'Offer',
         price: '99.00',
@@ -43,17 +41,20 @@ const jsonLd = {
         description: '14-day free trial, no credit card required. Cancel anytime.',
       },
       featureList: [
-        'AI-generated inspection report narratives',
-        'Photo annotation with arrows, boxes, and text',
-        'Client payment collection via Stripe',
-        'Built-in scheduling calendar',
-        'Custom inspection templates',
-        'InterNACHI standards pre-loaded',
-        'Branded PDF reports with logo and signature',
-        'Installs to phone home screen — works in low-signal areas',
-        'Email reports directly to clients',
-        'Secure client share links',
-        'Client repair list for agents',
+        '13 autonomous AI agents',
+        'AI report writing agent',
+        'Automated report delivery',
+        'Client follow-up sequences',
+        'Google review request automation',
+        'Realtor relationship nurture',
+        'Repair summary generation',
+        'Scheduling and booking page',
+        'Compliance tracking',
+        'Lead qualification',
+        'Business intelligence dashboard',
+        'After-hours email handling',
+        'Marketing content generation',
+        'Property research and permits',
       ],
       screenshot: 'https://www.useinspectiq.com/og-image.png',
       creator: {
@@ -67,66 +68,42 @@ const jsonLd = {
       mainEntity: [
         {
           '@type': 'Question',
+          name: 'Is InspectIQ really autonomous?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Yes. Once you connect your tools and set your preferences, the 13 AI agents work autonomously. They send follow-ups, request reviews, nurture realtor relationships, and handle after-hours emails — without you lifting a finger. You stay in control with a dashboard showing everything they do.',
+          },
+        },
+        {
+          '@type': 'Question',
           name: 'How much does InspectIQ cost?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'InspectIQ is $99/month with unlimited inspections and reports. There is a 14-day free trial with no credit card required. An annual plan is available at $79/month ($948/year). Founding members who sign up early lock in $99/month forever, even when prices increase.',
+            text: 'InspectIQ is $99/month for everything — all 13 AI agents, unlimited inspections, unlimited reports, your own branded booking page, and all future agents we add. There is a 14-day free trial with no credit card required.',
           },
         },
         {
           '@type': 'Question',
-          name: 'Does InspectIQ support state-specific inspection forms?',
+          name: 'What if I do not want all 13 agents?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Yes. InspectIQ includes built-in templates for TREC REI 7-6 (mandatory in Texas), ASHI Standard of Practice, InterNACHI Standards of Practice, and state-compliant templates for licensed states like NC, WI, IL, NY, MA, and NJ. You can also create custom templates for commercial, pool, radon, and specialty inspections.',
+            text: 'You can enable or disable any agent from your dashboard. Start with just the Report Writer if you want, then turn on more agents as you get comfortable. You are always in control.',
           },
         },
         {
           '@type': 'Question',
-          name: 'Does InspectIQ work without internet or in low-signal areas?',
+          name: 'Do I need to be technical to use InspectIQ?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'InspectIQ installs to your phone\'s home screen like a native app. The app and your recent inspections load instantly in low-signal areas like basements and crawlspaces. It works great with spotty LTE — no full offline mode required for most inspections.',
+            text: 'Not at all. If you can use email and a smartphone, you can use InspectIQ. Setup takes about 10 minutes — connect your email, set your preferences, and your AI team starts working. No coding, no integrations to build, no IT department needed.',
           },
         },
         {
           '@type': 'Question',
-          name: 'Can I annotate photos inside InspectIQ?',
+          name: 'How is InspectIQ different from Spectora or ISN?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Yes. InspectIQ includes built-in photo annotation. You can draw arrows, boxes, circles, and add text labels directly on your inspection photos — right inside the app. No separate app needed. Annotated photos are included in your PDF report.',
-          },
-        },
-        {
-          '@type': 'Question',
-          name: 'How long does it take to write a report with InspectIQ?',
-          acceptedAnswer: {
-            '@type': 'Answer',
-            text: 'Most inspectors finish their report on-site or within minutes of completing the inspection. You enter your findings room by room, then click Generate AI — InspectIQ writes the professional narrative for every room instantly. Most inspectors report cutting their report writing time by 80% or more.',
-          },
-        },
-        {
-          '@type': 'Question',
-          name: 'Does InspectIQ use InterNACHI standards?',
-          acceptedAnswer: {
-            '@type': 'Answer',
-            text: 'Yes. InspectIQ comes pre-loaded with InterNACHI Standards of Practice checklists so every report reflects the highest industry standards automatically. You can also create custom templates for commercial, pool, radon, sewer scope, and specialty inspections.',
-          },
-        },
-        {
-          '@type': 'Question',
-          name: 'Can I collect client payments through InspectIQ?',
-          acceptedAnswer: {
-            '@type': 'Answer',
-            text: 'Yes. InspectIQ lets you set your inspection fee and generate a secure Stripe payment link with one click. Email it to your client — they pay online, you get notified, and the inspection is marked as paid automatically. No separate payment app needed.',
-          },
-        },
-        {
-          '@type': 'Question',
-          name: 'What does an InspectIQ report look like?',
-          acceptedAnswer: {
-            '@type': 'Answer',
-            text: 'InspectIQ generates branded PDF reports that include your company logo, license number, digital signature, and contact information. Each report includes professional AI-written narratives for every room, annotated photos, and a findings summary. You can view a sample report at useinspectiq.com/sample-report.',
+            text: 'Spectora and ISN are tools — they help you do work faster. InspectIQ is an AI workforce — it does the work for you. Spectora has AI text suggestions. InspectIQ has 13 autonomous agents that write reports, send follow-ups, request reviews, nurture realtors, and run your marketing. Nobody else has this.',
           },
         },
       ],
