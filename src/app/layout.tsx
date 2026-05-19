@@ -110,6 +110,9 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" className={`${inter.className} h-full antialiased`}>
+        <head>
+          <meta name="google-site-verification" content="BIS6steIHyp44cBAIX51CfZzCMvlZF-yelLPiWg8dKs" />
+        </head>
         <body className="min-h-full flex flex-col">
           <script
             type="application/ld+json"
