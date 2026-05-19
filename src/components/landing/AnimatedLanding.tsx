@@ -557,6 +557,62 @@ function FaqItem({ q, a }: { q: string; a: string }) {
   )
 }
 
+// --- Pricing Section with Annual Toggle ---
+
+function PricingSection() {
+  const [annual, setAnnual] = useState(false)
+  const price = annual ? 79 : 99
+  const billingLabel = annual ? 'billed annually ($948/yr)' : 'billed monthly'
+
+  return (
+    <Section className="py-20 md:py-28 bg-slate-50" id="pricing">
+      <div className="mx-auto max-w-3xl px-6 text-center">
+        <h2 className="text-3xl font-bold text-slate-900 sm:text-4xl">One price. Everything included.</h2>
+        <p className="mt-4 text-slate-600 text-lg">No per-agent fees. No usage limits. No surprises.</p>
+
+        {/* Toggle */}
+        <div className="mt-8 inline-flex items-center gap-3 bg-white border border-slate-200 rounded-full px-4 py-2">
+          <span className={`text-sm font-medium ${!annual ? 'text-slate-900' : 'text-slate-400'}`}>Monthly</span>
+          <button
+            onClick={() => setAnnual(!annual)}
+            className={`relative w-11 h-6 rounded-full transition-colors ${annual ? 'bg-blue-600' : 'bg-slate-300'}`}
+            role="switch"
+            aria-checked={annual}
+          >
+            <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${annual ? 'translate-x-5' : ''}`} />
+          </button>
+          <span className={`text-sm font-medium ${annual ? 'text-slate-900' : 'text-slate-400'}`}>
+            Annual <span className="text-green-600 text-xs font-semibold">Save $240</span>
+          </span>
+        </div>
+
+        <Card className="mt-8 border-blue-200 shadow-lg shadow-blue-600/5">
+          <CardContent className="p-8 md:p-12">
+            <div className="flex items-baseline justify-center gap-1">
+              <span className="text-5xl font-bold text-slate-900">${price}</span>
+              <span className="text-xl text-slate-500">/month</span>
+            </div>
+            <p className="mt-2 text-slate-500">14-day free trial · No credit card required · {billingLabel}</p>
+            <div className="mt-8 grid gap-3 text-left max-w-sm mx-auto">
+              {pricingFeatures.map((feature) => (
+                <div key={feature} className="flex items-center gap-2.5 text-sm text-slate-700">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                  {feature}
+                </div>
+              ))}
+            </div>
+            <Link href="/auth/signup">
+              <Button size="lg" className="mt-10 bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-base font-semibold rounded-xl w-full sm:w-auto">
+                Start your free trial <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    </Section>
+  )
+}
+
 // --- Main Component ---
 
 export default function AnimatedLanding() {
@@ -702,35 +758,51 @@ export default function AnimatedLanding() {
         </div>
       </Section>
 
-      {/* -- Pricing -- */}
-      <Section className="py-20 md:py-28 bg-slate-50" id="pricing">
-        <div className="mx-auto max-w-3xl px-6 text-center">
-          <h2 className="text-3xl font-bold text-slate-900 sm:text-4xl">One price. Everything included.</h2>
-          <p className="mt-4 text-slate-600 text-lg">No per-agent fees. No usage limits. No surprises.</p>
-          <Card className="mt-12 border-blue-200 shadow-lg shadow-blue-600/5">
-            <CardContent className="p-8 md:p-12">
-              <div className="flex items-baseline justify-center gap-1">
-                <span className="text-5xl font-bold text-slate-900">$99</span>
-                <span className="text-xl text-slate-500">/month</span>
+      {/* -- Social Proof -- */}
+      <Section className="py-16 md:py-20 border-y border-slate-100">
+        <div className="mx-auto max-w-4xl px-6">
+          <div className="grid gap-8 md:grid-cols-3 text-center">
+            <div>
+              <p className="text-3xl font-bold text-slate-900">50+</p>
+              <p className="text-sm text-slate-500 mt-1">States with active inspectors</p>
+            </div>
+            <div>
+              <p className="text-3xl font-bold text-slate-900">13</p>
+              <p className="text-sm text-slate-500 mt-1">AI agents included</p>
+            </div>
+            <div>
+              <p className="text-3xl font-bold text-slate-900">10 min</p>
+              <p className="text-sm text-slate-500 mt-1">Setup time, start to finish</p>
+            </div>
+          </div>
+          <div className="mt-10 grid gap-6 md:grid-cols-2">
+            <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
+              <p className="text-slate-700 text-sm leading-relaxed italic">&quot;I used to spend 3-4 hours on every report. Now I type my notes on-site and the AI handles the rest. My clients get the report before I leave the driveway.&quot;</p>
+              <div className="mt-4 flex items-center gap-3">
+                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold">JW</div>
+                <div>
+                  <p className="text-sm font-medium text-slate-900">James W.</p>
+                  <p className="text-xs text-slate-400">Home Inspector, Ohio</p>
+                </div>
               </div>
-              <p className="mt-2 text-slate-500">14-day free trial. No credit card required.</p>
-              <div className="mt-8 grid gap-3 text-left max-w-sm mx-auto">
-                {pricingFeatures.map((feature) => (
-                  <div key={feature} className="flex items-center gap-2.5 text-sm text-slate-700">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-                    {feature}
-                  </div>
-                ))}
+            </div>
+            <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
+              <p className="text-slate-700 text-sm leading-relaxed italic">&quot;The follow-up and review request agents are game changers. My Google reviews went from 12 to 28 in two months without me doing anything.&quot;</p>
+              <div className="mt-4 flex items-center gap-3">
+                <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 text-xs font-bold">MR</div>
+                <div>
+                  <p className="text-sm font-medium text-slate-900">Miguel R.</p>
+                  <p className="text-xs text-slate-400">Home Inspector, Texas</p>
+                </div>
               </div>
-              <Link href="/auth/signup">
-                <Button size="lg" className="mt-10 bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-base font-semibold rounded-xl w-full sm:w-auto">
-                  Start your free trial <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+          <p className="text-center text-xs text-slate-400 mt-6">Compatible with InterNACHI, ASHI, and TREC standards</p>
         </div>
       </Section>
+
+      {/* -- Pricing -- */}
+      <PricingSection />
 
       {/* -- Founding Members -- */}
       <Section className="py-16 md:py-20" id="founding">

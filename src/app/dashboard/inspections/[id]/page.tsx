@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft, Sparkles, Loader2, ChevronDown, ChevronRight, CheckCircle2, FileText, AlertCircle, AlertTriangle, DollarSign, Copy, ExternalLink, Settings, Plus, X, Clock, Play, Square } from 'lucide-react'
+import { ArrowLeft, Sparkles, Loader2, ChevronDown, ChevronRight, CheckCircle2, FileText, AlertCircle, AlertTriangle, DollarSign, Copy, ExternalLink, Settings, Plus, X, Clock, Play, Square, Mail, Star } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import PhotoUploader from '@/components/inspection/PhotoUploader'
@@ -243,11 +243,14 @@ export default function InspectionEditorPage() {
     }, 1000)
   }
 
+  const [showCompleteConfirm, setShowCompleteConfirm] = useState(false)
+
   async function completeInspection() {
     setSaving(true)
     await fetch(`/api/inspections/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'completed' }) })
     setSaving(false)
-    toast.success('Inspection complete!')
+    setShowCompleteConfirm(false)
+    toast.success('Inspection marked complete — your AI agents are taking over!')
     console.log('[InspectIQ] Inspection completed and report auto-sent')
     router.push(`/dashboard/reports`)
   }
@@ -422,8 +425,8 @@ export default function InspectionEditorPage() {
               {generatingAll ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 mr-1.5" />}
               Generate All AI
             </Button>
-            <Button size="sm" onClick={completeInspection} disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-xs">
-              <FileText className="h-3.5 w-3.5 mr-1.5" />Complete & Export
+            <Button size="sm" onClick={() => setShowCompleteConfirm(true)} disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-xs">
+              <FileText className="h-3.5 w-3.5 mr-1.5" />Mark Complete
             </Button>
           </div>
           {/* Auto-save indicator */}
@@ -856,6 +859,32 @@ export default function InspectionEditorPage() {
                 </Button>
               </Link>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCompleteConfirm} onOpenChange={setShowCompleteConfirm}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-green-500" />
+              Mark Inspection Complete
+            </DialogTitle>
+            <DialogDescription>
+              This will activate your AI agents:
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 text-sm text-slate-600 py-2">
+            <div className="flex items-center gap-2"><Mail className="h-4 w-4 text-blue-500" /> Report delivered to client via email</div>
+            <div className="flex items-center gap-2"><Clock className="h-4 w-4 text-blue-500" /> Follow-up email scheduled for tomorrow</div>
+            <div className="flex items-center gap-2"><Star className="h-4 w-4 text-blue-500" /> Google review request queued</div>
+          </div>
+          <div className="flex gap-2 pt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setShowCompleteConfirm(false)}>Cancel</Button>
+            <Button className="flex-1 bg-green-600 hover:bg-green-700" onClick={completeInspection} disabled={saving}>
+              {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+              Mark Complete
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

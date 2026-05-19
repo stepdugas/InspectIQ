@@ -2,12 +2,12 @@ export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
 import { getUserId } from '@/lib/auth'
-import { db, inspections, reports } from '@/lib/db'
+import { db, inspections, reports, profiles, connectedAccounts } from '@/lib/db'
 import { eq, desc, gte, and } from 'drizzle-orm'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ClipboardList, FileText, Plus, TrendingUp, DollarSign, CalendarDays, ArrowUpRight, ArrowDownRight } from 'lucide-react'
+import { ClipboardList, FileText, Plus, TrendingUp, DollarSign, CalendarDays, ArrowUpRight, ArrowDownRight, CheckCircle2, Circle, UserCog, Link2, Sparkles, Bot } from 'lucide-react'
 import { Suspense } from 'react'
 import CheckoutRedirect from '@/components/CheckoutRedirect'
 import AgentActivityFeed from '@/components/agents/AgentActivityFeed'
@@ -25,10 +25,25 @@ export default async function DashboardPage() {
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
   const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1)
 
-  const [allInspections, allReports] = await Promise.all([
+  const [allInspections, allReports, [profile], googleConnections] = await Promise.all([
     db.select().from(inspections).where(eq(inspections.userId, userId)).orderBy(desc(inspections.createdAt)),
     db.select().from(reports).where(eq(reports.userId, userId)),
+    db.select().from(profiles).where(eq(profiles.id, userId)).limit(1),
+    db.select({ id: connectedAccounts.id }).from(connectedAccounts).where(and(eq(connectedAccounts.userId, userId), eq(connectedAccounts.provider, 'google'))).limit(1),
   ])
+
+  const hasProfile = !!(profile?.fullName && profile?.companyName)
+  const hasGoogle = googleConnections.length > 0
+  const hasInspection = allInspections.length > 0
+  const hasCompletedInspection = allInspections.some(i => i.status === 'completed')
+  const setupSteps = [
+    { done: hasProfile, label: 'Set up your profile', href: '/dashboard/settings', icon: UserCog },
+    { done: hasGoogle, label: 'Connect Google', href: '/dashboard/agents', icon: Link2 },
+    { done: hasInspection, label: 'Create your first inspection', href: '/dashboard/inspections/new', icon: ClipboardList },
+    { done: hasCompletedInspection, label: 'Generate an AI report', href: hasInspection ? `/dashboard/inspections/${allInspections[0]?.id}` : '/dashboard/inspections/new', icon: Sparkles },
+  ]
+  const stepsComplete = setupSteps.filter(s => s.done).length
+  const allSetupDone = stepsComplete === setupSteps.length
 
   // Stats
   const completedAll = allInspections.filter(i => i.status === 'completed').length
@@ -83,6 +98,42 @@ export default async function DashboardPage() {
           </Button>
         </Link>
       </div>
+
+      {/* ── Setup checklist — shown until all steps complete ── */}
+      {!allSetupDone && (
+        <Card className="border-blue-200 shadow-sm mb-6 bg-gradient-to-r from-blue-50 to-white">
+          <CardContent className="py-5 px-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Bot className="h-5 w-5 text-blue-600" />
+                <h3 className="font-semibold text-slate-900">Get your AI team running</h3>
+              </div>
+              <span className="text-xs font-medium text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">
+                {stepsComplete} of {setupSteps.length}
+              </span>
+            </div>
+            <div className="w-full bg-blue-100 rounded-full h-1.5 mb-4">
+              <div className="bg-blue-600 h-1.5 rounded-full transition-all" style={{ width: `${(stepsComplete / setupSteps.length) * 100}%` }} />
+            </div>
+            <div className="space-y-2">
+              {setupSteps.map((step) => (
+                <Link key={step.label} href={step.href}>
+                  <div className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${step.done ? 'opacity-60' : 'hover:bg-blue-50'}`}>
+                    {step.done
+                      ? <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                      : <Circle className="h-4 w-4 text-slate-300 shrink-0" />
+                    }
+                    <step.icon className={`h-4 w-4 ${step.done ? 'text-slate-400' : 'text-blue-600'} shrink-0`} />
+                    <span className={`text-sm ${step.done ? 'text-slate-400 line-through' : 'text-slate-700 font-medium'}`}>
+                      {step.label}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* ── Stat cards — only shown when there's data ── */}
       {allInspections.length > 0 && <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -211,7 +262,7 @@ export default async function DashboardPage() {
           {allInspections.length === 0 ? (
             <div className="text-center py-12">
               <ClipboardList className="h-10 w-10 text-slate-200 mx-auto mb-3" />
-              <p className="text-slate-500 text-sm">No inspections yet</p>
+              <p className="text-slate-500 text-sm">No inspections yet — create one to see your AI team in action</p>
               <Link href="/dashboard/inspections/new">
                 <Button className="mt-4 bg-blue-600 hover:bg-blue-700" size="sm">
                   <Plus className="h-4 w-4 mr-2" />Start your first inspection

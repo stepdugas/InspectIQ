@@ -5,10 +5,9 @@ import { getUserId } from '@/lib/auth'
 import { db, inspections } from '@/lib/db'
 import { eq, desc } from 'drizzle-orm'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
-import { ClipboardList, Plus, Calendar, User, Mail, Clock } from 'lucide-react'
-import DeleteInspectionButton from '@/components/inspection/DeleteInspectionButton'
+import { ClipboardList, Plus } from 'lucide-react'
+import InspectionsList from '@/components/inspection/InspectionsList'
 
 export default async function InspectionsPage() {
   const userId = await getUserId()
@@ -46,58 +45,7 @@ export default async function InspectionsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
-          {allInspections.map((inspection) => (
-            <Link key={inspection.id} href={`/dashboard/inspections/${inspection.id}`}>
-              <Card className="border-slate-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-                <CardContent className="py-4 px-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-slate-900">{inspection.propertyAddress}</h3>
-                      <div className="flex items-center gap-4 mt-1">
-                        <span className="flex items-center gap-1 text-xs text-slate-400">
-                          <User className="h-3 w-3" />{inspection.clientName}
-                        </span>
-                        <span className="flex items-center gap-1 text-xs text-slate-400">
-                          <Calendar className="h-3 w-3" />{inspection.inspectionDate}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {/* On mobile: show only inspection status. On desktop: show all badges */}
-                      <div className="hidden sm:flex items-center gap-2">
-                        {inspection.status === 'completed' && (
-                          inspection.reportDeliveredAt ? (
-                            <Badge className="bg-blue-50 text-blue-600 border-blue-100 text-xs">
-                              <Mail className="h-3 w-3 mr-1" />Sent
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-slate-50 text-slate-400 border-slate-100 text-xs">
-                              <Mail className="h-3 w-3 mr-1" />Not sent
-                            </Badge>
-                          )
-                        )}
-                        {inspection.followUpStatus === 'sent' && (
-                          <Badge className="bg-purple-50 text-purple-600 border-purple-100 text-xs">
-                            <Clock className="h-3 w-3 mr-1" />Followed up
-                          </Badge>
-                        )}
-                      </div>
-                      <Badge className={
-                        inspection.status === 'completed' ? 'bg-green-100 text-green-700 border-green-100' :
-                        inspection.status === 'in_progress' ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                        'bg-slate-100 text-slate-600 border-slate-100'
-                      }>
-                        {inspection.status?.replace('_', ' ')}
-                      </Badge>
-                      <DeleteInspectionButton inspectionId={inspection.id} address={inspection.propertyAddress} />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
+        <InspectionsList inspections={allInspections} />
       )}
     </div>
   )
