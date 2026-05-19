@@ -22,7 +22,7 @@
     },
     {
       "path": "/api/cron/email-agents",
-      "schedule": "0 */2 * * *"
+      "schedule": "0 18 * * *"
     },
     {
       "path": "/api/cron/realtor-nurture",
