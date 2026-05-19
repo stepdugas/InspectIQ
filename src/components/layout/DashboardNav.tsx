@@ -19,11 +19,12 @@ const navItems = [
   { href: '/', label: 'Home', icon: Home },
 ]
 
-// Bottom nav only shows these 4 on mobile
+// Bottom nav shows 5 items on mobile — AI Agents is the core differentiator
 const mobileNavItems = [
   { href: '/dashboard', label: 'Home', icon: LayoutDashboard },
   { href: '/dashboard/inspections', label: 'Inspect', icon: ClipboardList },
   { href: '/dashboard/reports', label: 'Reports', icon: FileText },
+  { href: '/dashboard/agents', label: 'Agents', icon: Bot },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ]
 

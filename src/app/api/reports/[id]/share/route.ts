@@ -18,7 +18,8 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
   if (!token) {
     token = crypto.randomBytes(16).toString('hex')
-    await db.insert(reports).values({ inspectionId: id, userId, shareToken: token })
+    const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) // 90 days
+    await db.insert(reports).values({ inspectionId: id, userId, shareToken: token, shareTokenExpiresAt: expiresAt })
   }
 
   const { APP_URL } = await import('@/lib/config')
