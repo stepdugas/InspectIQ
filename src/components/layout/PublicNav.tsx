@@ -44,7 +44,7 @@ export default function PublicNav({ activePath }: { activePath?: string }) {
           <Link href="/auth/login" className="hidden sm:block">
             <Button variant="ghost" size="sm" className="hover:bg-slate-100 transition-colors">Log in</Button>
           </Link>
-          <Link href="/auth/signup" className="hidden sm:block">
+          <Link href="/auth/signup">
             <Button size="sm" className="bg-blue-600 hover:bg-blue-500 hover:scale-105 active:scale-95 transition-all duration-200 shadow-sm">Start Free Trial</Button>
           </Link>
           {/* Mobile hamburger */}

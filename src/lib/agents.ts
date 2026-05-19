@@ -192,6 +192,7 @@ export const AGENT_DEFINITIONS: AgentDefinition[] = [
       businessHoursStart: '08:00',
       businessHoursEnd: '18:00',
       businessDays: [1, 2, 3, 4, 5], // Mon-Fri
+      timezone: 'America/New_York', // IANA timezone
       canBookAppointments: false,
     },
   },

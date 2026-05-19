@@ -5,7 +5,11 @@ import { validateCronAuth, getAgentConfig, logAgentActivity } from '@/lib/agent-
 import { escapeHtml, getInspectorFrom } from '@/lib/email'
 import { Resend } from 'resend'
 
+export const maxDuration = 60
+
 export async function GET(request: Request) {
+  const resendKey = process.env.RESEND_API_KEY
+  if (!resendKey) return NextResponse.json({ error: 'RESEND_API_KEY not set' }, { status: 500 })
   const authError = validateCronAuth(request)
   if (authError) return authError
 
@@ -78,7 +82,7 @@ export async function GET(request: Request) {
       const totalReferrals = contact?.totalReferrals ?? 1
       const includeStats = (config.includeStats as boolean) ?? true
 
-      const resend = new Resend(process.env.RESEND_API_KEY!)
+      const resend = new Resend(resendKey)
       await resend.emails.send({
         from: getInspectorFrom(inspectorName, companyName),
         to: inspection.buyerAgentEmail,
@@ -152,6 +156,8 @@ export async function GET(request: Request) {
             eq(agentActivityLog.userId, userId),
             eq(agentActivityLog.agentType, 'realtor_nurture'),
             eq(agentActivityLog.action, 'inactive_alert_sent'),
+            // Filter by this specific realtor to avoid cross-realtor dedup
+            sql`${agentActivityLog.details}->>'realtorEmail' = ${realtor.email}`,
             // Only check for alerts sent after the last referral — if they referred again and went
             // inactive again, we should alert again
             gte(agentActivityLog.createdAt, realtor.lastReferralAt!),
@@ -167,7 +173,7 @@ export async function GET(request: Request) {
           (now.getTime() - new Date(realtor.lastReferralAt!).getTime()) / (1000 * 60 * 60 * 24)
         )
 
-        const resend = new Resend(process.env.RESEND_API_KEY!)
+        const resend = new Resend(resendKey)
         await resend.emails.send({
           from: 'InspectIQ <stephanie@useinspectiq.com>',
           to: profile.email,
