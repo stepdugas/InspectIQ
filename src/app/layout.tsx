@@ -9,6 +9,9 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.useinspectiq.com'),
+  verification: {
+    google: 'BIS6steIHyp44cBAIX51CfZzCMvlZF-yelLPiWg8dKs',
+  },
   title: {
     default: 'InspectIQ — Hire Your First AI Employee for $99/month',
     template: '%s | InspectIQ',
