@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
+import { cookies } from 'next/headers'
+import { timingSafeEqual } from 'node:crypto'
 import { db, connectedAccounts } from '@/lib/db'
 import { eq, and } from 'drizzle-orm'
 import { encrypt } from '@/lib/crypto'
@@ -8,21 +10,36 @@ import { encrypt } from '@/lib/crypto'
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
-  const stateUserId = searchParams.get('state')
+  const stateParam = searchParams.get('state')
   const error = searchParams.get('error')
 
   const { APP_URL: appUrl } = await import('@/lib/config')
 
-  if (error || !code || !stateUserId) {
+  if (error || !code || !stateParam) {
     return NextResponse.redirect(`${appUrl}/dashboard/agents?connect=error&reason=${error ?? 'missing_code'}`)
   }
+
+  // Parse state = "userId:nonce"
+  const [stateUserId, stateNonce] = stateParam.split(':')
 
   // Validate that the OAuth state matches the currently logged-in user
   const { userId: currentUserId } = await auth()
   if (!currentUserId || currentUserId !== stateUserId) {
     console.error('[InspectIQ] OAuth state mismatch — possible CSRF attack')
-    return NextResponse.redirect(`${appUrl}/dashboard/settings?connect=error&reason=state_mismatch`)
+    return NextResponse.redirect(`${appUrl}/dashboard/agents?connect=error&reason=state_mismatch`)
   }
+
+  // Verify the nonce from the cookie
+  const cookieStore = await cookies()
+  const storedNonce = cookieStore.get('oauth_state_nonce')?.value
+  if (!storedNonce || !stateNonce || storedNonce.length !== stateNonce.length ||
+      !timingSafeEqual(Buffer.from(storedNonce), Buffer.from(stateNonce))) {
+    console.error('[InspectIQ] OAuth nonce mismatch — possible CSRF attack')
+    return NextResponse.redirect(`${appUrl}/dashboard/agents?connect=error&reason=state_mismatch`)
+  }
+
+  // Clear the nonce cookie
+  cookieStore.delete('oauth_state_nonce')
 
   const userId = currentUserId
 

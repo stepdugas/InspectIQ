@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { timingSafeEqual } from 'node:crypto'
 import { db, profiles, inspections } from '@/lib/db'
 import { eq, count, inArray, isNull } from 'drizzle-orm'
-import { sendActivationEmail, sendReferralNudgeEmail, sendTrialMidpointEmail, sendListeningCallEmail, sendTrialExpiringEmail } from '@/lib/email'
+import { sendActivationEmail, sendReferralNudgeEmail, sendTrialMidpointEmail, sendListeningCallEmail, sendTrialExpiringEmail, sendTrialExpiredEmail } from '@/lib/email'
 import { generateReferralCode } from '@/lib/auth'
 
 function safeCompare(a: string, b: string): boolean {
@@ -27,18 +27,20 @@ export async function GET(request: Request) {
   let midpointSent = 0
   let listeningSent = 0
   let expiringSent = 0
+  let expiredSent = 0
 
   // Identify day-2 candidates (daysLeft === 12) who need an inspection count check
-  const day2Candidates = allTrialing.filter((p) => {
+  // Day 2 and Day 14 candidates both need inspection counts
+  const needsInspectionCount = allTrialing.filter((p) => {
     if (!p.trialEndsAt) return false
     const daysLeft = Math.round((new Date(p.trialEndsAt).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-    return daysLeft === 12
+    return daysLeft === 12 || daysLeft === 0 || daysLeft === -1
   })
 
   // Batch-fetch inspection counts for all day-2 candidates in one query (N+1 fix)
   const inspectionCountByUserId = new Map<string, number>()
-  if (day2Candidates.length > 0) {
-    const candidateIds = day2Candidates.map((p) => p.id)
+  if (needsInspectionCount.length > 0) {
+    const candidateIds = needsInspectionCount.map((p) => p.id)
     const rows = await db
       .select({ userId: inspections.userId, total: count() })
       .from(inspections)
@@ -82,8 +84,13 @@ export async function GET(request: Request) {
     } else if (daysLeft === 1) {
       await sendTrialExpiringEmail(profile.email, firstName).catch(() => {})
       expiringSent++
+    } else if (daysLeft === 0 || daysLeft === -1) {
+      // Day 14/15 — trial just expired, remind them their data is saved
+      const total = inspectionCountByUserId.get(profile.id) ?? 0
+      await sendTrialExpiredEmail(profile.email, firstName, total).catch(() => {})
+      expiredSent++
     }
   }
 
-  return NextResponse.json({ ok: true, activationSent, referralSent, midpointSent, listeningSent, expiringSent })
+  return NextResponse.json({ ok: true, activationSent, referralSent, midpointSent, listeningSent, expiringSent, expiredSent })
 }

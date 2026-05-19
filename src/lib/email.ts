@@ -144,6 +144,32 @@ export async function sendTrialExpiringEmail(to: string, firstName: string) {
   })
 }
 
+// Day 14 — trial expired, your data is still here
+export async function sendTrialExpiredEmail(to: string, firstName: string, inspectionCount: number) {
+  await getResend().emails.send({
+    from: SYSTEM_FROM,
+    to,
+    subject: `your InspectIQ data is still here`,
+    html: `
+      <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1e293b">
+        <div style="background:#0f172a;padding:32px;border-radius:12px 12px 0 0">
+          <h1 style="color:#60a5fa;font-size:20px;margin:0">InspectIQ</h1>
+        </div>
+        <div style="background:#ffffff;padding:32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px">
+          <h2 style="font-size:22px;margin:0 0 16px">Your trial ended — but nothing is lost</h2>
+          <p style="color:#475569;line-height:1.6">Hey${firstName ? ' ' + escapeHtml(firstName) : ''} — your 14-day trial has ended.${inspectionCount > 0 ? ` You created <strong>${inspectionCount} inspection${inspectionCount > 1 ? 's' : ''}</strong> during your trial — all of that data is saved and waiting for you.` : ''}</p>
+          <p style="color:#475569;line-height:1.6">Subscribe anytime to pick up right where you left off. Your inspections, reports, and agent settings are all still there.</p>
+          <p style="color:#475569;line-height:1.6">Founding member pricing ($99/mo locked forever) is still available — but spots are limited.</p>
+          <a href="${APP_URL}/dashboard/settings" style="display:inline-block;background:#2563eb;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;margin-top:8px">
+            Reactivate Your Account →
+          </a>
+          <p style="color:#94a3b8;font-size:13px;margin-top:24px">Questions? Just reply to this email.<br/>— Stephanie</p>
+        </div>
+      </div>
+    `,
+  })
+}
+
 // Day 5 — share your referral link, get a free month
 export async function sendReferralNudgeEmail(to: string, firstName: string, referralCode: string) {
   const referralUrl = `${APP_URL}/auth/signup?ref=${referralCode}`

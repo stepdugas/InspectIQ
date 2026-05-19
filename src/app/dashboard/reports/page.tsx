@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 import lazyLoad from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { FileText, Download, Loader2, Share2, Mail, Upload, AlertTriangle, ClipboardList } from 'lucide-react'
+import { FileText, Download, Loader2, Share2, Mail, Upload, AlertTriangle, ClipboardList, Search } from 'lucide-react'
 import { toast } from 'sonner'
 import { pdf } from '@react-pdf/renderer'
 import PDFReport from '@/components/report/PDFReport'
@@ -61,6 +61,7 @@ export default function ReportsPage() {
   const [pushingToIsn, setPushingToIsn] = useState(false)
   // Mobile: show detail overlay when a report is selected
   const [mobileShowDetail, setMobileShowDetail] = useState(false)
+  const [reportSearch, setReportSearch] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -185,6 +186,18 @@ export default function ReportsPage() {
       <div className="flex flex-col md:flex-row gap-6">
         {/* Report list — full width on mobile, fixed sidebar on md+ */}
         <div className={`w-full md:w-72 md:shrink-0 space-y-2 ${mobileShowDetail ? 'hidden md:block' : ''}`}>
+          {inspections.length > 0 && (
+            <div className="relative mb-2">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search reports..."
+                value={reportSearch}
+                onChange={(e) => setReportSearch(e.target.value)}
+                className="w-full pl-8 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          )}
           {inspections.length === 0 ? (
             <Card className="border-slate-100 shadow-sm">
               <CardContent className="py-8 text-center">
@@ -192,7 +205,7 @@ export default function ReportsPage() {
                 <p className="text-sm text-slate-500">No completed inspections yet</p>
               </CardContent>
             </Card>
-          ) : inspections.map((inspection) => (
+          ) : inspections.filter((i) => reportSearch === '' || i.propertyAddress.toLowerCase().includes(reportSearch.toLowerCase()) || i.clientName.toLowerCase().includes(reportSearch.toLowerCase())).map((inspection) => (
             <button
               key={inspection.id}
               onClick={() => loadReport(inspection)}

@@ -208,6 +208,8 @@ function SampleReportInner() {
     urlState?.toUpperCase() === 'TX' ? 'TX' : 'OTHER'
   )
   const [downloading, setDownloading] = useState(false)
+  const [gateEmail, setGateEmail] = useState('')
+  const [emailCaptured, setEmailCaptured] = useState(false)
 
   // Pick sample data based on selected format
   const { profile, inspection, rooms, filename } = useMemo(() => {
@@ -228,6 +230,18 @@ function SampleReportInner() {
   }, [selectedFormat])
 
   async function downloadSample() {
+    // Require email before first download (soft gate)
+    if (!emailCaptured && !gateEmail.includes('@')) return
+    if (!emailCaptured) {
+      // Fire-and-forget: log the lead email
+      fetch('/api/sample-report-lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: gateEmail }),
+      }).catch(() => {})
+      setEmailCaptured(true)
+    }
+
     setDownloading(true)
     try {
       const blob = await pdf(
@@ -296,14 +310,35 @@ function SampleReportInner() {
             </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 shrink-0">
-            <Button
-              onClick={downloadSample}
-              disabled={downloading}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {downloading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-              Download PDF
-            </Button>
+            {!emailCaptured ? (
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  placeholder="Your email"
+                  value={gateEmail}
+                  onChange={(e) => setGateEmail(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && downloadSample()}
+                  className="px-3 py-2 text-sm border border-slate-600 bg-slate-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-48"
+                />
+                <Button
+                  onClick={downloadSample}
+                  disabled={downloading || !gateEmail.includes('@')}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {downloading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+                  Download PDF
+                </Button>
+              </div>
+            ) : (
+              <Button
+                onClick={downloadSample}
+                disabled={downloading}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {downloading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+                Download PDF
+              </Button>
+            )}
             <Link href="/auth/signup">
               <Button className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
                 Start Free Trial

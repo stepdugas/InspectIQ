@@ -23,41 +23,41 @@ const STEPS = [
     iconBg: 'bg-blue-100',
     iconColor: 'text-blue-600',
     title: 'Welcome to InspectIQ!',
-    subtitle: "You just hired your first AI employee. Here's your team:",
+    subtitle: "You just hired 13 AI employees. Let's see them work — it takes 60 seconds.",
     bullets: [
-      { icon: Bot, text: '13 AI agents handle reports, follow-ups, reviews, scheduling, and more' },
-      { icon: Zap, text: 'You inspect — they handle everything else' },
-      { icon: CheckCircle2, text: 'Toggle each agent on or off in Settings' },
+      { icon: Zap, text: 'AI writes your reports, delivers them, follows up, and requests reviews' },
+      { icon: Bot, text: 'Toggle each agent on or off — you are always in control' },
+      { icon: CheckCircle2, text: 'InterNACHI + TREC templates pre-loaded' },
     ],
-    primaryLabel: 'Get started',
+    primaryLabel: 'See the AI in action',
     secondaryLabel: 'Skip tour',
-  },
-  {
-    icon: UserCog,
-    iconBg: 'bg-purple-100',
-    iconColor: 'text-purple-600',
-    title: 'Set up your profile',
-    subtitle: 'Your logo and signature appear on every report. Takes 60 seconds.',
-    bullets: [
-      { icon: CheckCircle2, text: 'Upload your company logo' },
-      { icon: CheckCircle2, text: 'Add your digital signature' },
-      { icon: CheckCircle2, text: 'Connect Google for calendar sync + review requests' },
-    ],
-    primaryLabel: 'Go to Settings',
-    secondaryLabel: 'Skip for now',
   },
   {
     icon: ClipboardList,
     iconBg: 'bg-green-100',
     iconColor: 'text-green-600',
-    title: "See your AI team in action",
-    subtitle: "Create an inspection, add a note on any room, then hit \"Generate AI.\" When you mark it complete, your agents take over — delivering the report, following up with the client, and requesting a review.",
+    title: 'Try the AI Report Writer',
+    subtitle: 'Create an inspection, type a quick note on any room (even just "roof looks good"), then hit "Generate AI." Watch it write a professional narrative in seconds.',
     bullets: [
-      { icon: CheckCircle2, text: 'InterNACHI checklists pre-loaded — no setup' },
       { icon: Zap, text: 'Type a quick note → AI turns it into a full narrative' },
+      { icon: CheckCircle2, text: 'Works with any template — just add your notes' },
       { icon: Bot, text: 'Mark complete → Delivery, Follow-Up, and Review agents activate' },
     ],
     primaryLabel: 'Create first inspection',
+    secondaryLabel: 'I\'ll do this later',
+  },
+  {
+    icon: UserCog,
+    iconBg: 'bg-purple-100',
+    iconColor: 'text-purple-600',
+    title: 'Finish your setup',
+    subtitle: 'Add your name and company so reports look professional. Connect Google to unlock email agents.',
+    bullets: [
+      { icon: CheckCircle2, text: 'Add your company name and license number' },
+      { icon: CheckCircle2, text: 'Connect Google for email + calendar sync' },
+      { icon: CheckCircle2, text: 'Upload your logo (optional — you can do this anytime)' },
+    ],
+    primaryLabel: 'Go to Settings',
     secondaryLabel: 'Explore dashboard',
   },
 ]
@@ -81,13 +81,13 @@ export default function OnboardingModal() {
 
   function handlePrimary() {
     if (step === 0) {
-      setStep(1)
+      setStep(1) // Welcome → Try AI
     } else if (step === 1) {
       dismiss()
-      router.push('/dashboard/settings')
+      router.push('/dashboard/inspections/new') // Try AI → Create inspection
     } else {
       dismiss()
-      router.push('/dashboard/inspections/new')
+      router.push('/dashboard/settings') // Finish setup → Settings
     }
   }
 
