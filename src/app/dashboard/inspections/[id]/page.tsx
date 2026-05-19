@@ -204,19 +204,26 @@ export default function InspectionEditorPage() {
       return
     }
     setGeneratingAll(true)
-    for (const room of roomList) await generateRoomNarrative(room.id)
+    let generated = 0
+    for (const room of roomList) {
+      await generateRoomNarrative(room.id)
+      generated++
+    }
     setGeneratingAll(false)
-    toast.success('All narratives generated!')
+    // Expand all sections so user can see the narratives
+    setRoomList((prev) => prev.map((r) => ({ ...r, expanded: true })))
+    toast.success(`${generated} section narratives generated — scroll down to review`)
   }
 
   function dismissAiHintAndGenerate() {
     localStorage.setItem('inspectiq_ai_hint_seen', '1')
     setShowAiHint(false)
-    // Run generation anyway — some items might have condition ratings even without notes
     setGeneratingAll(true)
-    roomList.reduce((p, room) => p.then(() => generateRoomNarrative(room.id)), Promise.resolve()).then(() => {
+    let generated = 0
+    roomList.reduce((p, room) => p.then(async () => { await generateRoomNarrative(room.id); generated++ }), Promise.resolve()).then(() => {
       setGeneratingAll(false)
-      toast.success('All narratives generated!')
+      setRoomList((prev) => prev.map((r) => ({ ...r, expanded: true })))
+      toast.success(`${generated} section narratives generated — scroll down to review`)
     })
   }
 

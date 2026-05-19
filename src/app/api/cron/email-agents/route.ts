@@ -1,17 +1,29 @@
 import { NextResponse } from 'next/server'
-import { db, profiles, inspections, agentConfigs } from '@/lib/db'
+import { db, profiles, inspections, agentConfigs, agentActivityLog, bookingLinks } from '@/lib/db'
 import { eq, and, sql, desc } from 'drizzle-orm'
 import { getAgentConfig, logAgentActivity, hasConnector, validateCronAuth } from '@/lib/agent-runner'
 import { escapeHtml } from '@/lib/email'
+import { APP_URL } from '@/lib/config'
+import { getRecentEmails, sendGmailReply } from '@/lib/gmail'
 import { Resend } from 'resend'
+import Anthropic from '@anthropic-ai/sdk'
 
 export async function GET(request: Request) {
   const authError = validateCronAuth(request)
   if (authError) return authError
 
-  const marketingResults = await runMarketingAgent()
+  const [marketingResults, afterHoursResults, leadQualifierResults] = await Promise.all([
+    runMarketingAgent(),
+    runAfterHoursAgent(),
+    runLeadQualifierAgent(),
+  ])
 
-  return NextResponse.json({ ok: true, marketing: marketingResults })
+  return NextResponse.json({
+    ok: true,
+    marketing: marketingResults,
+    afterHours: afterHoursResults,
+    leadQualifier: leadQualifierResults,
+  })
 }
 
 // ── Marketing Agent ──
@@ -108,4 +120,247 @@ async function runMarketingAgent() {
 
   console.log(`[InspectIQ] Marketing agent: ${sent} posts suggested`)
   return { sent }
+}
+
+// ── After-Hours Agent ──
+// Auto-replies to unread emails when the inspector is outside business hours
+async function runAfterHoursAgent() {
+  let replied = 0
+
+  const configs = await db.select().from(agentConfigs).where(
+    and(eq(agentConfigs.agentType, 'after_hours'), eq(agentConfigs.enabled, true))
+  )
+
+  for (const agentConfig of configs) {
+    const config = agentConfig.config as Record<string, unknown>
+    const userId = agentConfig.userId
+
+    // Check if current time is outside business hours
+    const now = new Date()
+    const businessHoursStart = (config.businessHoursStart as string) ?? '08:00'
+    const businessHoursEnd = (config.businessHoursEnd as string) ?? '18:00'
+    const businessDays = (config.businessDays as number[]) ?? [1, 2, 3, 4, 5]
+
+    const currentDay = now.getUTCDay() // 0=Sun, 1=Mon, ...
+    const currentTime = `${String(now.getUTCHours()).padStart(2, '0')}:${String(now.getUTCMinutes()).padStart(2, '0')}`
+
+    const isDuringBusinessHours = businessDays.includes(currentDay)
+      && currentTime >= businessHoursStart
+      && currentTime < businessHoursEnd
+
+    // Only run outside business hours
+    if (isDuringBusinessHours) continue
+
+    // Verify Google is connected
+    if (!(await hasConnector(userId, 'google'))) continue
+
+    // Get profile info for the reply
+    const [profile] = await db.select().from(profiles).where(eq(profiles.id, userId)).limit(1)
+    if (!profile) continue
+
+    const companyName = profile.companyName ?? profile.fullName ?? 'our office'
+    const phone = profile.phone
+
+    // Fetch recent unread emails (last 2 hours to avoid replying to old mail)
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000)
+    const emails = await getRecentEmails(userId, 20, twoHoursAgo)
+
+    for (const email of emails) {
+      // Skip emails from ourselves (avoid loops)
+      if (email.from.includes(profile.email)) continue
+
+      // Check if we already auto-replied to this thread
+      const [existing] = await db.select({ id: agentActivityLog.id }).from(agentActivityLog)
+        .where(and(
+          eq(agentActivityLog.userId, userId),
+          eq(agentActivityLog.agentType, 'after_hours'),
+          eq(agentActivityLog.action, 'auto_reply'),
+          sql`${agentActivityLog.details}->>'threadId' = ${email.threadId}`,
+        ))
+        .limit(1)
+
+      if (existing) continue
+
+      // Build the auto-reply body
+      let replyHtml = `<div style="font-family:sans-serif;color:#1e293b;max-width:560px">
+        <p>Thanks for reaching out to <strong>${escapeHtml(companyName)}</strong>.</p>
+        <p>I'm currently out of the office and will respond during business hours (${escapeHtml(businessHoursStart)} - ${escapeHtml(businessHoursEnd)}).</p>`
+
+      if (phone) {
+        replyHtml += `<p>If this is urgent, you can reach me at <a href="tel:${escapeHtml(phone)}">${escapeHtml(phone)}</a>.</p>`
+      }
+
+      // Include booking link if enabled
+      if (config.canBookAppointments) {
+        const [bookingLink] = await db.select().from(bookingLinks)
+          .where(and(eq(bookingLinks.userId, userId), eq(bookingLinks.active, true)))
+          .limit(1)
+
+        if (bookingLink) {
+          const bookUrl = `${APP_URL}/book/${bookingLink.token}`
+          replyHtml += `<p>You can also <a href="${escapeHtml(bookUrl)}">book an appointment online</a> anytime.</p>`
+        }
+      }
+
+      replyHtml += `<p style="color:#94a3b8;font-size:12px;margin-top:16px">This is an automated reply from ${escapeHtml(companyName)}.</p></div>`
+
+      // Extract sender email from the "From" header (handles "Name <email>" format)
+      const senderEmail = extractEmail(email.from)
+      if (!senderEmail) continue
+
+      const sent = await sendGmailReply(userId, senderEmail, email.subject, replyHtml, email.threadId)
+      if (sent) {
+        await logAgentActivity(userId, 'after_hours', 'auto_reply', {
+          threadId: email.threadId,
+          messageId: email.id,
+          to: senderEmail,
+          subject: email.subject,
+        })
+        replied++
+      }
+    }
+  }
+
+  console.log(`[InspectIQ] After-hours agent: ${replied} auto-replies sent`)
+  return { replied }
+}
+
+// ── Lead Qualifier Agent ──
+// Auto-responds to inquiry emails with pricing and requests property details
+async function runLeadQualifierAgent() {
+  let qualified = 0
+
+  const configs = await db.select().from(agentConfigs).where(
+    and(eq(agentConfigs.agentType, 'lead_qualifier'), eq(agentConfigs.enabled, true))
+  )
+
+  // Keywords that indicate a home inspection inquiry
+  const inquiryKeywords = ['inspection', 'home inspection', 'quote', 'available', 'schedule']
+
+  for (const agentConfig of configs) {
+    const config = agentConfig.config as Record<string, unknown>
+    const userId = agentConfig.userId
+
+    if (!(config.autoRespond as boolean)) continue
+    if (!(await hasConnector(userId, 'google'))) continue
+
+    const [profile] = await db.select().from(profiles).where(eq(profiles.id, userId)).limit(1)
+    if (!profile) continue
+
+    // Fetch recent unread emails (last 4 hours)
+    const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000)
+    const emails = await getRecentEmails(userId, 20, fourHoursAgo)
+
+    for (const email of emails) {
+      // Skip emails from ourselves
+      if (email.from.includes(profile.email)) continue
+
+      // Check if this looks like an inspection inquiry (case-insensitive)
+      const textToCheck = `${email.subject} ${email.snippet} ${email.body}`.toLowerCase()
+      const isInquiry = inquiryKeywords.some(kw => textToCheck.includes(kw))
+      if (!isInquiry) continue
+
+      // Check if we already responded to this thread
+      const [existing] = await db.select({ id: agentActivityLog.id }).from(agentActivityLog)
+        .where(and(
+          eq(agentActivityLog.userId, userId),
+          eq(agentActivityLog.agentType, 'lead_qualifier'),
+          eq(agentActivityLog.action, 'inquiry_reply'),
+          sql`${agentActivityLog.details}->>'threadId' = ${email.threadId}`,
+        ))
+        .limit(1)
+
+      if (existing) continue
+
+      // Build pricing info for the AI prompt
+      const pricingModel = (config.pricingModel as string) ?? 'flat'
+      const flatRate = (config.flatRate as number) ?? 400
+      const perSqftRate = (config.perSqftRate as number) ?? 0.15
+      const companyName = profile.companyName ?? profile.fullName ?? 'our company'
+      const phone = profile.phone ?? ''
+
+      let pricingText = ''
+      if (pricingModel === 'flat') {
+        pricingText = `Our standard home inspection rate is $${flatRate}.`
+      } else if (pricingModel === 'per_sqft') {
+        pricingText = `Our rate is $${perSqftRate} per square foot (e.g., a 2,000 sq ft home would be $${(perSqftRate * 2000).toFixed(0)}).`
+      }
+
+      // Get booking link if available
+      let bookingUrl = ''
+      const [bookingLink] = await db.select().from(bookingLinks)
+        .where(and(eq(bookingLinks.userId, userId), eq(bookingLinks.active, true)))
+        .limit(1)
+      if (bookingLink) {
+        bookingUrl = `${APP_URL}/book/${bookingLink.token}`
+      }
+
+      // Use Claude to draft a professional response
+      const anthropicKey = process.env.ANTHROPIC_API_KEY
+      if (!anthropicKey) {
+        console.error('[InspectIQ] ANTHROPIC_API_KEY not set for lead qualifier')
+        continue
+      }
+
+      try {
+        const anthropic = new Anthropic({ apiKey: anthropicKey })
+        const aiResponse = await anthropic.messages.create({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 400,
+          messages: [{
+            role: 'user',
+            content: `You are a professional home inspector replying to a potential client's inquiry email. Write a short, friendly, professional HTML email reply (use <p> tags, no <html> or <body> wrapper).
+
+Company: ${companyName}
+Phone: ${phone}
+Pricing: ${pricingText}
+${bookingUrl ? `Booking link: ${bookingUrl}` : ''}
+
+The client's email subject: "${email.subject}"
+The client's email snippet: "${email.snippet}"
+
+Your reply should:
+1. Thank them for reaching out
+2. Mention the pricing
+3. Ask for the property address, approximate square footage, and preferred date/time
+4. ${bookingUrl ? 'Include the booking link' : 'Offer to set up a time'}
+5. Sign off with the company name
+
+Keep it under 150 words. Do NOT include a subject line — just the HTML body.`,
+          }],
+        })
+
+        const replyHtml = (aiResponse.content[0] as { type: string; text: string }).text
+
+        const senderEmail = extractEmail(email.from)
+        if (!senderEmail) continue
+
+        const sent = await sendGmailReply(userId, senderEmail, email.subject, replyHtml, email.threadId)
+        if (sent) {
+          await logAgentActivity(userId, 'lead_qualifier', 'inquiry_reply', {
+            threadId: email.threadId,
+            messageId: email.id,
+            to: senderEmail,
+            subject: email.subject,
+            pricingModel,
+          })
+          qualified++
+        }
+      } catch (err) {
+        console.error(`[InspectIQ] Lead qualifier AI failed for user ${userId}:`, err)
+      }
+    }
+  }
+
+  console.log(`[InspectIQ] Lead qualifier agent: ${qualified} inquiry replies sent`)
+  return { qualified }
+}
+
+// Extract email address from a "Name <email>" or bare email string
+function extractEmail(from: string): string | null {
+  const match = from.match(/<([^>]+)>/)
+  if (match) return match[1]
+  // If no angle brackets, check if the whole thing looks like an email
+  if (from.includes('@') && !from.includes(' ')) return from
+  return null
 }

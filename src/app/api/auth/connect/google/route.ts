@@ -17,6 +17,7 @@ export async function GET() {
   const scopes = [
     'https://www.googleapis.com/auth/calendar', // read/write calendar
     'https://www.googleapis.com/auth/gmail.send', // send email as user
+    'https://www.googleapis.com/auth/gmail.readonly', // read inbox for after-hours + lead qualifier agents
     'https://www.googleapis.com/auth/business.manage', // Google Business Profile
     'https://www.googleapis.com/auth/userinfo.email', // get email address
   ].join(' ')

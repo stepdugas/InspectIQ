@@ -2,7 +2,6 @@
 
 import { useRef, useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { motion, useInView, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -12,7 +11,7 @@ import {
   FileText, Zap, Clock, Mail, Star, Users, CalendarDays,
   CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Shield, Search,
   MessageSquare, Wrench, BarChart3, Phone, Brain, Megaphone,
-  Bot, ArrowRight, Sparkles,
+  Bot, ArrowRight, Sparkles, Circle, ToggleRight, Download,
 } from 'lucide-react'
 
 // --- Agent Data ---
@@ -58,22 +57,19 @@ const steps = [
     number: '1',
     title: 'Create your account',
     description: 'Email and password. That is it. No credit card, no sales call, no 30-minute demo.',
-    screenshot: '/screenshots/step-signup.png',
-    screenshotAlt: 'InspectIQ signup screen',
+    mockup: 'signup' as const,
   },
   {
     number: '2',
     title: 'Connect your email and calendar',
     description: 'Link Gmail or Outlook so your agents can send from your address and manage your schedule. About 10 minutes.',
-    screenshot: '/screenshots/step-connect.png',
-    screenshotAlt: 'InspectIQ settings page showing connected accounts',
+    mockup: 'connect' as const,
   },
   {
     number: '3',
     title: 'Run your first inspection',
     description: 'Create an inspection, walk the property, type your notes. Your AI team handles the rest — report, delivery, follow-up, review request.',
-    screenshot: '/screenshots/step-inspection.png',
-    screenshotAlt: 'InspectIQ inspection editor with AI-generated narrative',
+    mockup: 'inspection' as const,
   },
 ]
 
@@ -134,31 +130,308 @@ function Section({ children, className = '', id }: { children: React.ReactNode; 
   )
 }
 
-// --- Screenshot component with fallback ---
+// --- App Mockup Components (inline UI previews instead of screenshots) ---
 
-function Screenshot({ src, alt, className = '' }: { src: string; alt: string; className?: string }) {
-  const [hasError, setHasError] = useState(false)
-
-  if (hasError) {
-    return (
-      <div className={`rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center ${className}`}>
-        <p className="text-sm text-slate-400 px-4 text-center">Screenshot: {alt}</p>
-      </div>
-    )
-  }
-
+function MockupChrome({ children, title }: { children: React.ReactNode; title?: string }) {
   return (
-    <div className={`rounded-xl border border-slate-200 shadow-lg overflow-hidden bg-white ${className}`}>
-      <Image
-        src={src}
-        alt={alt}
-        width={800}
-        height={500}
-        className="w-full h-auto"
-        onError={() => setHasError(true)}
-      />
+    <div className="rounded-xl border border-slate-200 shadow-lg overflow-hidden bg-white">
+      <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 border-b border-slate-200">
+        <div className="flex gap-1.5">
+          <Circle className="h-2.5 w-2.5 fill-red-400 text-red-400" />
+          <Circle className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />
+          <Circle className="h-2.5 w-2.5 fill-green-400 text-green-400" />
+        </div>
+        {title && <span className="text-[10px] text-slate-400 ml-2 font-mono">{title}</span>}
+      </div>
+      <div className="p-4">{children}</div>
     </div>
   )
+}
+
+function HeroDashboardMockup() {
+  return (
+    <MockupChrome title="useinspectiq.com/dashboard">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-slate-900">Dashboard</p>
+            <p className="text-[10px] text-slate-400">Welcome back, James</p>
+          </div>
+          <div className="flex gap-1">
+            <span className="text-[9px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-medium">5 agents active</span>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { label: 'This Month', value: '12', sub: 'inspections' },
+            { label: 'Reports Sent', value: '11', sub: 'delivered' },
+            { label: 'Reviews', value: '4.9', sub: '28 reviews' },
+          ].map((s) => (
+            <div key={s.label} className="bg-slate-50 rounded-lg p-2 text-center">
+              <p className="text-lg font-bold text-slate-900">{s.value}</p>
+              <p className="text-[9px] text-slate-500">{s.sub}</p>
+            </div>
+          ))}
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Recent Inspections</p>
+          {[
+            { addr: '2847 Oakwood Dr, Columbus', status: 'Sent', color: 'text-blue-600 bg-blue-50' },
+            { addr: '1204 Maple Lane, Dublin', status: 'Completed', color: 'text-green-600 bg-green-50' },
+            { addr: '890 Elm St, Westerville', status: 'In Progress', color: 'text-amber-600 bg-amber-50' },
+          ].map((r) => (
+            <div key={r.addr} className="flex items-center justify-between bg-white border border-slate-100 rounded-lg px-2.5 py-1.5">
+              <span className="text-[10px] text-slate-700 truncate">{r.addr}</span>
+              <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded ${r.color}`}>{r.status}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </MockupChrome>
+  )
+}
+
+function SignupMockup() {
+  return (
+    <MockupChrome title="useinspectiq.com/auth/signup">
+      <div className="max-w-[220px] mx-auto space-y-3 py-2">
+        <div className="text-center">
+          <p className="text-sm font-bold text-slate-900">Start your free trial</p>
+          <p className="text-[9px] text-slate-400">No credit card required</p>
+        </div>
+        {['Full name', 'Email address', 'Password'].map((f) => (
+          <div key={f}>
+            <p className="text-[9px] text-slate-500 mb-0.5">{f}</p>
+            <div className="h-7 rounded-md border border-slate-200 bg-slate-50" />
+          </div>
+        ))}
+        <div className="h-8 rounded-md bg-blue-600 flex items-center justify-center">
+          <span className="text-[10px] text-white font-medium">Create Account</span>
+        </div>
+        <p className="text-[8px] text-slate-400 text-center">14-day free trial, then $99/month</p>
+      </div>
+    </MockupChrome>
+  )
+}
+
+function ConnectMockup() {
+  return (
+    <MockupChrome title="useinspectiq.com/dashboard/agents">
+      <div className="space-y-3">
+        <p className="text-sm font-semibold text-slate-900">Connect Your Accounts</p>
+        {[
+          { name: 'Google (Gmail + Calendar)', connected: true, icon: '🔗' },
+          { name: 'Microsoft Outlook', connected: false, icon: '📧' },
+        ].map((a) => (
+          <div key={a.name} className="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2 border border-slate-100">
+            <div className="flex items-center gap-2">
+              <span className="text-sm">{a.icon}</span>
+              <span className="text-[10px] font-medium text-slate-700">{a.name}</span>
+            </div>
+            {a.connected ? (
+              <span className="text-[9px] font-medium text-green-600 bg-green-50 px-1.5 py-0.5 rounded">Connected</span>
+            ) : (
+              <span className="text-[9px] font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded cursor-pointer">Connect</span>
+            )}
+          </div>
+        ))}
+        <div className="mt-2 bg-blue-50 border border-blue-100 rounded-lg p-2">
+          <p className="text-[9px] text-blue-700">Your agents will send emails from your connected account — clients see your name and email, not ours.</p>
+        </div>
+      </div>
+    </MockupChrome>
+  )
+}
+
+function InspectionMockup() {
+  return (
+    <MockupChrome title="useinspectiq.com/dashboard/inspections/edit">
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-semibold text-slate-900">Roof System</p>
+          <span className="text-[9px] bg-green-50 text-green-600 px-1.5 py-0.5 rounded font-medium">Auto-saved</span>
+        </div>
+        {[
+          { name: 'Asphalt Shingles', cond: 'Good', color: 'bg-green-500' },
+          { name: 'Gutters & Downspouts', cond: 'Fair', color: 'bg-amber-500' },
+          { name: 'Chimney Flashing', cond: 'Fair', color: 'bg-amber-500' },
+        ].map((item) => (
+          <div key={item.name} className="flex items-center gap-2 bg-slate-50 rounded-lg px-2.5 py-1.5 border border-slate-100">
+            <div className={`h-2 w-2 rounded-full ${item.color}`} />
+            <span className="text-[10px] text-slate-700 flex-1">{item.name}</span>
+            <span className="text-[9px] text-slate-500">{item.cond}</span>
+          </div>
+        ))}
+        <div className="bg-blue-50 border border-blue-100 rounded-lg p-2.5">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Sparkles className="h-3 w-3 text-blue-600" />
+            <span className="text-[10px] font-semibold text-blue-700">AI Narrative</span>
+          </div>
+          <p className="text-[9px] text-slate-600 leading-relaxed">
+            The roof system was inspected from ground level. Asphalt shingle roofing is in overall satisfactory condition with an estimated 5-7 years of remaining service life...
+          </p>
+        </div>
+      </div>
+    </MockupChrome>
+  )
+}
+
+function ReportWriterMockup() {
+  return (
+    <MockupChrome title="AI Report Writer">
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold text-slate-900">Kitchen</p>
+          <span className="text-[9px] text-slate-400">4 items inspected</span>
+        </div>
+        <div className="space-y-1">
+          {[
+            { name: 'Cabinets & Countertops', cond: 'Good' },
+            { name: 'Kitchen Sink & Drain', cond: 'Fair', note: 'Slow drain' },
+            { name: 'GFCI Outlets', cond: 'Good' },
+          ].map((i) => (
+            <div key={i.name} className="text-[9px] text-slate-600 flex items-center gap-1.5">
+              <CheckCircle2 className={`h-2.5 w-2.5 ${i.cond === 'Good' ? 'text-green-500' : 'text-amber-500'}`} />
+              {i.name} {i.note && <span className="text-slate-400">— {i.note}</span>}
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="h-6 rounded bg-blue-600 flex items-center px-2 gap-1">
+            <Sparkles className="h-2.5 w-2.5 text-white" />
+            <span className="text-[9px] text-white font-medium">Generate Narrative</span>
+          </div>
+          <div className="h-1.5 flex-1 bg-blue-200 rounded-full overflow-hidden">
+            <div className="h-full w-3/4 bg-blue-500 rounded-full" />
+          </div>
+        </div>
+        <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5">
+          <p className="text-[9px] text-slate-600 leading-relaxed italic">
+            &quot;The kitchen is in good overall condition. Cabinets and countertops show typical wear consistent with the age of the home. A slow drain was noted at the kitchen sink — this should be cleared prior to closing...&quot;
+          </p>
+        </div>
+      </div>
+    </MockupChrome>
+  )
+}
+
+function AgentsPageMockup() {
+  return (
+    <MockupChrome title="useinspectiq.com/dashboard/agents">
+      <div className="space-y-2">
+        <p className="text-xs font-semibold text-slate-900">Your AI Team</p>
+        {[
+          { name: 'Report Writer', on: true, icon: FileText },
+          { name: 'Report Delivery', on: true, icon: Mail },
+          { name: 'Client Follow-Ups', on: true, icon: MessageSquare },
+          { name: 'Google Reviews', on: false, icon: Star },
+          { name: 'Scheduling', on: true, icon: CalendarDays },
+          { name: 'After-Hours', on: false, icon: Phone },
+        ].map((a) => (
+          <div key={a.name} className="flex items-center justify-between bg-slate-50 rounded-lg px-2.5 py-1.5 border border-slate-100">
+            <div className="flex items-center gap-2">
+              <a.icon className={`h-3 w-3 ${a.on ? 'text-blue-600' : 'text-slate-300'}`} />
+              <span className={`text-[10px] font-medium ${a.on ? 'text-slate-700' : 'text-slate-400'}`}>{a.name}</span>
+            </div>
+            <ToggleRight className={`h-4 w-4 ${a.on ? 'text-blue-600' : 'text-slate-300'}`} />
+          </div>
+        ))}
+      </div>
+    </MockupChrome>
+  )
+}
+
+function BookingPageMockup() {
+  return (
+    <MockupChrome title="book.useinspectiq.com/james-whitfield">
+      <div className="space-y-2.5">
+        <div className="text-center">
+          <p className="text-xs font-bold text-slate-900">Summit Home Inspections</p>
+          <p className="text-[9px] text-slate-400">James Whitfield, HI-OH-4821</p>
+        </div>
+        <div>
+          <p className="text-[9px] text-slate-500 mb-1">Select a date</p>
+          <div className="grid grid-cols-7 gap-0.5 text-center">
+            {['M','T','W','T','F','S','S'].map((d,i) => (
+              <span key={i} className="text-[8px] text-slate-400 font-medium">{d}</span>
+            ))}
+            {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
+              <span
+                key={d}
+                className={`text-[8px] py-0.5 rounded ${
+                  d === 15 ? 'bg-blue-600 text-white font-bold' :
+                  [6,7,13,14,20,21,27,28].includes(d) ? 'text-slate-300' :
+                  'text-slate-600 hover:bg-blue-50'
+                }`}
+              >
+                {d}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="text-[9px] text-slate-500 mb-1">Available times</p>
+          <div className="flex flex-wrap gap-1">
+            {['9:00 AM', '10:30 AM', '1:00 PM', '3:00 PM'].map((t) => (
+              <span key={t} className={`text-[8px] px-1.5 py-0.5 rounded border ${t === '10:30 AM' ? 'bg-blue-600 text-white border-blue-600' : 'border-slate-200 text-slate-600'}`}>{t}</span>
+            ))}
+          </div>
+        </div>
+        <div className="h-6 rounded bg-blue-600 flex items-center justify-center">
+          <span className="text-[9px] text-white font-medium">Book Inspection</span>
+        </div>
+      </div>
+    </MockupChrome>
+  )
+}
+
+function SampleReportMockup() {
+  return (
+    <MockupChrome title="InspectIQ Report — PDF Preview">
+      <div className="space-y-2.5">
+        <div className="text-center border-b border-slate-100 pb-2">
+          <p className="text-xs font-bold text-slate-900">Home Inspection Report</p>
+          <p className="text-[9px] text-slate-400">2847 Oakwood Drive, Columbus, OH 43214</p>
+          <p className="text-[8px] text-slate-400">Prepared by Summit Home Inspections</p>
+        </div>
+        <div>
+          <p className="text-[9px] font-semibold text-slate-700 mb-1">Summary of Findings</p>
+          <div className="flex gap-2 mb-2">
+            <span className="text-[8px] bg-red-50 text-red-600 px-1.5 py-0.5 rounded font-medium">3 Critical</span>
+            <span className="text-[8px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded font-medium">5 Fair</span>
+            <span className="text-[8px] bg-green-50 text-green-600 px-1.5 py-0.5 rounded font-medium">26 Good</span>
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          {[
+            { section: 'Roof System', items: '5 items', badge: '1 fair' },
+            { section: 'Electrical', items: '4 items', badge: '1 critical' },
+            { section: 'HVAC', items: '4 items', badge: '1 fair' },
+          ].map((s) => (
+            <div key={s.section} className="flex items-center justify-between bg-slate-50 rounded px-2 py-1.5 border border-slate-100">
+              <div>
+                <p className="text-[9px] font-medium text-slate-700">{s.section}</p>
+                <p className="text-[8px] text-slate-400">{s.items}</p>
+              </div>
+              <span className="text-[8px] text-amber-600">{s.badge}</span>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center justify-center gap-1.5 pt-1">
+          <Download className="h-3 w-3 text-blue-600" />
+          <span className="text-[9px] text-blue-600 font-medium">Download Full PDF</span>
+        </div>
+      </div>
+    </MockupChrome>
+  )
+}
+
+function StepMockup({ type }: { type: 'signup' | 'connect' | 'inspection' }) {
+  switch (type) {
+    case 'signup': return <SignupMockup />
+    case 'connect': return <ConnectMockup />
+    case 'inspection': return <InspectionMockup />
+  }
 }
 
 // --- How It Works Carousel ---
@@ -241,11 +514,7 @@ function HowItWorksCarousel() {
               <p className="text-lg text-slate-600 leading-relaxed">{step.description}</p>
             </div>
             <div className="order-1 md:order-2">
-              <Screenshot
-                src={step.screenshot}
-                alt={step.screenshotAlt}
-                className="min-h-[240px]"
-              />
+              <StepMockup type={step.mockup} />
             </div>
           </motion.div>
         </AnimatePresence>
@@ -326,11 +595,7 @@ export default function AnimatedLanding() {
               </div>
             </div>
             <div>
-              <Screenshot
-                src="/screenshots/hero-dashboard.png"
-                alt="InspectIQ dashboard showing active agents and recent inspections"
-                className="min-h-[300px]"
-              />
+              <HeroDashboardMockup />
             </div>
           </div>
         </div>
@@ -366,47 +631,31 @@ export default function AnimatedLanding() {
         <HowItWorksCarousel />
       </Section>
 
-      {/* -- Product Screenshots -- */}
+      {/* -- Product Previews -- */}
       <Section className="py-16 md:py-24 bg-slate-50">
         <div className="mx-auto max-w-5xl px-6">
           <div className="text-center mb-14">
             <h2 className="text-3xl font-bold text-slate-900 sm:text-4xl">See it in action</h2>
-            <p className="mt-4 text-slate-600 text-lg">Real screenshots from inside the app.</p>
+            <p className="mt-4 text-slate-600 text-lg">What your dashboard actually looks like.</p>
           </div>
           <div className="grid gap-8 md:grid-cols-2">
             <div>
-              <Screenshot
-                src="/screenshots/report-writer.png"
-                alt="AI report writer generating a narrative from inspection notes"
-                className="min-h-[220px]"
-              />
+              <ReportWriterMockup />
               <h3 className="mt-4 font-semibold text-slate-900">AI Report Writer</h3>
               <p className="text-sm text-slate-600">Type your notes, get a professional narrative in seconds. Edit if you want, or send as-is.</p>
             </div>
             <div>
-              <Screenshot
-                src="/screenshots/agents-page.png"
-                alt="Agents dashboard showing toggleable AI agents"
-                className="min-h-[220px]"
-              />
+              <AgentsPageMockup />
               <h3 className="mt-4 font-semibold text-slate-900">Your AI Team</h3>
               <p className="text-sm text-slate-600">Toggle each agent on or off. Configure how they work. You are always in control.</p>
             </div>
             <div>
-              <Screenshot
-                src="/screenshots/booking-page.png"
-                alt="Branded booking page where realtors schedule inspections"
-                className="min-h-[220px]"
-              />
+              <BookingPageMockup />
               <h3 className="mt-4 font-semibold text-slate-900">Branded Booking Page</h3>
               <p className="text-sm text-slate-600">Share one link with realtors. They pick a time and enter the address. No phone tag.</p>
             </div>
             <div>
-              <Screenshot
-                src="/screenshots/sample-report.png"
-                alt="Professional inspection report generated by InspectIQ"
-                className="min-h-[220px]"
-              />
+              <SampleReportMockup />
               <h3 className="mt-4 font-semibold text-slate-900">Professional Reports</h3>
               <p className="text-sm text-slate-600">Clean, branded reports your clients will actually read. Photos, findings, repair summaries included.</p>
             </div>
