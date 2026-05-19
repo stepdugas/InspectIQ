@@ -257,11 +257,16 @@ export default function AgentsPage() {
                     <Unplug className="h-3 w-3 mr-1" />Disconnect
                   </Button>
                 ) : (
-                  <a href={`/api/auth/connect/${c.provider}`}>
-                    <Button size="sm" variant="outline" className="text-xs">
-                      <Plug className="h-3 w-3 mr-1" />Connect
-                    </Button>
-                  </a>
+                  <div className="flex flex-col items-end gap-1">
+                    <a href={`/api/auth/connect/${c.provider}`}>
+                      <Button size="sm" variant="outline" className="text-xs">
+                        <Plug className="h-3 w-3 mr-1" />Connect
+                      </Button>
+                    </a>
+                    {c.provider === 'google' && (
+                      <p className="text-[10px] text-slate-400 max-w-[180px] text-right">You may see a &quot;Google hasn&apos;t verified this app&quot; warning — click Advanced → Continue to proceed safely.</p>
+                    )}
+                  </div>
                 )}
               </div>
             ))}
